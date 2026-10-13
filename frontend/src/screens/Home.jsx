@@ -40,6 +40,7 @@ export default function Home({ navigate }) {
     <div className="page" style={{ maxWidth: 1080, padding: '40px 48px' }}>
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
+          <div style={{ width: 36, height: 3, background: 'var(--app-accent)', borderRadius: 2, marginBottom: 20 }} />
           <div className="home-greeting">
             {getGreeting()} Sun Jin.<br />
             <em>Ready to rehearse?</em>

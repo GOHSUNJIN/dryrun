@@ -84,7 +84,7 @@ function TranscriptMsg({ msg, personas, appearing }) {
         <div className="msg-header">
           <div className="msg-speaker-dot" style={{ background: persona.color }} />
           <span className="msg-speaker-name" style={{ color: persona.color }}>{persona.name}</span>
-          <span className="msg-speaker-role">· {persona.role}</span>
+          <span className="msg-speaker-role">{persona.role}</span>
           {replyPersona && (
             <span className="msg-reply-tag">
               <span>replying to {replyPersona.role}</span>
@@ -155,8 +155,11 @@ function StreamingText({ text }) {
 
 export default function RehearsalRoom({ navigate, session, updateSession }) {
   const hasRealSession = Boolean(session.proposalText)
+  const realOpenings   = session.transcript.filter(m => m.type === 'opening')
   const openingMsgs    = hasRealSession
-    ? session.transcript.filter(m => m.type === 'opening')
+    ? (realOpenings.length > 0
+        ? realOpenings
+        : DEMO_TRANSCRIPT.filter(m => m.type === 'opening' && (session.personaIds || []).includes(m.speaker)))
     : DEMO_TRANSCRIPT.filter(m => m.type === 'opening')
 
   const [localTranscript, setLocalTranscript]       = useState([])
@@ -681,22 +684,25 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       <div className="room-sep" />
 
       <div className="room-transcript" ref={transcriptRef}>
-        {localTranscript.map(msg => (
-          <TranscriptMsg
-            key={msg.id}
-            msg={msg}
-            personas={visiblePersonas}
-            appearing={msg.id === appearingMsgId}
-          />
-        ))}
-        <AnimatePresence>
-          {typingPersona && <TypingIndicator key="typing" persona={typingPersona} />}
-        </AnimatePresence>
+        <div className="room-transcript-inner">
+          {localTranscript.map(msg => (
+            <TranscriptMsg
+              key={msg.id}
+              msg={msg}
+              personas={visiblePersonas}
+              appearing={msg.id === appearingMsgId}
+            />
+          ))}
+          <AnimatePresence>
+            {typingPersona && <TypingIndicator key="typing" persona={typingPersona} />}
+          </AnimatePresence>
+        </div>
       </div>
 
       {apiError && hasRealSession && (
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
         <div style={{
-          margin: '0 20px 0', padding: '9px 16px',
+          padding: '9px 16px',
           background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
           borderRadius: 8, color: '#FCA5A5', fontSize: '0.8125rem',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
@@ -704,11 +710,13 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           <span>AI unavailable. Using scripted responses. Check your API key in Vercel settings.</span>
           <button onClick={() => setApiError(false)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0, fontSize: '1rem', lineHeight: 1 }}>×</button>
         </div>
+        </div>
       )}
 
       {showExitOffer && (
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
         <div style={{
-          margin: '0 20px 8px', padding: '12px 20px',
+          padding: '12px 20px',
           background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.25)',
           borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
@@ -734,9 +742,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             </button>
           </div>
         </div>
+        </div>
       )}
 
       <div className="room-input-area">
+        <div className="room-input-inner">
         <div className="room-input-wrap">
           <textarea
             className="room-input"
@@ -779,6 +789,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           </div>
         </div>
         <div className="room-input-hint">Press Enter to send · Shift+Enter for new line</div>
+        </div>
       </div>
 
     </div>

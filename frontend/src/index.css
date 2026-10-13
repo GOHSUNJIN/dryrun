@@ -48,8 +48,8 @@ ul { list-style: none; }
   --text-primary:  #1B1C20;
   --text-secondary:#575A62;
   --text-muted:    #8A8D96;
-  --app-accent:    #1D4ED8;
-  --app-accent-bg: rgba(29, 78, 216, 0.08);
+  --app-accent:    #B45309;
+  --app-accent-bg: rgba(180, 83, 9, 0.08);
 
   /* Sidebar */
   --sidebar-bg:      #17181C;
@@ -698,15 +698,24 @@ ul { list-style: none; }
 .room-transcript {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 80px 16px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 20px;
   position: relative;
   z-index: 2;
   scrollbar-width: thin;
   scrollbar-color: var(--room-border) transparent;
+}
+
+.room-transcript-inner {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 32px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .room-transcript::-webkit-scrollbar { width: 4px; }
@@ -836,8 +845,15 @@ ul { list-style: none; }
 .room-input-area {
   position: relative;
   z-index: 2;
-  padding: 16px 80px 32px;
+  padding: 0;
   flex-shrink: 0;
+}
+
+.room-input-inner {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px 32px 32px;
+  width: 100%;
 }
 
 .room-input-wrap {
@@ -989,7 +1005,7 @@ ul { list-style: none; }
   align-items: center;
   gap: 10px;
   padding: 16px 32px;
-  background: var(--text-primary);
+  background: var(--app-accent);
   color: #FFFFFF;
   border-radius: var(--r-lg);
   font-size: 0.9375rem;
@@ -1002,9 +1018,9 @@ ul { list-style: none; }
 }
 
 .home-hero-btn:hover {
-  background: #2D2926;
+  background: #92400E;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 20px rgba(180,83,9,0.28);
 }
 
 .home-grid {
@@ -1223,8 +1239,8 @@ ul { list-style: none; }
 }
 
 .step-number.active {
-  border-color: var(--text-primary);
-  background: var(--text-primary);
+  border-color: var(--app-accent);
+  background: var(--app-accent);
   color: white;
 }
 
@@ -1518,7 +1534,7 @@ ul { list-style: none; }
 }
 
 .mode-card.selected .mode-card-icon {
-  background: var(--text-primary);
+  background: var(--app-accent);
   color: white;
 }
 
@@ -1547,7 +1563,7 @@ ul { list-style: none; }
   align-items: center;
   gap: 10px;
   padding: 14px 32px;
-  background: var(--text-primary);
+  background: var(--app-accent);
   color: white;
   border: none;
   border-radius: var(--r-lg);
@@ -1559,9 +1575,9 @@ ul { list-style: none; }
 }
 
 .enter-room-btn:hover {
-  background: #2D2926;
+  background: #92400E;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(180,83,9,0.28);
 }
 
 /* ─── REPORT ─── */
