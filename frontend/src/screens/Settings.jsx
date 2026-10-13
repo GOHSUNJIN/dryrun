@@ -68,7 +68,6 @@ export default function Settings() {
   const [role, setRole]           = useState(init.role)
   const [savedProfile, setSavedProfile]   = useState(false)
   const [savedDefaults, setSavedDefaults] = useState(false)
-  const [defaultMode, setDefaultMode]     = useState(initDefaults.mode)
   const [toughness, setToughness]         = useState(initDefaults.toughness)
   const [turnLimit, setTurnLimit]         = useState(initDefaults.turnLimit)
   const [voiceEnabled, setVoiceEnabled]   = useState(initVoice.enabled)
@@ -81,7 +80,7 @@ export default function Settings() {
   }
 
   const handleSaveDefaults = () => {
-    saveRehearsalDefaults({ mode: defaultMode, toughness, turnLimit })
+    saveRehearsalDefaults({ toughness, turnLimit })
     setSavedDefaults(true)
     setTimeout(() => setSavedDefaults(false), 2000)
   }
@@ -170,12 +169,6 @@ export default function Settings() {
           {activeSection === 'Rehearsal defaults' && (
             <div className="settings-section">
               <SectionTitle>Rehearsal defaults</SectionTitle>
-              <Row label="Default mode" sublabel="Applied when starting a new rehearsal">
-                <select className="settings-select" value={defaultMode} onChange={e => setDefaultMode(e.target.value)}>
-                  <option>Type</option>
-                  <option>Hybrid</option>
-                </select>
-              </Row>
               <Row label="Turn limit" sublabel="Maximum turns before the session auto-ends">
                 <select className="settings-select" value={turnLimit} onChange={e => setTurnLimit(e.target.value)}>
                   {['5', '10', '15', '20', '25'].map(v => <option key={v}>{v}</option>)}

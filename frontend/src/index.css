@@ -1290,6 +1290,25 @@ ul { list-style: none; }
   margin-bottom: 28px;
 }
 
+/* Proposal textarea */
+.proposal-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-base);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color var(--t-base);
+  outline: none;
+}
+.proposal-input:focus { border-color: var(--app-accent); }
+.proposal-input::placeholder { color: var(--text-muted); }
+
 /* Upload zone */
 .upload-zone {
   border: 2px dashed var(--border);

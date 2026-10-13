@@ -80,11 +80,10 @@ export function loadRehearsalDefaults() {
   try {
     const d = JSON.parse(localStorage.getItem(DEFAULTS_KEY) || '{}')
     return {
-      mode:       d.mode       || 'Type',
-      toughness:  d.toughness  || 'Balanced',
-      turnLimit:  d.turnLimit  || '15',
+      toughness: d.toughness || 'Balanced',
+      turnLimit: d.turnLimit || '15',
     }
-  } catch { return { mode: 'Type', toughness: 'Balanced', turnLimit: '15' } }
+  } catch { return { toughness: 'Balanced', turnLimit: '15' } }
 }
 
 export function saveRehearsalDefaults(defaults) {

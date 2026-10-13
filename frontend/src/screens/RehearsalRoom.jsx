@@ -175,7 +175,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [activeSpeaker, setActiveSpeaker]           = useState(null)
   const [interruptSpeaker, setInterruptSpeaker]     = useState(null)
   const [inputValue, setInputValue]                 = useState('')
-  const [mode, setMode]                             = useState(session.config?.mode || 'Type')
   const [appearingMsgId, setAppearingMsgId]         = useState(null)
   const [typingPersonaId, setTypingPersonaId]       = useState(null)
   const [generatingReport, setGeneratingReport]     = useState(false)
@@ -187,6 +186,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
 
   const transcriptRef    = useRef(null)
+  const inputRef         = useRef(null)
   const recognitionRef   = useRef(null)
   const roomStateRef     = useRef(roomState)
   const speechOnRef      = useRef(speechOn)
@@ -247,7 +247,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     if (openingsFiredRef.current || openingMsgs.length === 0) return
     openingsFiredRef.current = true
     const shuffled = [...openingMsgs].sort(() => Math.random() - 0.5)
-    const msg = shuffled[0]
+    const msg = { ...shuffled[0], time: getCurrentTime() }
     setTimeout(() => {
       setLocalTranscript(prev => [...prev, msg])
       setActiveSpeaker(msg.speaker)
@@ -276,13 +276,21 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     cancelTTS()
   }, [cancelTTS])
 
-  const getElapsedTime = () => {
-    if (!session.startTime) return ''
-    const elapsed = Math.floor((Date.now() - session.startTime) / 1000)
-    const m = Math.floor(elapsed / 60)
-    const s = elapsed % 60
-    return `${m}:${String(s).padStart(2, '0')}`
-  }
+  const getCurrentTime = () =>
+    new Date().toLocaleTimeString('en-SG', {
+      timeZone: 'Asia/Singapore',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }, [inputValue])
 
   const handleSend = async (textOverride) => {
     const text = textOverride !== undefined ? String(textOverride).trim() : inputValue.trim()
@@ -295,7 +303,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       id: Date.now(),
       speaker: 'presenter',
       text,
-      time: getElapsedTime(),
+      time: getCurrentTime(),
     }
 
     const nextTranscript = [...localTranscript, userMsg]
@@ -330,7 +338,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           id: Date.now() + 1,
           speaker: data.speaker,
           text: data.text,
-          time: getElapsedTime(),
+          time: getCurrentTime(),
           ...(data.source ? { source: data.source } : {}),
         }
 
@@ -369,7 +377,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               id: Date.now() + 2,
               speaker: followUp.speaker,
               text: followUp.text,
-              time: getElapsedTime(),
+              time: getCurrentTime(),
               ...(followUp.source ? { source: followUp.source } : {}),
             }
             const finalTranscript = [...updatedTranscript, fuMsg]
@@ -427,7 +435,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           speaker: speakerId,
           text: scripted.text,
           ...(scripted.source ? { source: scripted.source } : {}),
-          time: getElapsedTime(),
+          time: getCurrentTime(),
         }
         setTypingPersonaId(null)
         setRoomState('speaking')
@@ -452,7 +460,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               speaker: fuSpeakerId,
               text: fuDef.text,
               ...(fuDef.source ? { source: fuDef.source } : {}),
-              time: getElapsedTime(),
+              time: getCurrentTime(),
             }
             setTypingPersonaId(null)
             setLocalTranscript(prev => [...prev, fuMsg])
@@ -563,7 +571,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        mode: session.config?.mode || 'Type',
+        mode: 'Type',
         condMet,
         condTotal,
         duration,
@@ -596,6 +604,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     && Object.values(localConditions).every(Boolean)
   const showExitOffer    = allConditionsMet && !exitOfferDismissed
 
+  // Auto-focus when input becomes available
+  useEffect(() => {
+    if (!isInputDisabled) inputRef.current?.focus()
+  }, [isInputDisabled])
+
   return (
     <div className="room">
       <div className="room-spotlight" style={spotlightStyle} />
@@ -613,16 +626,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           </div>
           <div className="room-divider" />
           <span className="room-proposal-title">{session.proposalName || 'Data Engineering Hires'}</span>
-        </div>
-
-        <div className="room-topbar-center">
-          {['Type', 'Hybrid'].map(m => (
-            <button
-              key={m}
-              className={`room-mode-btn ${mode === m ? 'active' : ''}`}
-              onClick={() => setMode(m)}
-            >{m}</button>
-          ))}
         </div>
 
         <div className="room-topbar-right">
@@ -744,6 +747,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         <div className="room-input-inner">
         <div className="room-input-wrap">
           <textarea
+            ref={inputRef}
             className="room-input"
             placeholder={
               listening          ? 'Listening...' :
@@ -759,20 +763,18 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             style={listening ? { color: 'var(--amber)' } : undefined}
           />
           <div className="room-input-actions">
-            {mode === 'Hybrid' && (
-              <button
-                className={`room-input-btn mic ${listening ? 'listening' : ''}`}
-                onClick={toggleMic}
-                disabled={isInputDisabled || !speechSupported}
-                title={
-                  !speechSupported        ? 'Voice input not supported. Try Chrome or Edge.' :
-                  listening               ? 'Stop listening' :
-                  'Start voice input'
-                }
-              >
-                {listening ? <MicOff size={16} /> : <Mic size={16} />}
-              </button>
-            )}
+            <button
+              className={`room-input-btn mic ${listening ? 'listening' : ''}`}
+              onClick={toggleMic}
+              disabled={isInputDisabled || !speechSupported}
+              title={
+                !speechSupported        ? 'Voice input not supported. Try Chrome or Edge.' :
+                listening               ? 'Stop listening' :
+                'Start voice input'
+              }
+            >
+              {listening ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
             <button
               className="room-input-btn send"
               onClick={() => handleSend()}
