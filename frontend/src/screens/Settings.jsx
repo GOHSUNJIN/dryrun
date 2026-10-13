@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { ExternalLink, Check, Zap } from 'lucide-react'
+import { ExternalLink, Check, Zap, Loader } from 'lucide-react'
 import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults } from '../utils/storage.js'
+import { signIn, isSignedIn } from '../utils/google.js'
 
 const NAV = ['Profile', 'Rehearsal Defaults', 'Voice', 'Integrations', 'Privacy']
 
 const INTEGRATIONS = [
-  { icon: '📁', name: 'Google Drive',    desc: 'Import proposals from Drive'    },
-  { icon: '📝', name: 'Google Docs',     desc: 'Export session reports to Docs' },
-  { icon: '📅', name: 'Google Calendar', desc: 'Sync upcoming meetings'         },
+  { icon: '📁', name: 'Google Drive',    desc: 'Import proposals directly from Drive'  },
+  { icon: '📝', name: 'Google Docs',     desc: 'Export session reports to a new Doc'   },
+  { icon: '📅', name: 'Google Calendar', desc: 'Sync upcoming meetings to your Home screen' },
 ]
 
 const PERSONA_VOICES = [
@@ -72,6 +73,8 @@ export default function Settings() {
   const [turnLimit, setTurnLimit]         = useState(initDefaults.turnLimit)
   const [voiceEnabled, setVoiceEnabled]   = useState(initVoice.enabled)
   const [voiceRate, setVoiceRate]         = useState(String(initVoice.rate))
+  const [googleConnected, setGoogleConnected] = useState(isSignedIn)
+  const [googleConnecting, setGoogleConnecting] = useState(false)
 
   const handleSaveProfile = () => {
     saveProfile(name, role)
@@ -83,6 +86,18 @@ export default function Settings() {
     saveRehearsalDefaults({ toughness, turnLimit })
     setSavedDefaults(true)
     setTimeout(() => setSavedDefaults(false), 2000)
+  }
+
+  const handleGoogleConnect = async () => {
+    setGoogleConnecting(true)
+    try {
+      await signIn()
+      setGoogleConnected(true)
+    } catch (err) {
+      console.error('[Settings] Google sign-in failed:', err)
+    } finally {
+      setGoogleConnecting(false)
+    }
   }
 
   const handleDeleteAll = () => {
@@ -227,21 +242,35 @@ export default function Settings() {
           {activeSection === 'Integrations' && (
             <div className="settings-section">
               <SectionTitle>Integrations</SectionTitle>
-              <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 12,
-                padding: '14px 16px', borderRadius: 8,
-                background: 'var(--bg-hover)', border: '1px solid var(--border)',
-                marginBottom: 20,
-              }}>
-                <Zap size={15} style={{ color: 'var(--text-muted)', marginTop: 1, flexShrink: 0 }} />
-                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Google integrations are coming in the next release. Connect Drive to import proposals and Calendar to sync upcoming meetings.
+              {googleConnected ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 16px', borderRadius: 8,
+                  background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)',
+                  marginBottom: 20,
+                }}>
+                  <Check size={14} style={{ color: '#059669', flexShrink: 0 }} />
+                  <div style={{ fontSize: '0.8125rem', color: '#059669', lineHeight: 1.5 }}>
+                    Connected to Google. Drive import, Docs export and Calendar sync are active.
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                  padding: '14px 16px', borderRadius: 8,
+                  background: 'var(--bg-hover)', border: '1px solid var(--border)',
+                  marginBottom: 20,
+                }}>
+                  <Zap size={15} style={{ color: 'var(--text-muted)', marginTop: 1, flexShrink: 0 }} />
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    One Google sign-in unlocks all three. Connect below to get started.
+                  </div>
+                </div>
+              )}
               {INTEGRATIONS.map((int, i) => (
                 <div key={int.name} style={{
                   display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 0', opacity: 0.45,
+                  padding: '12px 0',
                   borderBottom: i < INTEGRATIONS.length - 1 ? '1px solid var(--border-light)' : 'none',
                 }}>
                   <div style={{
@@ -253,7 +282,25 @@ export default function Settings() {
                     <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{int.name}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{int.desc}</div>
                   </div>
-                  <button className="btn btn-secondary btn-sm" disabled>Connect</button>
+                  {googleConnected ? (
+                    <span style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      fontSize: '0.8125rem', fontWeight: 600, color: '#059669',
+                    }}>
+                      <Check size={13} /> Connected
+                    </span>
+                  ) : (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleGoogleConnect}
+                      disabled={googleConnecting}
+                    >
+                      {googleConnecting
+                        ? <><Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> Connecting...</>
+                        : 'Connect'
+                      }
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
