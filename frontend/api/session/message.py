@@ -23,6 +23,7 @@ class handler(BaseHTTPRequestHandler):
                 body.get('transcript', []),
                 body.get('conditions', {}),
                 body.get('config', {}),
+                body.get('fact_check', ''),
             )
             self._json(200, result)
         except EnvironmentError as e:

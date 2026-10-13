@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-from _agents.core import generate_openings, get_initial_conditions
+from _agents.core import generate_openings, get_initial_conditions, fact_check_proposal
 
 
 class handler(BaseHTTPRequestHandler):
@@ -18,13 +18,17 @@ class handler(BaseHTTPRequestHandler):
             length = int(self.headers.get('Content-Length', 0))
             body = json.loads(self.rfile.read(length) or b'{}')
             persona_ids = body.get('persona_ids', ['finance', 'legal', 'ops', 'factcheck'])
+            proposal_text = body.get('proposal_text', '')
+            fact_check = fact_check_proposal(proposal_text) if 'factcheck' in persona_ids else ''
             result = {
                 'messages': generate_openings(
-                    body.get('proposal_text', ''),
+                    proposal_text,
                     persona_ids,
                     body.get('config', {}),
+                    fact_check,
                 ),
                 'conditions': get_initial_conditions(persona_ids),
+                'fact_check': fact_check,
             }
             self._json(200, result)
         except EnvironmentError as e:

@@ -61,6 +61,31 @@ def get_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
+def fact_check_proposal(proposal_text: str) -> str:
+    """Use Gemini with Google Search grounding to verify quantitative claims in the proposal."""
+    client = get_client()
+    prompt = (
+        "You are a fact-checker reviewing a business proposal. "
+        "Identify the 3 most important quantitative claims (salary figures, time estimates, cost projections or productivity figures) "
+        "and use web search to verify whether each is accurate based on current market data. "
+        "For each claim state what was claimed and what the evidence shows. "
+        "Be concise and cite your sources briefly. Under 180 words total.\n\n"
+        f"Proposal:\n{proposal_text[:800]}"
+    )
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                max_output_tokens=300,
+            ),
+        )
+        return response.text or ''
+    except Exception:
+        return ''
+
+
 def get_initial_conditions(persona_ids: list) -> dict:
     conditions = {}
     for pid in persona_ids:
@@ -82,17 +107,22 @@ def build_transcript_str(transcript: list) -> str:
     return '\n'.join(lines)
 
 
-def generate_openings(proposal_text: str, persona_ids: list, config: dict) -> list:
+def generate_openings(proposal_text: str, persona_ids: list, config: dict, fact_check_notes: str = '') -> list:
     """Generate all panel opening challenges in a single Gemini call."""
     client = get_client()
     toughness = config.get('toughness', 'Balanced')
     industry = config.get('industry', '')
 
-    panel_desc = '\n'.join(
-        f"- {pid}: {PERSONA_DEFS[pid]['name']}, {PERSONA_DEFS[pid]['role']}. Cares about: {PERSONA_DEFS[pid]['cares']}."
-        for pid in persona_ids
-        if pid in PERSONA_DEFS
-    )
+    panel_desc_lines = []
+    for pid in persona_ids:
+        if pid not in PERSONA_DEFS:
+            continue
+        p = PERSONA_DEFS[pid]
+        line = f"- {pid}: {p['name']}, {p['role']}. Cares about: {p['cares']}."
+        if pid == 'factcheck' and fact_check_notes:
+            line += f"\n  Sam's verified research briefing (cite these facts specifically): {fact_check_notes}"
+        panel_desc_lines.append(line)
+    panel_desc = '\n'.join(panel_desc_lines)
 
     industry_line = f'Industry context: {industry}' if industry else ''
 
@@ -153,6 +183,7 @@ def generate_reply(
     transcript: list,
     conditions: dict,
     config: dict,
+    fact_check_notes: str = '',
 ) -> dict:
     """Pick the next speaker and generate their response in a single Gemini call."""
     client = get_client()
@@ -175,9 +206,13 @@ def generate_reply(
             for c in conds
         )
         unmet_count = sum(1 for c in conds if not conditions.get(c['id'], False))
+        research = (
+            f"\n  Research briefing (cite these verified facts in your challenge):\n  {fact_check_notes}"
+            if pid == 'factcheck' and fact_check_notes else ''
+        )
         panel_lines.append(
             f"{pid} ({p['name']}, {p['role']}):\n"
-            f"  Style: {p['speaking_style']}\n"
+            f"  Style: {p['speaking_style']}{research}\n"
             f"  Conditions:\n  {cond_detail}\n"
             f"  Unmet: {unmet_count}"
         )

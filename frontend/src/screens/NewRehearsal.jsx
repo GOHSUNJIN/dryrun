@@ -8,7 +8,6 @@ const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 const MODES = [
   { id: 'Type',   icon: Keyboard, desc: 'Type your responses in the input bar.' },
   { id: 'Hybrid', icon: Radio,    desc: 'Type or speak. Your choice each turn.' },
-  { id: 'Voice',  icon: MicIcon,  desc: 'Speak all your answers, fully hands-free.' },
 ]
 
 const SAMPLE_PROPOSAL = `Title: Data Engineering Team Hire
@@ -97,6 +96,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         config,
         transcript: data.messages || [],
         conditions: data.conditions || {},
+        factCheckNotes: data.fact_check || '',
         startTime: Date.now(),
       })
       navigate('room')
@@ -222,9 +222,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                         <div className="role-card-cares">
                           Challenges {p.cares[0].toLowerCase()}.
                         </div>
-                        <div className="role-card-add-notes" onClick={e => e.stopPropagation()}>
-                          + Add notes
-                        </div>
                         {isSelected && (
                           <div className="role-card-check">
                             <Check size={11} color="white" />
@@ -233,10 +230,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       </div>
                     )
                   })}
-                  <div className="role-card-custom" onClick={() => {}}>
+                  <div className="role-card-custom" style={{ opacity: 0.38, cursor: 'default', pointerEvents: 'none' }}>
                     <Plus size={20} />
                     <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Custom role</span>
-                    <span style={{ fontSize: '0.75rem', textAlign: 'center' }}>Define your own persona and conviction conditions</span>
+                    <span style={{ fontSize: '0.75rem', textAlign: 'center' }}>Coming soon</span>
                   </div>
                 </div>
               </>

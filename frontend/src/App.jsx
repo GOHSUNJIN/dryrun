@@ -19,6 +19,7 @@ const DEFAULT_SESSION = {
   config: { mode: 'Type', toughness: 'Balanced' },
   transcript: [],
   conditions: {},
+  factCheckNotes: '',
   reportData: null,
   startTime: null,
 }

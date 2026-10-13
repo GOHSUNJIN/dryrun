@@ -233,6 +233,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             transcript: nextTranscript,
             conditions: localConditions,
             config: session.config,
+            fact_check: session.factCheckNotes || '',
           }),
         })
 
@@ -401,13 +402,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
 
         <div className="room-topbar-center">
-          {['Type', 'Hybrid', 'Voice'].map(m => (
+          {['Type', 'Hybrid'].map(m => (
             <button
               key={m}
               className={`room-mode-btn ${mode === m ? 'active' : ''}`}
               onClick={() => setMode(m)}
             >{m}</button>
           ))}
+          <button className="room-mode-btn" style={{ opacity: 0.35, cursor: 'default' }} title="Coming soon">Voice</button>
         </div>
 
         <div className="room-topbar-right">

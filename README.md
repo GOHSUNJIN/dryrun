@@ -16,6 +16,8 @@ Existing preparation tools are passive. Slide decks, bullet-point checklists and
 
 Dry Run gives you a safe space to rehearse. An AI panel challenges you the same way a real committee would, tracks whether you have actually answered their concerns and tells you what you missed.
 
+The primary users are professionals who present proposals to approval committees: team leads seeking budget, product managers pitching roadmap changes and consultants defending recommendations to client boards. For these users the cost of a failed presentation is high and the opportunity to rehearse with a realistic challenger does not currently exist outside expensive coaching.
+
 ---
 
 ## How it works
@@ -38,6 +40,7 @@ Dry Run gives you a safe space to rehearse. An AI panel challenges you the same 
 | Animations | Framer Motion |
 | Icons | Lucide React |
 | AI model | Gemini 2.0 Flash via `google-genai` Python SDK |
+| Fact-checking | Gemini 2.0 Flash with Google Search grounding (live web verification) |
 | API layer | Python serverless functions on Vercel |
 | Cloud Run target | FastAPI + uvicorn (Dockerfile ready) |
 | State management | React `useState` with session lifted to `App.jsx` |
@@ -113,6 +116,10 @@ main.py                  terminal rehearsal entry point (original prototype)
 ## AI logic
 
 All three AI calls use a single batch approach: one Gemini call returns the complete response as structured JSON. There is no streaming and no multi-turn conversation stored on the server side.
+
+### `fact_check_proposal` — Google Search grounding
+
+Called at session start if the Fact-Checker persona is selected. Uses Gemini's `google_search` grounding tool to verify the proposal's key quantitative claims against live web data: salary benchmarks, time estimates, cost projections and productivity figures. The verified findings are injected into Sam's context so every challenge Sam makes in the session is grounded in real market data, not generated claims. This is a separate Gemini call that runs before `generate_openings` so Sam's very first challenge already references the verified facts.
 
 ### `generate_openings`
 
