@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, X, Copy, RotateCcw, BookOpen } from 'lucide-react'
+import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader } from 'lucide-react'
 import { PERSONAS } from '../data.js'
+import { exportToGoogleDoc } from '../utils/google.js'
 
 const FALLBACK_WEAK_POINTS = [
   {
@@ -33,6 +34,8 @@ const item = {
 export default function Report({ navigate, session }) {
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState('conditions')
+  const [exporting, setExporting] = useState(false)
+  const [docUrl, setDocUrl] = useState(null)
 
   const hasRealReport = Boolean(session?.reportData?.weak_points?.length)
   const weakPoints    = hasRealReport ? session.reportData.weak_points : FALLBACK_WEAK_POINTS
@@ -61,6 +64,20 @@ export default function Report({ navigate, session }) {
           conditions: (p.conditions || []).map(c => ({ ...c, met: conditions[c.id] || false })),
         }))
     : PERSONAS
+
+  const handleExportToDoc = async () => {
+    if (docUrl) { window.open(docUrl, '_blank'); return }
+    setExporting(true)
+    try {
+      const url = await exportToGoogleDoc(proposalName, weakPoints, personas, conditions)
+      setDocUrl(url)
+      window.open(url, '_blank')
+    } catch (err) {
+      console.error('[Docs] export failed:', err)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const copyReport = () => {
     const lines = [
@@ -110,6 +127,19 @@ export default function Report({ navigate, session }) {
                 }}
               >
                 {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy report</>}
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleExportToDoc}
+                disabled={exporting}
+                style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }}
+              >
+                {exporting
+                  ? <><Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> Exporting...</>
+                  : docUrl
+                    ? <><ExternalLink size={13} /> Open in Docs</>
+                    : <><ExternalLink size={13} /> Export to Docs</>
+                }
               </button>
             </div>
           </div>

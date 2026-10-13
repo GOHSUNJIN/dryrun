@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader } from 'lucide-react'
+import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadCustomPersonas, loadRehearsalDefaults } from '../utils/storage.js'
+import { listDriveDocs, fetchDocText } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
@@ -42,6 +43,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [companySize, setCompanySize] = useState('')
   const [focus, setFocus]         = useState('')
   const [launching, setLaunching] = useState(false)
+  const [driveLoading, setDriveLoading] = useState(false)
+  const [driveFiles, setDriveFiles] = useState(null)
   const fileInputRef = useRef(null)
 
   const togglePersona = (id) => {
@@ -56,6 +59,34 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setUploaded(true)
     }
     reader.readAsText(file)
+  }
+
+  const handleDriveImport = async () => {
+    setDriveLoading(true)
+    setDriveFiles(null)
+    try {
+      const files = await listDriveDocs()
+      setDriveFiles(files)
+    } catch (err) {
+      console.error('[Drive] failed to list docs:', err)
+    } finally {
+      setDriveLoading(false)
+    }
+  }
+
+  const selectDriveFile = async (file) => {
+    setDriveFiles(null)
+    setDriveLoading(true)
+    try {
+      const text = await fetchDocText(file.id)
+      setProposalText(text)
+      setProposalName(file.name)
+      setUploaded(true)
+    } catch (err) {
+      console.error('[Drive] failed to fetch doc:', err)
+    } finally {
+      setDriveLoading(false)
+    }
   }
 
   const useSampleProposal = () => {
@@ -189,8 +220,53 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       <div className="upload-primary">Drop your file here, or click to browse</div>
                       <div className="upload-secondary">TXT, Markdown, Word or PDF</div>
                     </div>
-                    <div style={{ textAlign: 'center', marginTop: 16 }}>
-                      <button className="btn btn-secondary btn-sm" onClick={useSampleProposal}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 16 }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleDriveImport}
+                        disabled={driveLoading}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                      >
+                        {driveLoading ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <FolderOpen size={13} />}
+                        Import from Google Drive
+                      </button>
+
+                      {driveFiles !== null && (
+                        <div style={{
+                          width: '100%', maxWidth: 360,
+                          border: '1px solid var(--border)', borderRadius: 8,
+                          background: 'var(--bg-card)', overflow: 'hidden',
+                        }}>
+                          {driveFiles.length === 0 ? (
+                            <div style={{ padding: '12px 16px', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                              No Google Docs found.
+                            </div>
+                          ) : driveFiles.map(f => (
+                            <button
+                              key={f.id}
+                              onClick={() => selectDriveFile(f)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10,
+                                width: '100%', padding: '10px 14px', background: 'none',
+                                border: 'none', borderBottom: '1px solid var(--border)',
+                                cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-ui)',
+                              }}
+                            >
+                              <FileText size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {f.name}
+                                </div>
+                                <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                  {new Date(f.modifiedTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <button className="btn btn-secondary btn-sm" onClick={useSampleProposal} style={{ color: 'var(--text-muted)' }}>
                         Use sample proposal
                       </button>
                     </div>

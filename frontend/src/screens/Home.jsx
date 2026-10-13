@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Calendar, Clock, ChevronRight } from 'lucide-react'
+import { ArrowRight, Calendar, Clock, ChevronRight, Loader } from 'lucide-react'
 import { PAST_SESSIONS, WEAK_SPOTS, UPCOMING_MEETINGS, PERSONAS } from '../data.js'
 import { loadSessions } from '../utils/storage.js'
+import { fetchCalendarEvents } from '../utils/google.js'
 
 const container = {
   hidden: {},
@@ -35,6 +37,21 @@ function loadRecentSessions() {
 
 export default function Home({ navigate }) {
   const { sessions: recent, isReal } = loadRecentSessions()
+  const [calEvents, setCalEvents] = useState(null)
+  const [calLoading, setCalLoading] = useState(false)
+
+  const connectCalendar = async () => {
+    setCalLoading(true)
+    try {
+      const events = await fetchCalendarEvents()
+      setCalEvents(events)
+    } catch (err) {
+      console.error('[Calendar] failed:', err)
+      setCalEvents([])
+    } finally {
+      setCalLoading(false)
+    }
+  }
 
   return (
     <div className="page" style={{ maxWidth: 1080, padding: '40px 48px' }}>
@@ -54,9 +71,27 @@ export default function Home({ navigate }) {
         <div className="home-grid" style={{ marginTop: 48 }}>
           {/* Upcoming meetings */}
           <motion.div variants={item}>
-            <div className="section-label">Upcoming meetings</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div className="section-label" style={{ marginBottom: 0 }}>Upcoming meetings</div>
+              {calEvents === null && (
+                <button
+                  onClick={connectCalendar}
+                  disabled={calLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer',
+                    background: 'none', border: 'none', fontFamily: 'var(--font-ui)',
+                  }}
+                >
+                  {calLoading
+                    ? <><Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> Connecting...</>
+                    : <><Calendar size={11} /> Connect Google Calendar</>
+                  }
+                </button>
+              )}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {UPCOMING_MEETINGS.map((m, i) => (
+              {(calEvents !== null ? calEvents : UPCOMING_MEETINGS).map((m, i) => (
                 <div key={i} className="meeting-card" onClick={() => navigate('new')}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                     <div className="meeting-name">{m.name}</div>
@@ -78,6 +113,15 @@ export default function Home({ navigate }) {
                   </button>
                 </div>
               ))}
+              {calEvents !== null && calEvents.length === 0 && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: 8,
+                  background: 'var(--bg-hover)', border: '1px dashed var(--border)',
+                  color: 'var(--text-muted)', fontSize: '0.8125rem',
+                }}>
+                  No meetings in the next 7 days.
+                </div>
+              )}
             </div>
           </motion.div>
 
