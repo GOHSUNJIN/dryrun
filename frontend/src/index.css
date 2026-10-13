@@ -2417,3 +2417,51 @@ ul { list-style: none; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 768px) {
+  .app-shell { flex-direction: column; }
+  .sidebar { display: none; }
+  .app-main { width: 100%; }
+
+  .page { padding: 24px 20px; }
+
+  .home-grid { grid-template-columns: 1fr !important; }
+  .home-grid > *[style*="gridColumn"] { grid-column: 1 !important; }
+  .weak-spot-item { flex-direction: column; gap: 6px; }
+
+  .setup-container { padding: 24px 20px; }
+  .setup-steps { gap: 8px; }
+  .step-label { display: none; }
+
+  .role-cards-grid { grid-template-columns: 1fr 1fr; }
+
+  .debrief-layout { flex-direction: column; overflow: auto; }
+  .debrief-timeline { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 320px; overflow-y: auto; }
+  .debrief-coaching { padding: 20px; }
+
+  .report-actions { flex-wrap: wrap; gap: 8px; }
+
+  .session-row { flex-wrap: wrap; gap: 10px; }
+  .session-row-actions { width: 100%; justify-content: flex-start; }
+
+  .settings-layout { flex-direction: column; }
+  .settings-nav { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; gap: 4px; }
+  .settings-nav-item { padding: 6px 12px !important; border-radius: 6px !important; }
+  .settings-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .settings-input, .settings-select { width: 100%; }
+
+  .room-panel { gap: 16px; padding: 16px 16px 12px; }
+  .persona-seat { min-width: 64px; }
+  .seat-name { font-size: 0.6875rem; }
+  .seat-role { display: none; }
+
+  .room-topbar { padding: 10px 14px; }
+  .room-topbar-center { display: none; }
+  .room-proposal-title { font-size: 0.75rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .panel-cards-grid { grid-template-columns: 1fr; }
+
+  .report-hero { padding: 28px 20px 24px; }
+  .report-hero-title { font-size: 1.375rem; }
+}

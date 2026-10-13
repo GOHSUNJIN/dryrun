@@ -170,6 +170,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [typingPersonaId, setTypingPersonaId] = useState(null)
   const [generatingReport, setGeneratingReport] = useState(false)
   const [responseIdx, setResponseIdx]     = useState(0)
+  const [apiError, setApiError]           = useState(false)
   const transcriptRef = useRef(null)
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
@@ -271,6 +272,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         }
       } catch {
         setTypingPersonaId(null)
+        setApiError(true)
         fallbackResponse(nextTranscript)
       }
     } else {
@@ -455,6 +457,18 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </AnimatePresence>
       </div>
 
+      {apiError && hasRealSession && (
+        <div style={{
+          margin: '0 20px 0', padding: '9px 16px',
+          background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
+          borderRadius: 8, color: '#FCA5A5', fontSize: '0.8125rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        }}>
+          <span>AI unavailable — using scripted responses. Check your API key in Vercel settings.</span>
+          <button onClick={() => setApiError(false)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0, fontSize: '1rem', lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
       <div className="room-input-area">
         <div className="room-input-wrap">
           <textarea
@@ -467,9 +481,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             disabled={isInputDisabled}
           />
           <div className="room-input-actions">
-            <button className="room-input-btn" title="Voice input">
-              <Mic size={16} />
-            </button>
+            {mode !== 'Type' && (
+              <button className="room-input-btn" title="Voice input coming soon" style={{ opacity: 0.4, cursor: 'default' }}>
+                <Mic size={16} />
+              </button>
+            )}
             <button
               className="room-input-btn send"
               onClick={handleSend}

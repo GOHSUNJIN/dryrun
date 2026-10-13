@@ -14,30 +14,38 @@ const item = {
   show:   { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
 }
 
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning,'
+  if (h < 17) return 'Good afternoon,'
+  return 'Good evening,'
+}
+
 function loadRecentSessions() {
   try {
     const stored = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
     if (stored.length) {
-      return stored.slice(0, 3).map(s => ({
-        ...s,
-        proposal: s.proposal || 'Untitled proposal',
-      }))
+      return {
+        sessions: stored.slice(0, 3).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' })),
+        isReal: true,
+      }
     }
   } catch {}
-  return PAST_SESSIONS.flatMap(g =>
-    g.sessions.map(s => ({ ...s, proposal: g.proposal }))
-  ).slice(0, 3)
+  return {
+    sessions: PAST_SESSIONS.flatMap(g => g.sessions.map(s => ({ ...s, proposal: g.proposal }))).slice(0, 3),
+    isReal: false,
+  }
 }
 
 export default function Home({ navigate }) {
-  const recent = loadRecentSessions()
+  const { sessions: recent, isReal } = loadRecentSessions()
 
   return (
     <div className="page" style={{ maxWidth: 1080, padding: '40px 48px' }}>
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
           <div className="home-greeting">
-            Good morning,<br />
+            {getGreeting()}<br />
             <em>ready to rehearse?</em>
           </div>
           <button className="home-hero-btn" onClick={() => navigate('new')}>
@@ -87,33 +95,29 @@ export default function Home({ navigate }) {
                 View all <ChevronRight size={12} />
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {recent.map((s, idx) => {
-                const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
-                const isGood = pct >= 60
-                return (
-                  <div key={s.id || idx} className="session-card" onClick={() => navigate('report')}>
-                    <div className="session-info">
-                      <div className="session-name">{s.proposal}</div>
-                      <div className="session-meta">
-                        <Clock size={11} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
-                        {s.date} · {s.mode} · {s.duration}
-                      </div>
-                    </div>
-                    <div className="session-avatars">
-                      {AVATAR_INITIALS.map((init, j) => (
-                        <div key={j} className="session-avatar-pip" style={{ background: AVATAR_COLORS[j] }}>
-                          {init}
-                        </div>
-                      ))}
-                    </div>
-                    <span className={`conditions-met-badge ${isGood ? 'good' : 'partial'}`}>
-                      {s.condMet}/{s.condTotal} met
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+
+            {!isReal ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{
+                  padding: '12px 16px', borderRadius: 8,
+                  background: 'var(--bg-hover)', border: '1px dashed var(--border)',
+                  color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: 4,
+                }}>
+                  No real sessions yet. These are sample sessions.{' '}
+                  <button
+                    onClick={() => navigate('new')}
+                    style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', fontWeight: 600, padding: 0 }}
+                  >
+                    Start your first rehearsal.
+                  </button>
+                </div>
+                {recent.map((s, idx) => <SessionCard key={idx} s={s} navigate={navigate} />)}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {recent.map((s, idx) => <SessionCard key={idx} s={s} navigate={navigate} />)}
+              </div>
+            )}
           </motion.div>
 
           {/* Weak spots */}
@@ -133,6 +137,30 @@ export default function Home({ navigate }) {
           </motion.div>
         </div>
       </motion.div>
+    </div>
+  )
+}
+
+function SessionCard({ s, navigate }) {
+  const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
+  const isGood = pct >= 60
+  return (
+    <div className="session-card" onClick={() => navigate('report')}>
+      <div className="session-info">
+        <div className="session-name">{s.proposal}</div>
+        <div className="session-meta">
+          <Clock size={11} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
+          {s.date} · {s.mode} · {s.duration}
+        </div>
+      </div>
+      <div className="session-avatars">
+        {AVATAR_INITIALS.map((init, j) => (
+          <div key={j} className="session-avatar-pip" style={{ background: AVATAR_COLORS[j] }}>{init}</div>
+        ))}
+      </div>
+      <span className={`conditions-met-badge ${isGood ? 'good' : 'partial'}`}>
+        {s.condMet}/{s.condTotal} met
+      </span>
     </div>
   )
 }

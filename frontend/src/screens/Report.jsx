@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, X, ExternalLink, RotateCcw, BookOpen } from 'lucide-react'
+import { Check, X, Copy, RotateCcw, BookOpen } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 
 const FALLBACK_WEAK_POINTS = [
@@ -30,16 +31,18 @@ const item = {
 }
 
 export default function Report({ navigate, session }) {
-  const weakPoints  = session?.reportData?.weak_points?.length
+  const [copied, setCopied] = useState(false)
+
+  const weakPoints   = session?.reportData?.weak_points?.length
     ? session.reportData.weak_points
     : FALLBACK_WEAK_POINTS
 
-  const conditions  = session?.conditions || {}
-  const condMet     = Object.values(conditions).filter(Boolean).length
-  const condTotal   = Object.keys(conditions).length || 11
-  const turns       = session?.transcript?.filter(m => m.speaker === 'presenter').length || 6
+  const conditions   = session?.conditions || {}
+  const condMet      = Object.values(conditions).filter(Boolean).length
+  const condTotal    = Object.keys(conditions).length || 11
+  const turns        = session?.transcript?.filter(m => m.speaker === 'presenter').length || 6
   const proposalName = session?.proposalName || 'Data Engineering Hires'
-  const duration    = session?.startTime
+  const duration     = session?.startTime
     ? `${Math.floor((Date.now() - session.startTime) / 60000)} min`
     : '18 min'
 
@@ -51,6 +54,24 @@ export default function Report({ navigate, session }) {
           conditions: p.conditions.map(c => ({ ...c, met: conditions[c.id] || false })),
         }))
     : PERSONAS
+
+  const copyReport = () => {
+    const lines = [
+      `Session Report: ${proposalName}`,
+      `${condMet}/${condTotal} conditions met  |  ${turns} turns  |  ${duration}`,
+      '',
+      'CONDITIONS',
+      ...personas.flatMap(p =>
+        p.conditions.map(c => `${c.met ? '[MET]' : '[   ]'} ${p.name} (${p.role}): ${c.text}`)
+      ),
+      '',
+      'WEAK POINTS',
+      ...weakPoints.map(w => `${w.label}: ${w.issue}\nFix: ${w.fix}`),
+    ]
+    navigator.clipboard.writeText(lines.join('\n')).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div className="page" style={{ maxWidth: 820, padding: '40px 48px' }}>
@@ -71,8 +92,8 @@ export default function Report({ navigate, session }) {
               <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={() => navigate('room')}>
                 <RotateCcw size={13} /> Rehearse again
               </button>
-              <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }}>
-                <ExternalLink size={13} /> Export to Google Docs
+              <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={copyReport}>
+                {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy report</>}
               </button>
             </div>
           </div>

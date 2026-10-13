@@ -40,46 +40,58 @@ const FALLBACK_COACHING = {
 
 const PERSONA_FILTER_OPTIONS = ['All personas', 'Finance', 'Legal', 'Operations', 'Fact-Checker']
 
+const PERSONA_KEYWORDS = {
+  Finance:       ['morgan', 'finance', 'cost', 'budget', 'payback', 'tco'],
+  Legal:         ['alex', 'legal', 'privacy', 'gdpr', 'compliance', 'contract', 'vendor'],
+  Operations:    ['jordan', 'ops', 'operations', 'timeline', 'process', 'milestone'],
+  'Fact-Checker': ['sam', 'fact', 'verify', 'source', 'substantiat', 'salary', 'claim'],
+}
+
 export default function Debrief({ navigate, session }) {
   const [selected, setSelected] = useState(1)
   const [filter, setFilter]     = useState('All personas')
-  const [compare, setCompare]   = useState(false)
 
   const moments = session?.reportData?.moments?.length
     ? session.reportData.moments
     : DEBRIEF_MOMENTS
 
+  const filteredMoments = filter === 'All personas'
+    ? moments
+    : moments.filter(m => {
+        const keywords = PERSONA_KEYWORDS[filter] || []
+        const text = `${m.excerpt} ${m.asked || ''} ${m.tag} ${m.turn}`.toLowerCase()
+        return keywords.some(k => text.includes(k))
+      })
+
+  const selectedInFiltered = filteredMoments.find(m => m.id === selected)
+  const effectiveSelected  = selectedInFiltered ? selected : (filteredMoments[0]?.id ?? 1)
+
   const getCoaching = (momentId) => {
     if (session?.reportData?.moments?.length) {
       const m = session.reportData.moments.find(m => m.id === momentId)
-      if (m) {
-        return {
-          momentType:  m.type,
-          momentLabel: m.tag,
-          asked:       m.asked,
-          yourAnswer:  m.your_answer,
-          whyShort:    m.why,
-          betterAnswer: m.better,
-        }
-      }
+      if (m) return { momentType: m.type, momentLabel: m.tag, asked: m.asked, yourAnswer: m.your_answer, whyShort: m.why, betterAnswer: m.better }
     }
     return FALLBACK_COACHING[momentId] || FALLBACK_COACHING[1]
   }
 
-  const coaching    = getCoaching(selected)
+  const nextWeakPoint = () => {
+    const weakMoments = filteredMoments.filter(m => m.type === 'weak')
+    if (!weakMoments.length) return
+    const currentIdx = weakMoments.findIndex(m => m.id === effectiveSelected)
+    const nextIdx = (currentIdx + 1) % weakMoments.length
+    setSelected(weakMoments[nextIdx].id)
+  }
+
+  const coaching    = getCoaching(effectiveSelected)
   const MomentIcon  = MARKER_ICONS[coaching.momentType] || Minus
   const momentColor = MARKER_COLORS[coaching.momentType] || '#9B9BAB'
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div style={{
-        padding: '16px 28px',
-        borderBottom: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        background: 'var(--bg-surface)',
-        flexShrink: 0,
+        padding: '16px 28px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: 16,
+        background: 'var(--bg-surface)', flexShrink: 0,
       }}>
         <button
           onClick={() => navigate('report')}
@@ -91,7 +103,7 @@ export default function Debrief({ navigate, session }) {
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
           Session Debrief: {session?.proposalName || 'Data Engineering Hires'}
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div style={{ marginLeft: 'auto' }}>
           <button className="btn btn-secondary btn-sm" onClick={() => navigate('room')}>
             <RotateCcw size={12} /> Rehearse again
           </button>
@@ -117,20 +129,17 @@ export default function Debrief({ navigate, session }) {
             ))}
           </div>
 
-          <div className="compare-toggle" onClick={() => setCompare(c => !c)}>
-            <div className={`toggle-track ${compare ? 'on' : ''}`}>
-              <div className="toggle-thumb" />
+          {filteredMoments.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              No moments for this persona yet.
             </div>
-            <span className="compare-label">Compare with previous rehearsal</span>
-          </div>
-
-          {moments.map(m => {
+          ) : filteredMoments.map(m => {
             const Icon  = MARKER_ICONS[m.type] || Minus
             const color = MARKER_COLORS[m.type] || '#9B9BAB'
             return (
               <div
                 key={m.id}
-                className={`timeline-item ${selected === m.id ? 'selected' : ''}`}
+                className={`timeline-item ${effectiveSelected === m.id ? 'selected' : ''}`}
                 onClick={() => setSelected(m.id)}
               >
                 <div className={`timeline-marker ${m.type}`}><Icon size={13} /></div>
@@ -148,7 +157,7 @@ export default function Debrief({ navigate, session }) {
         {/* Right: Coaching */}
         <div className="debrief-coaching">
           <motion.div
-            key={selected}
+            key={effectiveSelected}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -167,12 +176,10 @@ export default function Debrief({ navigate, session }) {
             <div className="coaching-section">
               <div className="coaching-section-title">What you said</div>
               <div className="coaching-body" style={{
-                background: 'var(--bg-base)',
-                border: '1px solid var(--border)',
+                background: 'var(--bg-base)', border: '1px solid var(--border)',
                 borderLeft: `3px solid ${momentColor}`,
                 borderRadius: '0 var(--r-md) var(--r-md) 0',
-                padding: '12px 16px',
-                fontStyle: 'italic',
+                padding: '12px 16px', fontStyle: 'italic',
               }}>
                 {coaching.yourAnswer}
               </div>
@@ -198,7 +205,11 @@ export default function Debrief({ navigate, session }) {
               <button className="btn btn-primary" onClick={() => navigate('room')}>
                 <RotateCcw size={14} /> Practise this moment
               </button>
-              <button className="btn btn-secondary">
+              <button
+                className="btn btn-secondary"
+                onClick={nextWeakPoint}
+                disabled={filteredMoments.filter(m => m.type === 'weak').length === 0}
+              >
                 Next weak point
               </button>
             </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown } from 'lucide-react'
+import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle } from 'lucide-react'
 import { PAST_SESSIONS } from '../data.js'
 
 const AVATAR_COLORS   = ['#F59E0B', '#0FB8AA', '#9061F9', '#5B8FD6']
@@ -15,16 +15,18 @@ function loadSessions() {
         if (!groups[key]) groups[key] = { proposal: key, sessions: [] }
         groups[key].sessions.push(s)
       }
-      return Object.values(groups)
+      return { groups: Object.values(groups), isReal: true }
     }
   } catch {}
-  return PAST_SESSIONS
+  return { groups: PAST_SESSIONS, isReal: false }
 }
 
 export default function PastSessions({ navigate }) {
   const [query, setQuery]       = useState('')
   const [expanded, setExpanded] = useState({ 0: true, 1: true, 2: true })
-  const [groups, setGroups]     = useState(loadSessions)
+  const { groups: initGroups, isReal: initIsReal } = loadSessions()
+  const [groups, setGroups]     = useState(initGroups)
+  const [isReal, setIsReal]     = useState(initIsReal)
 
   const filtered = groups.filter(g =>
     g.proposal.toLowerCase().includes(query.toLowerCase())
@@ -37,7 +39,9 @@ export default function PastSessions({ navigate }) {
       const stored = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
       const updated = stored.filter(s => s.id !== sessionId)
       localStorage.setItem('dryrun_sessions', JSON.stringify(updated))
-      setGroups(loadSessions())
+      const { groups: g, isReal: r } = loadSessions()
+      setGroups(g)
+      setIsReal(r)
     } catch {}
   }
 
@@ -47,6 +51,24 @@ export default function PastSessions({ navigate }) {
         <div className="page-title">Past Sessions</div>
         <div className="page-subtitle">Every rehearsal grouped by proposal. Track how you improve across attempts.</div>
       </div>
+
+      {!isReal && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 16px', borderRadius: 8, marginBottom: 20,
+          background: 'var(--bg-hover)', border: '1px dashed var(--border)',
+          color: 'var(--text-muted)', fontSize: '0.8125rem',
+        }}>
+          <span>Showing sample sessions. Complete a rehearsal to see your real history here.</span>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ marginLeft: 'auto', flexShrink: 0 }}
+            onClick={() => navigate('new')}
+          >
+            <PlusCircle size={12} /> New rehearsal
+          </button>
+        </div>
+      )}
 
       <div className="search-bar">
         <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
