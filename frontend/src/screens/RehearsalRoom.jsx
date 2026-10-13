@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT, SCRIPTED_RESPONSES } from '../data.js'
 import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
 
@@ -181,6 +181,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [listening, setListening]                   = useState(false)
   const [speechOn, setSpeechOn]                     = useState(() => loadVoiceSettings().enabled)
   const [openingsDone, setOpeningsDone]             = useState(openingMsgs.length === 0)
+  const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
 
   const transcriptRef  = useRef(null)
   const recognitionRef = useRef(null)
@@ -318,7 +319,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             persona_ids: session.personaIds,
             transcript: nextTranscript,
             conditions: localConditions,
-            config: session.config,
+            config: { ...session.config, turns_remaining: turnsLeft - 1 },
             fact_check: session.factCheckNotes || '',
             custom_personas: session.customPersonaDefs || {},
           }),
@@ -592,6 +593,10 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const turnLimitReached = hasRealSession && turnCount >= turnLimit
   const nearTurnLimit    = hasRealSession && turnsLeft <= 3 && turnsLeft > 0
   const isInputDisabled  = !openingsDone || turnLimitReached || (roomState !== 'idle' && roomState !== 'condition-met')
+  const allConditionsMet = hasRealSession && openingsDone
+    && Object.keys(localConditions).length > 0
+    && Object.values(localConditions).every(Boolean)
+  const showExitOffer    = allConditionsMet && !exitOfferDismissed
 
   return (
     <div className="room">
@@ -698,6 +703,36 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         }}>
           <span>AI unavailable. Using scripted responses. Check your API key in Vercel settings.</span>
           <button onClick={() => setApiError(false)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0, fontSize: '1rem', lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
+      {showExitOffer && (
+        <div style={{
+          margin: '0 20px 8px', padding: '12px 20px',
+          background: 'rgba(5,150,105,0.1)', border: '1px solid rgba(5,150,105,0.25)',
+          borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Check size={15} style={{ color: '#34D399', flexShrink: 0 }} />
+            <span style={{ fontSize: '0.875rem', color: '#34D399', fontWeight: 500 }}>
+              All panel conditions addressed. Ready to get your report?
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setExitOfferDismissed(true)}
+              style={{ background: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'var(--room-text-2)', fontSize: '0.75rem' }}
+            >Keep going</button>
+            <button
+              className="btn btn-sm"
+              onClick={handleEndSession}
+              disabled={generatingReport}
+              style={{ background: '#059669', borderColor: '#059669', color: '#fff', fontSize: '0.75rem' }}
+            >
+              {generatingReport ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'End and get report'}
+            </button>
+          </div>
         </div>
       )}
 

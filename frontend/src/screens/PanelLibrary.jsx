@@ -91,14 +91,14 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
               <span>Name</span>
               {errors.name && <span style={{ color: '#DC2626', fontWeight: 400 }}>{errors.name}</span>}
             </div>
-            <input className="settings-input" value={form.name} onChange={set('name')} placeholder="e.g. Sarah" style={inputStyle('name')} />
+            <input className="settings-input" value={form.name} onChange={set('name')} placeholder="Their first name" style={inputStyle('name')} />
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
               <span>Role title</span>
               {errors.role && <span style={{ color: '#DC2626', fontWeight: 400 }}>{errors.role}</span>}
             </div>
-            <input className="settings-input" value={form.role} onChange={set('role')} placeholder="e.g. CTO" style={inputStyle('role')} />
+            <input className="settings-input" value={form.role} onChange={set('role')} placeholder="Their job title" style={inputStyle('role')} />
           </div>
         </div>
 
@@ -109,8 +109,8 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
           Conviction conditions
           <div style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)', marginTop: 2 }}>What must the presenter explicitly say to satisfy this persona?</div>
         </div>
-        {field('Condition 1', 'cond1', { placeholder: 'e.g. Technical feasibility confirmed with engineering lead' })}
-        {field('Condition 2 (optional)', 'cond2', { placeholder: 'e.g. Migration timeline reviewed with the team' })}
+        {field('Condition 1', 'cond1', { placeholder: 'What must the presenter explicitly say to satisfy this persona?' })}
+        {field('Condition 2 (optional)', 'cond2', { placeholder: 'A second condition, or leave blank' })}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
