@@ -85,28 +85,6 @@ export const DEMO_TRANSCRIPT = [
     text: 'The "30 hours per month" figure needs a source. Is that self-reported by the team, time-tracked, or estimated? The entire ROI argument rests on it.',
     time: '0:50',
   },
-  {
-    id: 5, speaker: 'presenter',
-    text: 'This pays for itself within a year.',
-    time: '1:04',
-  },
-  {
-    id: 6, speaker: 'finance', replyTo: null, conditionMet: 'f2',
-    text: 'Show me the maths. Two engineers at $120k each is $240k, before benefits, before tooling licenses and before AWS infrastructure. What is the total cost of ownership, not just base salary?',
-    time: '1:18',
-  },
-  {
-    id: 7, speaker: 'ops', replyTo: 'finance',
-    text: "I'd push back on Finance here. The real cost isn't the salaries. It's the errors in today's reports. Last quarter we sent incorrect figures to the board. What is that liability worth annually?",
-    time: '1:32',
-  },
-  {
-    id: 8, speaker: 'factcheck',
-    source: { label: 'Hired.com State of Software Engineers 2024' },
-    conditionMet: 'fc1',
-    text: 'The $120k salary range is consistent with current market data for senior data engineers in major metros. That part of the maths is defensible.',
-    time: '1:48',
-  },
 ];
 
 export const SCRIPTED_RESPONSES = [
@@ -179,9 +157,6 @@ export const DEBRIEF_MOMENTS = [
   { id: 6, type: 'cond',    turn: 'Turn 8', excerpt: 'Salary range verified (Fact-Checker)',         tag: 'Condition met' },
   { id: 7, type: 'strong',  turn: 'Turn 11',excerpt: '"HR owns the data; we have a DPA template."', tag: 'Strong answer' },
 ];
-
-export const AVATAR_COLORS   = ['#F59E0B', '#0FB8AA', '#9061F9', '#5B8FD6']
-export const AVATAR_INITIALS = ['M', 'A', 'J', 'S']
 
 export const UPCOMING_MEETINGS = [
   { name: 'Budget Review: Q4 Headcount',     date: 'Oct 17, 2026',  daysLeft: 4 },

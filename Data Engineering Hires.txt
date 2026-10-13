@@ -1,0 +1,11 @@
+Title: Data Engineering Team Hire
+
+Summary: We propose hiring two senior data engineers at $120,000 per year each to automate our monthly sales reporting process, which currently consumes 30 hours of analyst time each month.
+
+Business case: Our analytics team manually compiles sales data from three systems (Salesforce, AWS Redshift and our internal CRM) every month. This process takes 30 hours and is error-prone. In Q3 2024 an error caused incorrect figures to be presented to the board.
+
+Proposed solution: Hire two senior data engineers to build an automated pipeline using Apache Airflow and dbt. The pipeline consolidates all three data sources into a single warehouse and generates the monthly report automatically.
+
+Cost: $240,000 per year in base salary.
+Expected savings: 30 analyst hours per month and elimination of reporting errors.
+Timeline: 6 months from hire to full deployment.

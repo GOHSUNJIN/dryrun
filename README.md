@@ -2,7 +2,7 @@
 
 **Rehearse your pitch before the meeting that matters.**
 
-Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal and they push back with hard questions. They only become satisfied when you have addressed their specific concerns. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix before the real meeting.
+Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal, they push back with hard questions, pile on when your answers contradict each other, and only back down when you address their specific concerns with real data. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix.
 
 **Live:** https://dryrun-swart.vercel.app
 
@@ -16,19 +16,19 @@ Existing preparation tools are passive. Slide decks, bullet-point checklists and
 
 Dry Run gives you a safe space to rehearse. An AI panel challenges you the same way a real committee would, tracks whether you have actually answered their concerns and tells you what you missed.
 
-The primary users are professionals who present proposals to approval committees: team leads seeking budget, product managers pitching roadmap changes and consultants defending recommendations to client boards. For these users the cost of a failed presentation is high and the opportunity to rehearse with a realistic challenger does not currently exist outside expensive coaching.
+The primary users are professionals who present proposals to approval committees: team leads seeking budget, product managers pitching roadmap changes and consultants defending recommendations to client boards.
 
 ---
 
 ## How it works
 
-1. **Upload your proposal.** Paste text or drop in a file. The panel reads it and generates challenges specific to your content, not generic template questions.
-2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and a set of conditions that must be met before they are satisfied.
-3. **Configure the session.** Set industry context, company size, panel toughness and session mode.
-4. **Enter the room.** The panel opens with their first challenges. You type your responses. After each reply Gemini picks the next speaker whose concerns are least addressed and generates a challenge specific to what you just said.
-5. **End the session.** Gemini analyses the full transcript and generates a coaching report: conditions met by persona, top weak points and suggested fixes.
-6. **Read the debrief.** Every key moment in the session is annotated with what you said, why it worked or fell short and a stronger version to try.
-7. **Rehearse again.** One click puts you back in the room. Past sessions are saved locally so you can track improvement across attempts.
+1. **Upload your proposal.** Paste text or drop in a file. The panel reads it and generates challenges specific to your content.
+2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library.
+3. **Configure the session.** Set industry context, company size, panel toughness, turn limit and session mode.
+4. **Enter the room.** A random panelist fires the first question immediately. The rest stagger in. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer was specific enough to satisfy any conditions and sometimes triggers a second panelist to pile on.
+5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually. The AI analyses the full transcript and generates a coaching report.
+6. **Read the debrief.** Every key moment is annotated with what was asked, what you said, why it worked or fell short and a stronger version to try.
+7. **Rehearse again.** One click puts you back in the room. Past sessions are saved locally.
 
 ---
 
@@ -40,11 +40,11 @@ The primary users are professionals who present proposals to approval committees
 | Animations | Framer Motion |
 | Icons | Lucide React |
 | AI model | Gemini 3.8 Flash via `@google/genai` JS SDK |
-| Fact-checking | Gemini 3.8 Flash with Google Search grounding (live web verification) |
+| Fact-checking | Gemini 3.8 Flash with Google Search grounding |
 | API layer | JavaScript serverless functions on Vercel |
 | Cloud Run target | FastAPI + uvicorn (Dockerfile ready) |
 | State management | React `useState` with session lifted to `App.jsx` |
-| Persistence | `localStorage` for past sessions |
+| Persistence | `localStorage` for past sessions and custom personas |
 | Styling | Plain CSS with CSS custom properties |
 
 ---
@@ -72,7 +72,7 @@ Vercel JS serverless functions
   Gemini 3.8 Flash
 ```
 
-The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript so far and the current condition state. This means the JS functions hold no memory between calls and scale to zero on Vercel serverless without any coordination layer.
+The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript and the current condition state. The JS functions hold no memory between calls.
 
 ---
 
@@ -84,61 +84,71 @@ frontend/
     _lib/
       core.js            Gemini logic: generateOpenings, generateReply, generateReport
     session/
-      start.js           POST /api/session/start  (panel opening challenges)
-      message.js         POST /api/session/message (next speaker reply)
-      end.js             POST /api/session/end     (coaching report)
+      start.js           POST /api/session/start
+      message.js         POST /api/session/message
+      end.js             POST /api/session/end
   src/
     App.jsx              root: screen routing and session state
     components/
-      Sidebar.jsx        left nav (home, past sessions, panel library, settings)
+      Sidebar.jsx        left nav
     screens/
-      Home.jsx           dashboard: upcoming meetings, recent sessions, weak spots
+      Home.jsx           dashboard: greeting, upcoming meetings, recent sessions, weak spots
       NewRehearsal.jsx   3-step setup wizard: upload, choose panel, configure
       RehearsalRoom.jsx  live rehearsal: panel seats, transcript, input bar
-      Report.jsx         post-session: conditions by persona, top weak points
+      Report.jsx         post-session summary with tabbed Conditions / Coaching view
       Debrief.jsx        moment-by-moment coaching with timeline and analysis
-      PastSessions.jsx   history grouped by proposal with progress tracking
-      PanelLibrary.jsx   browse and customise persona cards
-      Settings.jsx       preferences
+      PastSessions.jsx   history grouped by proposal
+      PanelLibrary.jsx   browse built-in roles and create custom ones
+      Settings.jsx       preferences: voice rate, defaults
     utils/
-      storage.js         localStorage helpers shared across screens
-    data.js              static personas, fallback transcript and demo data
+      storage.js         localStorage helpers
+    data.js              static personas, demo openings and scripted fallback responses
     index.css            design system: tokens, components, room theme
-  vercel.json            function timeout config (30s start/message, 60s end)
+  vercel.json            function timeout config
 agents/
   core.py                FastAPI-compatible Gemini logic for Cloud Run
 server.py                FastAPI server (for Cloud Run deployment)
 Dockerfile               multi-stage: Node 20 builds React, Python 3.12 runs FastAPI
 main.py                  terminal rehearsal entry point (original prototype)
+tests/
+  test_core.py           66 pytest tests for agents/core.py
 ```
 
 ---
 
 ## AI logic
 
-All three AI calls use a single batch approach: one Gemini call returns the complete response as structured JSON. There is no streaming and no multi-turn conversation stored on the server side.
+All three AI calls use a single-call batch approach: one Gemini call returns the complete structured JSON response. No streaming, no server-side state.
 
 ### `factCheckProposal` (Google Search grounding)
 
-Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding tool to verify the proposal's key quantitative claims against live web data: salary benchmarks, time estimates, cost projections and productivity figures. The verified findings are injected into Sam's context so every challenge Sam makes in the session is grounded in real market data, not generated claims. This is a separate Gemini call that runs before `generateOpenings` so Sam's very first challenge already references the verified facts.
+Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding to verify the proposal's key quantitative claims against live web data. The findings are injected into Sam's context so every challenge Sam makes references real market data.
 
 ### `generateOpenings`
 
-Called once at the start of a session. Takes the proposal text, the selected persona IDs and the session config. Returns one opening challenge per panelist, each written specifically around the proposal content. The system prompt instructs Gemini not to use generic questions and not to let panelists introduce themselves.
+Called once. Returns one opening challenge per selected panelist written specifically around the proposal content. Openings are shuffled on the client so a random panelist always fires first.
 
 ### `generateReply`
 
-Called after every presenter turn. Takes the full transcript, the current condition state and the proposal. Gemini picks the panelist whose concerns are least addressed (avoiding the last speaker unless everyone else is satisfied), writes their response and returns which conditions were met by the presenter's last message. The condition check is strict: a condition is only marked met if the presenter explicitly addressed it with concrete information.
+Called after every presenter turn. The system prompt applies several layers of intelligence:
+
+- **Speaker selection.** Picks the panelist with the most unmet conditions. Avoids repeating the last speaker.
+- **Answer quality assessment.** Classifies the presenter's answer as poor, medium or good based on word count, hedging phrases and presence of specific data. Poor answers are called out directly and cannot satisfy any conditions.
+- **Contradiction tracking.** If the current answer conflicts with something said in an earlier turn the panelist references the contradiction explicitly.
+- **Condition acknowledgment.** When a condition is met the speaker briefly acknowledges it before pressing on to the next concern.
+- **Satisfied panelist mode.** When all of a panelist's conditions are met they shift from challenging to supportive or cooperative.
+- **Near-limit urgency.** When three or fewer turns remain the panelist explicitly names the most critical unmet conditions.
+- **Multi-voice pile-on.** An optional `follow_up` field lets a second panelist jump in immediately when the answer creates a new issue for them or directly contradicts their concern.
 
 ### `generateReport`
 
-Called when the presenter ends the session. Takes the full transcript and all condition states. Returns two arrays: `weak_points` (2 to 4 gaps with concrete suggested fixes) and `moments` (4 to 7 annotated turning points with type, what was asked, what was said, why it worked or fell short and a stronger version to try).
+Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested fixes) and `moments` (4 to 7 annotated turning points).
 
 ---
 
 ## The conditions system
 
-Each persona has 2 to 3 conditions. A condition is a specific claim the presenter must make to satisfy that stakeholder. Conditions are tracked as a flat dictionary keyed by ID.
+Each persona has 2 to 3 conditions. A condition is a specific claim the presenter must make to satisfy that stakeholder. Conditions are tracked as a flat dictionary and passed with every `/api/session/message` request.
 
 | Persona | Name | Role | Conditions |
 |---------|------|------|-----------|
@@ -147,75 +157,35 @@ Each persona has 2 to 3 conditions. A condition is a specific claim the presente
 | `ops` | Jordan | Operations Lead | Timeline with milestones given, current process owner identified, disruption assessment complete |
 | `factcheck` | Sam | Fact-Checker | Salary range verified, 30-hour claim substantiated |
 
-The conditions are passed with every `/api/session/message` request so Gemini can see which are still unmet and prioritise the most unsatisfied persona as the next speaker.
+Custom personas created in the Panel Library follow the same structure and are passed to every API call in `custom_personas`.
 
 ---
 
 ## Session state
 
-Session state lives in `App.jsx` and is passed down as props. It is never stored on a server.
+Session state lives in `App.jsx` and is passed down as props. Never stored on a server.
 
 ```js
 {
-  proposalText: '',       // full proposal text
-  proposalName: '',       // display name derived from filename or title
-  personaIds: [...],      // which personas are in this session
+  proposalText: '',           // full proposal text
+  proposalName: '',           // display name from filename or title
+  personaIds: [...],          // active persona IDs
   config: {
-    mode: 'Type',         // Type | Hybrid | Voice
-    toughness: 'Balanced' // Supportive | Balanced | Tough
+    mode: 'Type',             // Type | Hybrid
+    toughness: 'Balanced',    // Supportive | Balanced | Tough
+    turnLimit: 15,            // 5 | 10 | 15 | 20 | 25
+    industry: '',
+    companySize: '',
+    focus: '',
   },
-  transcript: [],         // full message history
-  conditions: {},         // { f1: false, f2: true, ... }
-  reportData: null,       // weak_points + moments from generateReport
-  startTime: null,        // Date.now() at session start
+  transcript: [],             // full message history
+  conditions: {},             // { f1: false, f2: true, ... }
+  factCheckNotes: '',         // Sam's verified research briefing
+  customPersonaDefs: {},      // serialised custom personas for API calls
+  reportData: null,           // weak_points + moments from generateReport
+  startTime: null,            // Date.now() at session start
 }
 ```
-
-When a session ends the summary (proposal name, date, mode, conditions met) is written to `localStorage` under `dryrun_sessions`. The `PastSessions` and `Home` screens read from localStorage first and fall back to static demo data.
-
----
-
-## Screens
-
-### Home
-
-Shows a dashboard with upcoming meetings (static demo data), recent sessions read from localStorage and recurring weak spots aggregated across sessions. Clicking any item navigates to the relevant screen.
-
-### New Rehearsal
-
-A three-step wizard:
-1. **Upload proposal:** drag-and-drop file upload with a `FileReader`, or use the built-in sample proposal about hiring data engineers.
-2. **Choose panel:** toggle cards for each persona. Minimum two required.
-3. **Configure:** set company size, industry, panel focus, toughness level and session mode. Clicking "Enter the room" calls `/api/session/start` and shows a spinner while Gemini generates the opening challenges.
-
-### Rehearsal Room
-
-The main experience. A dark theatre-style interface with:
-- **Panel seats** at the top showing each persona with their name, role, condition dots and a waveform animation when they are speaking.
-- **Spotlight** that sweeps across the panel to highlight the active speaker using a radial gradient.
-- **Transcript** showing the full conversation with speaker labels, timestamps and a streaming text effect on new AI messages.
-- **Typing indicator** shown while waiting for the Gemini reply.
-- **Input bar** with Enter to send.
-
-Pressing "End session" calls `/api/session/end` and navigates to the Report. If the Gemini call fails the room falls back to scripted responses so the UI always works.
-
-### Report
-
-Shows the post-session summary with:
-- Conditions by persona (check or cross for each one)
-- Score (conditions met out of total)
-- Turn count and duration
-- Top weak points with suggested fixes from Gemini
-
-### Debrief
-
-A two-panel view with:
-- **Left:** timeline of key moments (strong answers, weak answers, conditions met, persona clashes) with persona filter tabs
-- **Right:** coaching card for the selected moment showing what was asked, what was said, why it worked or fell short and a stronger answer
-
-### Past Sessions
-
-All sessions grouped by proposal. Shows the conditions-met progress bar for each attempt so you can see improvement across rehearsals. Sessions can be deleted and the change is reflected immediately from localStorage.
 
 ---
 
@@ -228,7 +198,8 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
 {
   "proposal_text": "...",
   "persona_ids": ["finance", "legal", "ops", "factcheck"],
-  "config": { "toughness": "Balanced", "industry": "Technology" }
+  "config": { "toughness": "Balanced", "industry": "Technology" },
+  "custom_personas": {}
 }
 ```
 
@@ -238,7 +209,8 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
   "messages": [
     { "id": 1, "speaker": "finance", "text": "...", "time": "0:12", "type": "opening" }
   ],
-  "conditions": { "f1": false, "f2": false, "f3": false, "l1": false }
+  "conditions": { "f1": false, "f2": false, "f3": false, "l1": false },
+  "fact_check": "..."
 }
 ```
 
@@ -251,7 +223,9 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
   "persona_ids": ["finance", "legal", "ops", "factcheck"],
   "transcript": [...],
   "conditions": { "f1": false, "f2": true },
-  "config": {}
+  "config": { "turns_remaining": 4 },
+  "fact_check": "...",
+  "custom_personas": {}
 }
 ```
 
@@ -261,9 +235,17 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
   "speaker": "legal",
   "text": "...",
   "conditions_met": ["l1"],
-  "source": null
+  "source": null,
+  "follow_up": {
+    "speaker": "finance",
+    "text": "...",
+    "conditions_met": [],
+    "source": null
+  }
 }
 ```
+
+`follow_up` is `null` when only one panelist responds.
 
 ### `POST /api/session/end`
 
@@ -273,7 +255,8 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
   "proposal_text": "...",
   "persona_ids": ["finance", "legal", "ops", "factcheck"],
   "transcript": [...],
-  "conditions": { "f1": true, "f2": false }
+  "conditions": { "f1": true, "f2": false },
+  "custom_personas": {}
 }
 ```
 
@@ -287,7 +270,7 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
     {
       "id": 1, "type": "weak", "turn": "Turn 3",
       "excerpt": "This pays for itself within a year.",
-      "tag": "Weak Answer",
+      "tag": "Weak answer",
       "asked": "...", "your_answer": "...", "why": "...", "better": "..."
     }
   ]
@@ -306,7 +289,7 @@ npm install
 npm run dev
 ```
 
-Set `GEMINI_API_KEY` in a `.env` file at `frontend/.env` (it is read by the Vite dev server and the serverless functions):
+Set `GEMINI_API_KEY` in `frontend/.env`:
 
 ```
 GEMINI_API_KEY=your_google_ai_studio_key_here
@@ -314,13 +297,7 @@ GEMINI_API_KEY=your_google_ai_studio_key_here
 
 ### Web app without AI (demo mode)
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The room falls back to scripted responses. All screens and navigation work without an API key.
+Run the same `npm run dev` command without an API key. The room falls back to scripted responses with multi-voice pile-on pairs. All screens and navigation work.
 
 ### Terminal (original prototype)
 
@@ -343,7 +320,7 @@ cd frontend
 vercel --prod
 ```
 
-Set `GEMINI_API_KEY` as a Vercel environment variable (sensitive type). The JS functions in `frontend/api/` are picked up automatically by the Vercel Node runtime.
+Set `GEMINI_API_KEY` as a Vercel environment variable. The JS functions in `frontend/api/` are picked up automatically.
 
 ### Cloud Run (planned)
 
@@ -376,31 +353,8 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - [x] Gemini AI (@google/genai SDK, `gemini-3.8-flash`)
 - [x] Live deployment link
 - [ ] Google Cloud Run backend (ready in `server.py` and `Dockerfile`, pending billing setup)
-- [ ] Firebase Hosting (planned alongside Cloud Run migration)
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
-
----
-
-## Roadmap
-
-Features being built in this order:
-
-### 1. Voice input (in progress)
-Web Speech API (`SpeechRecognition`) for hands-free presenter turns. The mic button in Hybrid mode captures one turn at a time and populates the input field for review before sending. Voice mode auto-sends on result. Chrome and Edge only. Whisper API is the planned fallback for Safari.
-
-### 2. Panel text-to-speech
-Web Speech Synthesis API to give each persona a distinct voice. Each persona gets a different pitch and rate. The voice settings in the Settings screen become functional and map to browser voice indices. An ElevenLabs integration is the higher-quality upgrade path.
-
-### 3. Custom panel roles
-A create/edit form for personas stored in `localStorage` under `dryrun_custom_personas`. Custom personas are merged with the built-in ones at runtime. The API already handles arbitrary persona IDs. The system prompt builds persona context dynamically from whatever IDs are passed so no backend changes are needed.
-
-### 4. Google integrations
-- **Drive import:** Google Picker API to select a doc and fetch its text into the proposal field.
-- **Docs export:** Docs API to write the session report into a new Google Doc and return a link.
-- **Calendar sync:** Calendar API to pull upcoming meetings onto the Home dashboard.
-
-All three require OAuth 2.0 setup via Google Cloud Console (client ID and consent screen).
 
 ---
 
