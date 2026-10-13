@@ -72,7 +72,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
   const enterRoom = async () => {
     setLaunching(true)
-    resetSession()
 
     const text = proposalText || SAMPLE_PROPOSAL
     const config = { toughness, turnLimit, industry, companySize, focus }
@@ -96,6 +95,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
       const data = await res.json()
       if (data.demo) console.warn('[NewRehearsal] AI unavailable, server returned demo data')
+      resetSession()
       updateSession({
         proposalText: text,
         proposalName: proposalName || 'Untitled proposal',
@@ -111,7 +111,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       navigate('room')
     } catch (err) {
       console.error('[NewRehearsal] session/start failed:', err)
-      // AI unavailable, enter room in demo mode
+      resetSession()
       updateSession({
         proposalText: text,
         proposalName: proposalName || 'Untitled proposal',
