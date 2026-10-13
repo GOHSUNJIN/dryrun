@@ -10,11 +10,11 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY agents/ agents/
-COPY server.py .
+COPY backend/agents/ agents/
+COPY backend/server.py .
 COPY --from=frontend-builder /app/frontend/dist/ frontend/dist/
 
 EXPOSE 8080
