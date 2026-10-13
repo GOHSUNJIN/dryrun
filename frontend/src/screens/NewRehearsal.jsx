@@ -243,7 +243,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                           <div className="role-card-title">{p.role}</div>
                         </div>
                         <div className="role-card-cares">
-                          Challenges {p.cares[0].toLowerCase()}.
+                          Challenges {(Array.isArray(p.cares) ? p.cares[0] : p.cares || '').toLowerCase()}.
                         </div>
                         {isSelected && (
                           <div className="role-card-check">

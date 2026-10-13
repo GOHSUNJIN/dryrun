@@ -139,7 +139,7 @@ export default function PanelLibrary() {
       name: form.name.trim(),
       role: form.role.trim(),
       initial: form.name.trim()[0].toUpperCase(),
-      cares: [form.cares.trim()],
+      cares: form.cares.trim(),
       speaking_style: form.speaking_style.trim(),
       conditions,
       custom: true,
@@ -161,7 +161,7 @@ export default function PanelLibrary() {
       name: form.name.trim(),
       role: form.role.trim(),
       initial: form.name.trim()[0].toUpperCase(),
-      cares: [form.cares.trim()],
+      cares: form.cares.trim(),
       speaking_style: form.speaking_style.trim(),
       conditions,
     })
@@ -179,7 +179,7 @@ export default function PanelLibrary() {
   const editingInitial = editingPersona ? {
     name: editingPersona.name,
     role: editingPersona.role,
-    cares: editingPersona.cares[0] || '',
+    cares: Array.isArray(editingPersona.cares) ? (editingPersona.cares[0] || '') : (editingPersona.cares || ''),
     speaking_style: editingPersona.speaking_style || '',
     cond1: editingPersona.conditions[0]?.text || '',
     cond2: editingPersona.conditions[1]?.text || '',
