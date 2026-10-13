@@ -566,6 +566,184 @@ class TestGenerateReport:
 
 
 # ---------------------------------------------------------------------------
+# _answer_quality
+# ---------------------------------------------------------------------------
+
+class TestAnswerQuality:
+    def test_empty_string_is_poor(self):
+        assert core._answer_quality('') == 'poor'
+
+    def test_none_like_falsy_is_poor(self):
+        assert core._answer_quality('   ') == 'poor'
+
+    def test_short_answer_under_15_words_is_poor(self):
+        assert core._answer_quality('We will handle it.') == 'poor'
+
+    def test_exactly_15_words_no_vagueness_no_number_is_medium(self):
+        # 15 words: just clears the < 15 short-answer gate
+        text = 'The analytics lead owns the transition and will run the parallel migration process until cutover.'
+        assert core._answer_quality(text) == 'medium'
+
+    def test_two_vague_phrases_is_poor(self):
+        text = ('I think we will figure this out and probably the budget will work. '
+                'We plan to review the costs and maybe adjust the timeline.')
+        assert core._answer_quality(text) == 'poor'
+
+    def test_one_vague_phrase_under_30_words_is_poor(self):
+        text = 'The cost is maybe around two hundred and forty thousand per year plus tooling.'
+        assert core._answer_quality(text) == 'poor'
+
+    def test_one_vague_phrase_over_30_words_no_number_is_medium(self):
+        # 31 words, 1 vague phrase ('i think') but >= 30 words so only 'poor' if vague_hits >= 2
+        words = ('The analytics lead owns the transition and will manage the parallel run. '
+                 'We have a detailed handover plan and the team is fully prepared. '
+                 'I think the cutover will complete within the agreed window.')
+        assert core._answer_quality(words) == 'medium'
+
+    def test_answer_with_digit_is_good(self):
+        text = ('Total cost is $240,000 per year including salary, tooling and cloud infrastructure. '
+                'The payback period is under 6 years based on 30 hours saved per month at a loaded rate.')
+        assert core._answer_quality(text) == 'good'
+
+    def test_answer_40_or_more_words_no_digit_is_good(self):
+        text = ' '.join(['word'] * 40)
+        assert core._answer_quality(text) == 'good'
+
+    def test_answer_39_words_no_digit_no_vagueness_is_medium(self):
+        text = ' '.join(['word'] * 39)
+        assert core._answer_quality(text) == 'medium'
+
+    def test_vague_phrase_matching_is_case_insensitive(self):
+        text = 'I THINK this will work and the team will PROBABLY deliver on time for the review.'
+        assert core._answer_quality(text) == 'poor'
+
+
+# ---------------------------------------------------------------------------
+# generate_reply: follow_up and turns_remaining (additional tests)
+# ---------------------------------------------------------------------------
+
+class TestGenerateReplyFollowUp:
+    def _reply_with_followup(self, main='finance', fu_speaker='legal', fu_text='Legal concern.'):
+        return json.dumps({
+            'speaker_id': main,
+            'response': 'Finance challenge.',
+            'conditions_met': [],
+            'source': None,
+            'follow_up': {
+                'speaker_id': fu_speaker,
+                'response': fu_text,
+                'conditions_met': [],
+                'source': None,
+            },
+        })
+
+    @patch('agents.core.get_client')
+    def test_follow_up_included_when_valid(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._reply_with_followup('finance', 'legal'))
+        conds = core.get_initial_conditions(['finance', 'legal', 'ops'])
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal', 'ops'], SAMPLE_TRANSCRIPT, conds, {})
+        assert 'follow_up' in result
+        assert result['follow_up']['speaker'] == 'legal'
+        assert result['follow_up']['text'] == 'Legal concern.'
+
+    @patch('agents.core.get_client')
+    def test_follow_up_absent_when_null(self, mock_get_client):
+        payload = json.dumps({
+            'speaker_id': 'finance', 'response': 'Cost concern.',
+            'conditions_met': [], 'source': None, 'follow_up': None,
+        })
+        mock_get_client.return_value = make_mock_client(payload)
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert 'follow_up' not in result
+
+    @patch('agents.core.get_client')
+    def test_follow_up_excluded_when_same_speaker_as_main(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._reply_with_followup('finance', 'finance'))
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert 'follow_up' not in result
+
+    @patch('agents.core.get_client')
+    def test_follow_up_excluded_when_speaker_not_in_persona_ids(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._reply_with_followup('finance', 'unknown_role'))
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert 'follow_up' not in result
+
+    @patch('agents.core.get_client')
+    def test_follow_up_excluded_when_text_is_empty(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._reply_with_followup('finance', 'legal', ''))
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert 'follow_up' not in result
+
+    @patch('agents.core.get_client')
+    def test_follow_up_conditions_met_filters_already_met(self, mock_get_client):
+        payload = json.dumps({
+            'speaker_id': 'finance', 'response': 'Finance.', 'conditions_met': [], 'source': None,
+            'follow_up': {
+                'speaker_id': 'legal',
+                'response': 'Legal challenge.',
+                'conditions_met': ['l1', 'l2'],
+                'source': None,
+            },
+        })
+        mock_get_client.return_value = make_mock_client(payload)
+        conds = {'f1': False, 'l1': True, 'l2': False, 'l3': False}
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, conds, {})
+        assert 'l1' not in result['follow_up']['conditions_met']
+        assert 'l2' in result['follow_up']['conditions_met']
+
+    @patch('agents.core.get_client')
+    def test_follow_up_source_included_when_present(self, mock_get_client):
+        payload = json.dumps({
+            'speaker_id': 'finance', 'response': 'Finance.', 'conditions_met': [], 'source': None,
+            'follow_up': {
+                'speaker_id': 'factcheck',
+                'response': 'BLS data shows $120k.',
+                'conditions_met': [],
+                'source': 'BLS 2025',
+            },
+        })
+        mock_get_client.return_value = make_mock_client(payload)
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'factcheck'], SAMPLE_TRANSCRIPT, {}, {})
+        assert result['follow_up']['source']['label'] == 'BLS 2025'
+
+    @patch('agents.core.get_client')
+    def test_turns_remaining_3_triggers_urgency_in_system_prompt(self, mock_get_client):
+        payload = json.dumps({'speaker_id': 'finance', 'response': 'Cost.', 'conditions_met': [], 'source': None})
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {'turns_remaining': 3})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'URGENT' in config.system_instruction
+
+    @patch('agents.core.get_client')
+    def test_turns_remaining_1_triggers_urgency(self, mock_get_client):
+        payload = json.dumps({'speaker_id': 'finance', 'response': 'Cost.', 'conditions_met': [], 'source': None})
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {'turns_remaining': 1})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'URGENT' in config.system_instruction
+
+    @patch('agents.core.get_client')
+    def test_turns_remaining_4_does_not_trigger_urgency(self, mock_get_client):
+        payload = json.dumps({'speaker_id': 'finance', 'response': 'Cost.', 'conditions_met': [], 'source': None})
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {'turns_remaining': 4})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'URGENT' not in config.system_instruction
+
+    @patch('agents.core.get_client')
+    def test_no_turns_remaining_in_config_no_urgency(self, mock_get_client):
+        payload = json.dumps({'speaker_id': 'finance', 'response': 'Cost.', 'conditions_met': [], 'source': None})
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'URGENT' not in config.system_instruction
+
+
+# ---------------------------------------------------------------------------
 # fact_check_proposal
 # ---------------------------------------------------------------------------
 
