@@ -161,10 +161,17 @@ function StreamingText({ text }) {
 }
 
 export default function RehearsalRoom({ navigate, session, updateSession }) {
-  const hasRealSession = session.transcript.length > 0
+  const hasRealSession = Boolean(session.proposalText)
+  const openingMsgs    = hasRealSession
+    ? session.transcript.filter(m => m.type === 'opening')
+    : []
 
   const [localTranscript, setLocalTranscript]       = useState(hasRealSession ? [] : DEMO_TRANSCRIPT)
-  const [localConditions, setLocalConditions]       = useState(hasRealSession ? session.conditions : {})
+  const [localConditions, setLocalConditions]       = useState(() =>
+    hasRealSession
+      ? Object.fromEntries(Object.keys(session.conditions).map(k => [k, false]))
+      : {}
+  )
   const [roomState, setRoomState]                   = useState(hasRealSession ? 'thinking' : 'speaking')
   const [activeSpeaker, setActiveSpeaker]           = useState(hasRealSession ? null : 'finance')
   const [interruptSpeaker, setInterruptSpeaker]     = useState('ops')
@@ -177,7 +184,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [apiError, setApiError]                     = useState(false)
   const [listening, setListening]                   = useState(false)
   const [speechOn, setSpeechOn]                     = useState(() => loadVoiceSettings().enabled)
-  const [openingsDone, setOpeningsDone]             = useState(!hasRealSession)
+  const [openingsDone, setOpeningsDone]             = useState(!hasRealSession || openingMsgs.length === 0)
 
   const transcriptRef  = useRef(null)
   const recognitionRef = useRef(null)
@@ -235,19 +242,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   // Stagger opening messages on fresh session load
   useEffect(() => {
-    if (!hasRealSession) return
-    const msgs = session.transcript
-    let delay  = 600
-    msgs.forEach((msg, i) => {
-      const isLast = i === msgs.length - 1
+    if (!hasRealSession || openingMsgs.length === 0) return
+    let delay = 600
+    openingMsgs.forEach((msg, i) => {
+      const isLast = i === openingMsgs.length - 1
       setTimeout(() => {
         setLocalTranscript(prev => [...prev, msg])
-        if (msg.speaker !== 'presenter') {
-          setActiveSpeaker(msg.speaker)
-          setAppearingMsgId(msg.id)
-          setRoomState('speaking')
-          enqueueSpeak(msg.text, msg.speaker)
-        }
+        setActiveSpeaker(msg.speaker)
+        setAppearingMsgId(msg.id)
+        setRoomState('speaking')
+        enqueueSpeak(msg.text, msg.speaker)
         if (isLast) {
           setTimeout(() => {
             setRoomState('idle')
@@ -255,7 +259,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           }, 2800)
         }
       }, delay)
-      delay += msg.speaker === 'presenter' ? 300 : 2200
+      delay += 2200
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -551,13 +555,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               border: 'none',
               color: speechOn ? 'var(--room-text-2)' : 'var(--room-text-3)',
               cursor: 'pointer', padding: '4px 8px', borderRadius: 6,
-              display: 'flex', alignItems: 'center', gap: 5,
-              fontSize: '0.75rem', fontFamily: 'var(--font-ui)',
+              display: 'flex', alignItems: 'center',
               transition: 'all 0.15s ease',
             }}
           >
-            {speechOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            <span>{speechOn ? 'Voice on' : 'Voice off'}</span>
+            {speechOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <span className="room-turn-counter">Turn {turnCount} of {turnLimit}</span>
           <button
