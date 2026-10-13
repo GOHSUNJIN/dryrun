@@ -1,13 +1,10 @@
 {
-  "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ],
   "functions": {
-    "api/session/start.py":   { "maxDuration": 30 },
-    "api/session/message.py": { "maxDuration": 30 },
-    "api/session/end.py":     { "maxDuration": 60 }
-  }
+    "api/session/start.js":   { "maxDuration": 30 },
+    "api/session/message.js": { "maxDuration": 30 },
+    "api/session/end.js":     { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
