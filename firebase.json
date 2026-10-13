@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "public": "frontend/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/api/session/start",   "function": "sessionStart"   },
+      { "source": "/api/session/message", "function": "sessionMessage" },
+      { "source": "/api/session/end",     "function": "sessionEnd"     },
+      { "source": "**", "destination": "/index.html" }
+    ]
+  },
+  "functions": {
+    "source": "functions"
+  }
+}
