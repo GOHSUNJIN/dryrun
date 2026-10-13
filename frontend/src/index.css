@@ -4,7 +4,7 @@ html { height: 100%; }
 body { height: 100%; font-family: var(--font-ui); background: var(--bg-base); color: var(--text-primary); -webkit-font-smoothing: antialiased; }
 #root { height: 100%; display: flex; }
 button { font-family: var(--font-ui); cursor: pointer; border: none; background: none; }
-input, textarea { font-family: var(--font-ui); }
+input, textarea { font-family: var(--font-ui); resize: none; }
 a { text-decoration: none; color: inherit; }
 ul { list-style: none; }
 

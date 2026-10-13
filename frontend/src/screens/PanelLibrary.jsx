@@ -52,7 +52,7 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
           onChange={set(key)}
           rows={opts.rows || 2}
           placeholder={opts.placeholder || ''}
-          style={{ ...inputStyle(key), resize: 'vertical' }}
+          style={inputStyle(key)}
         />
       ) : (
         <input
