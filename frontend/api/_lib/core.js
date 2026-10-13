@@ -270,7 +270,7 @@ Return ONLY valid JSON with no markdown fences:
       "type": "weak|strong|cond|clash",
       "turn": "Turn N",
       "excerpt": "short presenter quote under 12 words",
-      "tag": "Weak Answer|Strong Answer|Condition Met|Persona Clash",
+      "tag": "Weak answer|Strong answer|Condition met|Persona clash",
       "asked": "what the panel challenged in one sentence",
       "your_answer": "brief quote of what the presenter said",
       "why": "why it worked or fell short in two sentences",

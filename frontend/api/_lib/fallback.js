@@ -39,7 +39,7 @@ const CANNED_REPORT = {
     {
       id: 1, type: 'weak', turn: 'Turn 1',
       excerpt: 'This pays for itself within a year.',
-      tag: 'Weak Answer',
+      tag: 'Weak answer',
       asked: 'Morgan asked for a full three-year cost breakdown including tooling and infrastructure.',
       your_answer: '"This pays for itself within a year."',
       why: 'The claim lacks any supporting numbers. A payback assertion without a TCO figure reads as a deflection to a finance audience.',
@@ -48,7 +48,7 @@ const CANNED_REPORT = {
     {
       id: 2, type: 'weak', turn: 'Turn 2',
       excerpt: 'We will handle data privacy as we go.',
-      tag: 'Weak Answer',
+      tag: 'Weak answer',
       asked: 'Alex asked who owns the data and whether a GDPR scope assessment has been done.',
       your_answer: '"We will handle data privacy as we go."',
       why: 'This signals the risk has not been thought through. Legal stakeholders need written commitments, not assurances of future planning.',
@@ -57,7 +57,7 @@ const CANNED_REPORT = {
     {
       id: 3, type: 'strong', turn: 'Turn 3',
       excerpt: 'The current analytics lead owns the transition.',
-      tag: 'Strong Answer',
+      tag: 'Strong answer',
       asked: 'Jordan asked who currently does the manual work and what happens to their role.',
       your_answer: '"The current analytics lead owns the transition."',
       why: 'Naming a person directly answers the accountability question. It shows you have thought about the human side of the change.',
@@ -66,7 +66,7 @@ const CANNED_REPORT = {
     {
       id: 4, type: 'weak', turn: 'Turn 4',
       excerpt: 'We can cut scope if needed.',
-      tag: 'Weak Answer',
+      tag: 'Weak answer',
       asked: 'Morgan asked what gets cut if the budget is halved.',
       your_answer: '"We can cut scope if needed."',
       why: 'Vague contingency answers tell a finance audience you have not stress-tested the plan. They expect a specific ranked list.',

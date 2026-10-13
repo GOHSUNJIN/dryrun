@@ -160,13 +160,13 @@ export const WEAK_SPOTS = [
 ];
 
 export const DEBRIEF_MOMENTS = [
-  { id: 1, type: 'weak',    turn: 'Turn 5', excerpt: '"This pays for itself within a year."',         tag: 'Weak Answer' },
-  { id: 2, type: 'strong',  turn: 'Turn 7', excerpt: '"We ran a pilot last quarter with Ops..."',     tag: 'Strong Answer' },
-  { id: 3, type: 'cond',    turn: 'Turn 6', excerpt: 'Payback period (Finance)',                      tag: 'Condition Met' },
-  { id: 4, type: 'clash',   turn: 'Turn 7', excerpt: 'Jordan challenged Morgan on cost framing',      tag: 'Persona Clash' },
-  { id: 5, type: 'weak',    turn: 'Turn 9', excerpt: '"The vendor is TBD but we\'re evaluating..."', tag: 'Weak Answer' },
-  { id: 6, type: 'cond',    turn: 'Turn 8', excerpt: 'Salary range verified (Fact-Checker)',         tag: 'Condition Met' },
-  { id: 7, type: 'strong',  turn: 'Turn 11',excerpt: '"HR owns the data; we have a DPA template."', tag: 'Strong Answer' },
+  { id: 1, type: 'weak',    turn: 'Turn 5', excerpt: '"This pays for itself within a year."',         tag: 'Weak answer' },
+  { id: 2, type: 'strong',  turn: 'Turn 7', excerpt: '"We ran a pilot last quarter with Ops..."',     tag: 'Strong answer' },
+  { id: 3, type: 'cond',    turn: 'Turn 6', excerpt: 'Payback period (Finance)',                      tag: 'Condition met' },
+  { id: 4, type: 'clash',   turn: 'Turn 7', excerpt: 'Jordan challenged Morgan on cost framing',      tag: 'Persona clash' },
+  { id: 5, type: 'weak',    turn: 'Turn 9', excerpt: '"The vendor is TBD but we\'re evaluating..."', tag: 'Weak answer' },
+  { id: 6, type: 'cond',    turn: 'Turn 8', excerpt: 'Salary range verified (Fact-Checker)',         tag: 'Condition met' },
+  { id: 7, type: 'strong',  turn: 'Turn 11',excerpt: '"HR owns the data; we have a DPA template."', tag: 'Strong answer' },
 ];
 
 export const AVATAR_COLORS   = ['#F59E0B', '#0FB8AA', '#9061F9', '#5B8FD6']

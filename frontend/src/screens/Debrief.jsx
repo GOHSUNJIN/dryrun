@@ -22,7 +22,7 @@ const MARKER_COLORS = {
 const FALLBACK_COACHING = {
   1: {
     momentType:  'weak',
-    momentLabel: 'Weak Answer',
+    momentLabel: 'Weak answer',
     asked:       'Morgan (Finance) challenged the payback claim',
     yourAnswer:  '"This pays for itself within a year."',
     whyShort:    'The answer restated the conclusion rather than showing the workings. Finance needs a line-by-line model, not an assertion.',
@@ -30,7 +30,7 @@ const FALLBACK_COACHING = {
   },
   2: {
     momentType:  'strong',
-    momentLabel: 'Strong Answer',
+    momentLabel: 'Strong answer',
     asked:       'Jordan (Ops) asked about the existing manual process owner',
     yourAnswer:  '"We ran a pilot last quarter with Ops. The analyst who owns the process helped scope it."',
     whyShort:    'Named a real pilot, cited a specific stakeholder and turned a potential HR concern into a positive story.',
@@ -101,7 +101,7 @@ export default function Debrief({ navigate, session }) {
         </button>
         <div style={{ width: 1, height: 16, background: 'var(--border)' }} />
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Session Debrief: {session?.proposalName || 'Data Engineering Hires'}
+          Session debrief: {session?.proposalName || 'Data Engineering Hires'}
         </div>
         <div style={{ marginLeft: 'auto' }}>
           <button className="btn btn-secondary btn-sm" onClick={() => navigate('room')}>
