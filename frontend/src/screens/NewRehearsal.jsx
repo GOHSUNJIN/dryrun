@@ -120,6 +120,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         factCheckNotes: '',
         customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         startTime: Date.now(),
+        demoMode: true,
       })
       navigate('room')
     }

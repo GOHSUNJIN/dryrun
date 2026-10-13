@@ -699,6 +699,19 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
       </div>
 
+      {session.demoMode && (
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
+          <div style={{
+            padding: '9px 16px',
+            background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)',
+            borderRadius: 8, color: '#D97706', fontSize: '0.8125rem',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span>AI unavailable — running on scripted demo responses. Add a Gemini API key in Vercel to enable live AI.</span>
+          </div>
+        </div>
+      )}
+
       {apiError && hasRealSession && (
         <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
         <div style={{
