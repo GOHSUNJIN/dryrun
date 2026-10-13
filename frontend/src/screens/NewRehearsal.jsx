@@ -233,36 +233,56 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
                       {driveFiles !== null && (
                         <div style={{
-                          width: '100%', maxWidth: 360,
-                          border: '1px solid var(--border)', borderRadius: 8,
-                          background: 'var(--bg-card)', overflow: 'hidden',
+                          width: '100%', maxWidth: 400,
+                          border: '1px solid var(--border)', borderRadius: 10,
+                          background: 'var(--bg-card)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                          overflow: 'hidden',
                         }}>
-                          {driveFiles.length === 0 ? (
-                            <div style={{ padding: '12px 16px', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                              No Google Docs found.
-                            </div>
-                          ) : driveFiles.map(f => (
-                            <button
-                              key={f.id}
-                              onClick={() => selectDriveFile(f)}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 10,
-                                width: '100%', padding: '10px 14px', background: 'none',
-                                border: 'none', borderBottom: '1px solid var(--border)',
-                                cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-ui)',
-                              }}
-                            >
-                              <FileText size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {f.name}
-                                </div>
-                                <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                  {new Date(f.modifiedTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </div>
-                              </div>
+                          <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '9px 14px', borderBottom: '1px solid var(--border)',
+                            background: 'var(--bg-hover)',
+                          }}>
+                            <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                              Recent documents
+                            </span>
+                            <button onClick={() => setDriveFiles(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex' }}>
+                              <X size={13} />
                             </button>
-                          ))}
+                          </div>
+                          <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+                            {driveFiles.length === 0 ? (
+                              <div style={{ padding: '16px', fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                                No Google Docs found.
+                              </div>
+                            ) : driveFiles.map((f, i) => (
+                              <button
+                                key={f.id}
+                                onClick={() => selectDriveFile(f)}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: 10,
+                                  width: '100%', padding: '9px 14px',
+                                  background: 'transparent', border: 'none',
+                                  borderBottom: i < driveFiles.length - 1 ? '1px solid var(--border)' : 'none',
+                                  cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-ui)',
+                                  color: 'var(--text-primary)', transition: 'background 0.1s ease',
+                                }}
+                              >
+                                <FileText size={14} style={{ color: '#4285F4', flexShrink: 0 }} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.8125rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {f.name}
+                                  </div>
+                                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 1 }}>
+                                    {new Date(f.modifiedTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       )}
 
