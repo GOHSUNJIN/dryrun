@@ -113,7 +113,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       })
       navigate('room')
     } catch {
-      // AI unavailable — enter room in demo mode
+      // AI unavailable, enter room in demo mode
       updateSession({
         proposalText: text,
         proposalName: proposalName || 'Untitled proposal',

@@ -387,13 +387,13 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 Features being built in this order:
 
 ### 1. Voice input (in progress)
-Web Speech API (`SpeechRecognition`) for hands-free presenter turns. The mic button in Hybrid mode captures one turn at a time and populates the input field for review before sending. Voice mode auto-sends on result. Chrome and Edge only — Whisper API is the planned fallback for Safari.
+Web Speech API (`SpeechRecognition`) for hands-free presenter turns. The mic button in Hybrid mode captures one turn at a time and populates the input field for review before sending. Voice mode auto-sends on result. Chrome and Edge only. Whisper API is the planned fallback for Safari.
 
 ### 2. Panel text-to-speech
 Web Speech Synthesis API to give each persona a distinct voice. Each persona gets a different pitch and rate. The voice settings in the Settings screen become functional and map to browser voice indices. An ElevenLabs integration is the higher-quality upgrade path.
 
 ### 3. Custom panel roles
-A create/edit form for personas stored in `localStorage` under `dryrun_custom_personas`. Custom personas are merged with the built-in ones at runtime. The API already handles arbitrary persona IDs — the system prompt builds persona context dynamically from whatever IDs are passed so no backend changes are needed.
+A create/edit form for personas stored in `localStorage` under `dryrun_custom_personas`. Custom personas are merged with the built-in ones at runtime. The API already handles arbitrary persona IDs. The system prompt builds persona context dynamically from whatever IDs are passed so no backend changes are needed.
 
 ### 4. Google integrations
 - **Drive import:** Google Picker API to select a doc and fetch its text into the proposal field.
