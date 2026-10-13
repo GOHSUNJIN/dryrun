@@ -356,6 +356,11 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
 
+**Planned before submission:**
+- [ ] Google Drive — import proposals directly into the upload step
+- [ ] Google Docs — export session reports as formatted documents
+- [ ] Google Calendar — sync upcoming meetings to the Home screen dashboard
+
 ---
 
 ## Notes
