@@ -106,7 +106,7 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
         {field('Speaking style', 'speaking_style', { textarea: true, rows: 3, placeholder: 'One or two sentences describing how they communicate and challenge.' })}
 
         <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '20px 0 12px', borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-          Conditions
+          Conditions met
           <div style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--text-muted)', marginTop: 2 }}>What must the presenter explicitly say to satisfy this persona?</div>
         </div>
         {field('Condition 1', 'cond1', { placeholder: 'What must the presenter explicitly say to satisfy this persona?' })}
@@ -234,7 +234,7 @@ export default function PanelLibrary() {
                   <ul className="panel-card-cares-list">
                     {(p.cares || []).map((c, j) => <li key={j}>{c}</li>)}
                   </ul>
-                  <div className="panel-card-conditions-label">Conditions</div>
+                  <div className="panel-card-conditions-label">Conditions met</div>
                   {(p.conditions || []).map(c => (
                     <div key={c.id} className="panel-card-condition">
                       <div style={{
@@ -292,7 +292,7 @@ export default function PanelLibrary() {
               <ul className="panel-card-cares-list">
                 {p.cares.map((c, i) => <li key={i}>{c}</li>)}
               </ul>
-              <div className="panel-card-conditions-label">Conditions</div>
+              <div className="panel-card-conditions-label">Conditions met</div>
               {(p.conditions || []).map(c => (
                 <div key={c.id} className="panel-card-condition">
                   <div style={{
