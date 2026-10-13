@@ -587,9 +587,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     transition: 'background 0.8s ease',
   }
 
-  const turnLimit       = parseInt(session.config?.turnLimit) || 15
+  const turnLimit        = parseInt(session.config?.turnLimit) || 15
+  const turnsLeft        = turnLimit - turnCount
   const turnLimitReached = hasRealSession && turnCount >= turnLimit
-  const isInputDisabled = !openingsDone || turnLimitReached || (roomState !== 'idle' && roomState !== 'condition-met')
+  const nearTurnLimit    = hasRealSession && turnsLeft <= 3 && turnsLeft > 0
+  const isInputDisabled  = !openingsDone || turnLimitReached || (roomState !== 'idle' && roomState !== 'condition-met')
 
   return (
     <div className="room">
@@ -636,7 +638,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           >
             {speechOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
-          <span className="room-turn-counter">Turn {turnCount} of {turnLimit}</span>
+          <span
+            className="room-turn-counter"
+            style={nearTurnLimit || turnLimitReached ? { color: '#F59E0B' } : undefined}
+          >
+            {turnLimitReached
+              ? 'No turns left'
+              : nearTurnLimit
+                ? `${turnsLeft} turn${turnsLeft === 1 ? '' : 's'} left`
+                : `Turn ${turnCount} of ${turnLimit}`}
+          </span>
           <button
             className="room-end-btn"
             onClick={handleEndSession}

@@ -42,6 +42,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
   const [mode, setMode]           = useState(defaults.mode)
   const [toughness, setToughness] = useState(defaults.toughness)
+  const [turnLimit, setTurnLimit] = useState(15)
   const [industry, setIndustry]   = useState('')
   const [companySize, setCompanySize] = useState('')
   const [focus, setFocus]         = useState('')
@@ -80,7 +81,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     resetSession()
 
     const text = proposalText || SAMPLE_PROPOSAL
-    const config = { mode, toughness, industry, companySize, focus }
+    const config = { mode, toughness, turnLimit, industry, companySize, focus }
 
     try {
       const res = await fetch('/api/session/start', {
@@ -298,23 +299,45 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                   </div>
                 </div>
 
-                <div style={{ marginTop: 8 }}>
-                  <div className="question-label">Panel toughness</div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    {['Supportive', 'Balanced', 'Tough'].map(t => (
-                      <button
-                        key={t}
-                        onClick={() => setToughness(t)}
-                        style={{
-                          padding: '7px 14px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 500,
-                          cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
-                          borderColor: toughness === t ? 'var(--text-primary)' : 'var(--border)',
-                          background: toughness === t ? 'var(--text-primary)' : 'transparent',
-                          color: toughness === t ? 'white' : 'var(--text-secondary)',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >{t}</button>
-                    ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 8 }}>
+                  <div>
+                    <div className="question-label">Panel toughness</div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      {['Supportive', 'Balanced', 'Tough'].map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setToughness(t)}
+                          style={{
+                            padding: '7px 12px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 500,
+                            cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
+                            borderColor: toughness === t ? 'var(--text-primary)' : 'var(--border)',
+                            background: toughness === t ? 'var(--text-primary)' : 'transparent',
+                            color: toughness === t ? 'white' : 'var(--text-secondary)',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >{t}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="question-label">Turn limit</div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      {[5, 10, 15, 20, 25].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setTurnLimit(n)}
+                          style={{
+                            padding: '7px 11px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 500,
+                            cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
+                            borderColor: turnLimit === n ? 'var(--text-primary)' : 'var(--border)',
+                            background: turnLimit === n ? 'var(--text-primary)' : 'transparent',
+                            color: turnLimit === n ? 'white' : 'var(--text-secondary)',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >{n}</button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
