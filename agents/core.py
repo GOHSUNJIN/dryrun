@@ -3,7 +3,7 @@ import os
 from google import genai
 from google.genai import types
 
-GEMINI_MODEL = 'gemini-2.0-flash'
+GEMINI_MODEL = 'gemini-3.8-flash'
 
 PERSONA_DEFS = {
     'finance': {
