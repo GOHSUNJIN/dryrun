@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT, SCRIPTED_RESPONSES } from '../data.js'
-import { saveSession, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
+import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
 
 const PERSONA_VOICE = {
   finance:   { pitch: 0.85, rate: 0.92 },
@@ -188,7 +188,8 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
-  const allPersonas = PERSONAS.map(p => ({
+  const allPersonaBase = [...PERSONAS, ...loadCustomPersonas()]
+  const allPersonas = allPersonaBase.map(p => ({
     ...p,
     conditions: p.conditions.map(c => ({
       ...c,
@@ -277,6 +278,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             conditions: localConditions,
             config: session.config,
             fact_check: session.factCheckNotes || '',
+            custom_personas: session.customPersonaDefs || {},
           }),
         })
 
@@ -419,6 +421,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           persona_ids: session.personaIds,
           transcript: localTranscript,
           conditions: localConditions,
+          custom_personas: session.customPersonaDefs || {},
         }),
       })
       if (!res.ok) throw new Error(`API error ${res.status}`)

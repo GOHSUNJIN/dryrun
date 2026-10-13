@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, Keyboard, MicIcon, Radio, Plus, X, Loader } from 'lucide-react'
 import { PERSONAS } from '../data.js'
+import { loadCustomPersonas } from '../utils/storage.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
@@ -22,7 +23,17 @@ Cost: $240,000 per year in base salary.
 Expected savings: 30 analyst hours per month and elimination of reporting errors.
 Timeline: 6 months from hire to full deployment.`
 
+function buildCustomDefs(customPersonas) {
+  const defs = {}
+  for (const p of customPersonas) {
+    defs[p.id] = { name: p.name, role: p.role, speaking_style: p.speaking_style || '', cares: (p.cares || []).join(', '), conditions: p.conditions || [] }
+  }
+  return defs
+}
+
 export default function NewRehearsal({ navigate, session, updateSession, resetSession }) {
+  const customPersonas = loadCustomPersonas()
+  const allPersonas    = [...PERSONAS, ...customPersonas]
   const [step, setStep]           = useState(0)
   const [uploaded, setUploaded]   = useState(false)
   const [proposalText, setProposalText] = useState('')
@@ -78,6 +89,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
           proposal_text: text,
           persona_ids: selected,
           config,
+          custom_personas: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         }),
       })
 
@@ -95,6 +107,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         transcript: data.messages || [],
         conditions: data.conditions || {},
         factCheckNotes: data.fact_check || '',
+        customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         startTime: Date.now(),
       })
       navigate('room')
@@ -108,6 +121,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         transcript: [],
         conditions: {},
         factCheckNotes: '',
+        customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         startTime: Date.now(),
       })
       navigate('room')
@@ -214,7 +228,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                 <div className="step-title">Choose your panel</div>
                 <div className="step-desc">Select the roles who will challenge you. Minimum 2.</div>
                 <div className="role-cards-grid">
-                  {PERSONAS.map(p => {
+                  {allPersonas.map(p => {
                     const isSelected = selected.includes(p.id)
                     return (
                       <div
@@ -238,11 +252,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       </div>
                     )
                   })}
-                  <div className="role-card-custom" style={{ opacity: 0.38, cursor: 'default', pointerEvents: 'none' }}>
-                    <Plus size={20} />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Custom role</span>
-                    <span style={{ fontSize: '0.75rem', textAlign: 'center' }}>Coming soon</span>
-                  </div>
                 </div>
               </>
             )}

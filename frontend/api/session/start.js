@@ -9,6 +9,7 @@ export default async function handler(req, res) {
       proposal_text = '',
       persona_ids = ['finance', 'legal', 'ops'],
       config = {},
+      custom_personas = {},
     } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
@@ -24,8 +25,8 @@ export default async function handler(req, res) {
       ? await factCheckProposal(proposal_text)
       : '';
     res.status(200).json({
-      messages: await generateOpenings(proposal_text, persona_ids, config, factCheck),
-      conditions: getInitialConditions(persona_ids),
+      messages: await generateOpenings(proposal_text, persona_ids, config, factCheck, custom_personas),
+      conditions: getInitialConditions(persona_ids, custom_personas),
       fact_check: factCheck,
     });
   } catch (err) {

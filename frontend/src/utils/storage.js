@@ -1,6 +1,7 @@
-const SESSIONS_KEY = 'dryrun_sessions'
-const PROFILE_KEY  = 'dryrun_profile'
-const VOICE_KEY    = 'dryrun_voice'
+const SESSIONS_KEY        = 'dryrun_sessions'
+const PROFILE_KEY         = 'dryrun_profile'
+const VOICE_KEY           = 'dryrun_voice'
+const CUSTOM_PERSONAS_KEY = 'dryrun_custom_personas'
 
 export function loadSessions() {
   try {
@@ -51,6 +52,27 @@ export function loadProfile() {
 
 export function saveProfile(name, role) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, role }))
+}
+
+export function loadCustomPersonas() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_PERSONAS_KEY) || '[]') }
+  catch { return [] }
+}
+
+export function saveCustomPersonas(personas) {
+  localStorage.setItem(CUSTOM_PERSONAS_KEY, JSON.stringify(personas))
+}
+
+export function addCustomPersona(persona) {
+  saveCustomPersonas([...loadCustomPersonas(), persona])
+}
+
+export function updateCustomPersona(id, updates) {
+  saveCustomPersonas(loadCustomPersonas().map(p => p.id === id ? { ...p, ...updates } : p))
+}
+
+export function deleteCustomPersona(id) {
+  saveCustomPersonas(loadCustomPersonas().filter(p => p.id !== id))
 }
 
 export function loadVoiceSettings() {

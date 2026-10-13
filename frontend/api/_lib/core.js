@@ -48,6 +48,10 @@ const PERSONA_DEFS = {
   },
 };
 
+function allDefs(customDefs = {}) {
+  return { ...PERSONA_DEFS, ...customDefs }
+}
+
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY is not set.');
@@ -78,33 +82,36 @@ export async function factCheckProposal(proposalText) {
   }
 }
 
-export function getInitialConditions(personaIds) {
+export function getInitialConditions(personaIds, customDefs = {}) {
+  const defs = allDefs(customDefs);
   const conditions = {};
   for (const pid of personaIds) {
-    for (const c of (PERSONA_DEFS[pid]?.conditions || [])) {
+    for (const c of (defs[pid]?.conditions || [])) {
       conditions[c.id] = false;
     }
   }
   return conditions;
 }
 
-function buildTranscriptStr(transcript) {
+function buildTranscriptStr(transcript, customDefs = {}) {
+  const defs = allDefs(customDefs);
   return transcript.map(msg => {
     if (msg.speaker === 'presenter') return `Presenter: ${msg.text}`;
-    const p = PERSONA_DEFS[msg.speaker] || {};
+    const p = defs[msg.speaker] || {};
     return `${p.name || msg.speaker} (${p.role || ''}): ${msg.text}`;
   }).join('\n');
 }
 
-export async function generateOpenings(proposalText, personaIds, config, factCheckNotes = '') {
+export async function generateOpenings(proposalText, personaIds, config, factCheckNotes = '', customDefs = {}) {
   const ai = getClient();
+  const defs = allDefs(customDefs);
   const toughness = config.toughness || 'Balanced';
   const industry = config.industry || '';
 
   const panelDescLines = personaIds
-    .filter(pid => PERSONA_DEFS[pid])
+    .filter(pid => defs[pid])
     .map(pid => {
-      const p = PERSONA_DEFS[pid];
+      const p = defs[pid];
       let line = `- ${pid}: ${p.name}, ${p.role}. Cares about: ${p.cares}.`;
       if (pid === 'factcheck' && factCheckNotes) {
         line += `\n  Sam's verified research briefing (cite these facts specifically): ${factCheckNotes}`;
@@ -158,8 +165,9 @@ Return ONLY valid JSON with no markdown fences:
     }));
 }
 
-export async function generateReply(proposalText, personaIds, transcript, conditions, config, factCheckNotes = '') {
+export async function generateReply(proposalText, personaIds, transcript, conditions, config, factCheckNotes = '', customDefs = {}) {
   const ai = getClient();
+  const defs = allDefs(customDefs);
   const toughness = config.toughness || 'Balanced';
 
   let lastSpeaker = null;
@@ -168,9 +176,9 @@ export async function generateReply(proposalText, personaIds, transcript, condit
   }
 
   const panelLines = personaIds
-    .filter(pid => PERSONA_DEFS[pid])
+    .filter(pid => defs[pid])
     .map(pid => {
-      const p = PERSONA_DEFS[pid];
+      const p = defs[pid];
       const conds = p.conditions || [];
       const condDetail = conds
         .map(c => `[${c.id}] ${c.text} (${conditions[c.id] ? 'MET' : 'unmet'})`)
@@ -182,7 +190,7 @@ export async function generateReply(proposalText, personaIds, transcript, condit
       return `${pid} (${p.name}, ${p.role}):\n  Style: ${p.speaking_style}${research}\n  Conditions:\n  ${condDetail}\n  Unmet: ${unmetCount}`;
     });
 
-  const transcriptStr = buildTranscriptStr(transcript.slice(-14));
+  const transcriptStr = buildTranscriptStr(transcript.slice(-14), customDefs);
 
   let presenterMsg = '';
   for (let i = transcript.length - 1; i >= 0; i--) {
@@ -234,7 +242,7 @@ Return ONLY valid JSON with no markdown fences:
   if (!personaIds.includes(speakerId)) speakerId = personaIds[0];
 
   const allCondIds = new Set(
-    personaIds.flatMap(pid => (PERSONA_DEFS[pid]?.conditions || []).map(c => c.id))
+    personaIds.flatMap(pid => (defs[pid]?.conditions || []).map(c => c.id))
   );
   const conditionsMet = (data.conditions_met || []).filter(c => allCondIds.has(c) && !conditions[c]);
 
@@ -243,11 +251,12 @@ Return ONLY valid JSON with no markdown fences:
   return result;
 }
 
-export async function generateReport(proposalText, personaIds, transcript, conditions) {
+export async function generateReport(proposalText, personaIds, transcript, conditions, customDefs = {}) {
   const ai = getClient();
+  const defs = allDefs(customDefs);
 
   const condLines = personaIds.flatMap(pid => {
-    const p = PERSONA_DEFS[pid] || {};
+    const p = defs[pid] || {};
     return (p.conditions || []).map(c =>
       `[${conditions[c.id] ? 'MET' : 'UNMET'}] ${p.name || pid}: ${c.text}`
     );
@@ -290,7 +299,7 @@ Rules:
     contents:
       `PROPOSAL:\n${proposalText}\n\n` +
       `CONDITION STATUS:\n${condLines.join('\n')}\n\n` +
-      `SESSION TRANSCRIPT:\n${buildTranscriptStr(transcript)}\n\n` +
+      `SESSION TRANSCRIPT:\n${buildTranscriptStr(transcript, customDefs)}\n\n` +
       'Generate the coaching report.',
     config: {
       systemInstruction: system,

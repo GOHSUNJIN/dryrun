@@ -12,6 +12,7 @@ export default async function handler(req, res) {
       conditions = {},
       config = {},
       fact_check = '',
+      custom_personas = {},
     } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json(
-      await generateReply(proposal_text, persona_ids, transcript, conditions, config, fact_check)
+      await generateReply(proposal_text, persona_ids, transcript, conditions, config, fact_check, custom_personas)
     );
   } catch (err) {
     res.status(500).json({ detail: err.message });
