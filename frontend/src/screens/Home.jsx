@@ -21,12 +21,20 @@ function getGreeting() {
   return 'Good evening,'
 }
 
+const rowCard = (hovered) => ({
+  display: 'flex', alignItems: 'center', gap: 12,
+  padding: '12px 16px', marginBottom: 8,
+  borderRadius: 8, border: '1px solid var(--border)',
+  background: hovered ? 'var(--bg-hover)' : 'var(--bg-card)',
+  cursor: 'pointer', transition: 'background 0.15s ease',
+})
+
 export default function Home({ navigate }) {
   const stored = loadSessions()
   const recent = stored.slice(0, 4).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
 
-  const [calEvents, setCalEvents] = useState(null)
-  const [calLoading, setCalLoading] = useState(false)
+  const [calEvents, setCalEvents]       = useState(null)
+  const [calLoading, setCalLoading]     = useState(false)
   const [hoveredMeeting, setHoveredMeeting] = useState(null)
   const [hoveredSession, setHoveredSession] = useState(null)
 
@@ -62,7 +70,7 @@ export default function Home({ navigate }) {
         </motion.div>
 
         {/* Two-column grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
 
           {/* Upcoming meetings */}
           <motion.div variants={item}>
@@ -87,54 +95,43 @@ export default function Home({ navigate }) {
               )}
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border)' }}>
-              {meetings.length === 0 ? (
-                <div style={{ padding: '20px 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                  No meetings in the next 7 days.
-                </div>
-              ) : meetings.map((m, i) => (
-                <div
-                  key={i}
-                  onClick={() => navigate('new')}
-                  onMouseEnter={() => setHoveredMeeting(i)}
-                  onMouseLeave={() => setHoveredMeeting(null)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '11px 0',
-                    borderBottom: '1px solid var(--border)',
-                    cursor: 'pointer',
-                    background: hoveredMeeting === i ? 'rgba(180,83,9,0.025)' : 'transparent',
-                    marginLeft: hoveredMeeting === i ? -8 : 0,
-                    paddingLeft: hoveredMeeting === i ? 8 : 0,
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{m.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Calendar size={10} style={{ flexShrink: 0 }} />
-                      {m.date}
-                    </div>
+            {meetings.length === 0 ? (
+              <div style={{ ...rowCard(false), cursor: 'default' }}>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>No meetings in the next 7 days.</span>
+              </div>
+            ) : meetings.map((m, i) => (
+              <div
+                key={i}
+                onClick={() => navigate('new')}
+                onMouseEnter={() => setHoveredMeeting(i)}
+                onMouseLeave={() => setHoveredMeeting(null)}
+                style={rowCard(hoveredMeeting === i)}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{m.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Calendar size={10} style={{ flexShrink: 0 }} />
+                    {m.date}
                   </div>
-                  <span style={{
-                    fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
-                    background: m.daysLeft <= 5 ? 'rgba(245,158,11,0.1)' : 'var(--bg-hover)',
-                    color: m.daysLeft <= 5 ? '#D97706' : 'var(--text-muted)',
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                  }}>{m.daysLeft}d</span>
-                  <ArrowRight
-                    size={13}
-                    style={{
-                      color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)',
-                      flexShrink: 0, transition: 'color 0.15s ease',
-                    }}
-                  />
                 </div>
-              ))}
-            </div>
+                <span style={{
+                  fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
+                  background: m.daysLeft <= 5 ? 'rgba(245,158,11,0.1)' : 'var(--bg-hover)',
+                  color: m.daysLeft <= 5 ? '#D97706' : 'var(--text-muted)',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}>{m.daysLeft}d</span>
+                <ArrowRight
+                  size={13}
+                  style={{
+                    color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)',
+                    flexShrink: 0, transition: 'color 0.15s ease',
+                  }}
+                />
+              </div>
+            ))}
           </motion.div>
 
           {/* Recent sessions */}
@@ -151,85 +148,72 @@ export default function Home({ navigate }) {
               )}
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border)' }}>
-              {recent.length === 0 ? (
-                <div style={{ padding: '20px 0' }}>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-                    No sessions yet.
+            {recent.length === 0 ? (
+              <div style={{ ...rowCard(false), cursor: 'default', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No sessions yet.</div>
+                <button
+                  onClick={() => navigate('new')}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    fontSize: '0.8125rem', fontWeight: 600, color: 'var(--app-accent)',
+                    background: 'rgba(180,83,9,0.06)', border: '1px solid rgba(180,83,9,0.15)',
+                    borderRadius: 6, padding: '7px 12px', cursor: 'pointer',
+                    fontFamily: 'var(--font-ui)',
+                  }}
+                >
+                  <Plus size={13} /> Start your first rehearsal
+                </button>
+              </div>
+            ) : recent.map((s, idx) => {
+              const pct     = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
+              const isGood  = pct >= 60
+              const personas = s.personaIds?.length
+                ? PERSONAS.filter(p => s.personaIds.includes(p.id))
+                : PERSONAS
+              return (
+                <div
+                  key={idx}
+                  onClick={() => navigate('past')}
+                  onMouseEnter={() => setHoveredSession(idx)}
+                  onMouseLeave={() => setHoveredSession(null)}
+                  style={rowCard(hoveredSession === idx)}
+                >
+                  <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                    {personas.map(p => (
+                      <div key={p.id} style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        background: p.color, display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700,
+                        color: 'white', fontFamily: 'var(--font-ui)',
+                      }}>{p.initial}</div>
+                    ))}
                   </div>
-                  <button
-                    onClick={() => navigate('new')}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{s.proposal}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Clock size={10} style={{ flexShrink: 0 }} />
+                      {s.date} · {s.duration}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
+                    background: isGood ? 'rgba(5,150,105,0.08)' : 'rgba(245,158,11,0.08)',
+                    color: isGood ? '#059669' : '#D97706',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}>{s.condMet}/{s.condTotal}</span>
+                  <ArrowRight
+                    size={13}
                     style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      fontSize: '0.8125rem', fontWeight: 600, color: 'var(--app-accent)',
-                      background: 'rgba(180,83,9,0.06)', border: '1px solid rgba(180,83,9,0.15)',
-                      borderRadius: 6, padding: '7px 12px', cursor: 'pointer',
-                      fontFamily: 'var(--font-ui)',
+                      color: hoveredSession === idx ? 'var(--app-accent)' : 'var(--border)',
+                      flexShrink: 0, transition: 'color 0.15s ease',
                     }}
-                  >
-                    <Plus size={13} /> Start your first rehearsal
-                  </button>
+                  />
                 </div>
-              ) : recent.map((s, idx) => {
-                const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
-                const isGood = pct >= 60
-                const personas = s.personaIds?.length
-                  ? PERSONAS.filter(p => s.personaIds.includes(p.id))
-                  : PERSONAS
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => navigate('past')}
-                    onMouseEnter={() => setHoveredSession(idx)}
-                    onMouseLeave={() => setHoveredSession(null)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '10px 0',
-                      borderBottom: '1px solid var(--border)',
-                      cursor: 'pointer',
-                      background: hoveredSession === idx ? 'rgba(180,83,9,0.025)' : 'transparent',
-                      marginLeft: hoveredSession === idx ? -8 : 0,
-                      paddingLeft: hoveredSession === idx ? 8 : 0,
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-                      {personas.map(p => (
-                        <div key={p.id} style={{
-                          width: 20, height: 20, borderRadius: '50%',
-                          background: p.color, display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700,
-                          color: 'white', fontFamily: 'var(--font-ui)',
-                        }}>{p.initial}</div>
-                      ))}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>{s.proposal}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <Clock size={10} style={{ flexShrink: 0 }} />
-                        {s.date} · {s.duration}
-                      </div>
-                    </div>
-                    <span style={{
-                      fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
-                      background: isGood ? 'rgba(5,150,105,0.08)' : 'rgba(245,158,11,0.08)',
-                      color: isGood ? '#059669' : '#D97706',
-                      whiteSpace: 'nowrap', flexShrink: 0,
-                    }}>{s.condMet}/{s.condTotal}</span>
-                    <ArrowRight
-                      size={13}
-                      style={{
-                        color: hoveredSession === idx ? 'var(--app-accent)' : 'var(--border)',
-                        flexShrink: 0, transition: 'color 0.15s ease',
-                      }}
-                    />
-                  </div>
-                )
-              })}
-            </div>
+              )
+            })}
           </motion.div>
 
           {/* Weak spots */}

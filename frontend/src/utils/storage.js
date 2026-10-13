@@ -101,6 +101,10 @@ export function saveVoiceSettings(settings) {
   localStorage.setItem(VOICE_KEY, JSON.stringify(settings))
 }
 
+export function renameProposal(oldName, newName) {
+  saveSessions(loadSessions().map(s => s.proposal === oldName ? { ...s, proposal: newName } : s))
+}
+
 export function groupSessionsByProposal(sessions) {
   const groups = {}
   for (const s of sessions) {

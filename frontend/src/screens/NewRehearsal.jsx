@@ -7,17 +7,6 @@ import { listDriveDocs, fetchDocText } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
-const SAMPLE_PROPOSAL = `Title: Data Engineering Team Hire
-
-Summary: We propose hiring two senior data engineers at $120,000 per year each to automate our monthly sales reporting process, which currently consumes 30 hours of analyst time each month.
-
-Business case: Our analytics team manually compiles sales data from three systems (Salesforce, AWS Redshift and our internal CRM) every month. This process takes 30 hours and is error-prone. In Q3 2024 an error caused incorrect figures to be presented to the board.
-
-Proposed solution: Hire two senior data engineers to build an automated pipeline using Apache Airflow and dbt. The pipeline consolidates all three data sources into a single warehouse and generates the monthly report automatically.
-
-Cost: $240,000 per year in base salary.
-Expected savings: 30 analyst hours per month and elimination of reporting errors.
-Timeline: 6 months from hire to full deployment.`
 
 function buildCustomDefs(customPersonas) {
   const defs = {}
@@ -89,14 +78,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     }
   }
 
-  const useSampleProposal = () => {
-    setProposalText(SAMPLE_PROPOSAL)
-    setProposalName('Data Engineering Hires')
-    setUploaded(true)
-  }
-
-  const canContinue = () => {
-    if (step === 0) return uploaded
+const canContinue = () => {
+    if (step === 0) return uploaded && proposalName.trim().length > 0
     if (step === 1) return selected.length >= 2
     return true
   }
@@ -104,7 +87,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const enterRoom = async () => {
     setLaunching(true)
 
-    const text = proposalText || SAMPLE_PROPOSAL
+    const text = proposalText
     const config = { toughness, turnLimit, industry, companySize, focus }
 
     try {
@@ -198,7 +181,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             {step === 0 && (
               <>
                 <div className="step-title">Upload your proposal</div>
-                <div className="step-desc">Drag in a PDF or text file, or use the sample proposal to try the demo.</div>
+                <div className="step-desc">Drag in a PDF or text file, or import directly from Google Drive.</div>
 
                 {!uploaded ? (
                   <>
@@ -286,9 +269,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                         </div>
                       )}
 
-                      <button className="btn btn-secondary btn-sm" onClick={useSampleProposal} style={{ color: 'var(--text-muted)' }}>
-                        Use sample proposal
-                      </button>
                     </div>
                   </>
                 ) : (
@@ -312,6 +292,16 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       >
                         <X size={16} />
                       </button>
+                    </div>
+                    <div style={{ marginTop: 20 }}>
+                      <div className="question-label">Session name</div>
+                      <input
+                        className="settings-input"
+                        value={proposalName}
+                        onChange={e => setProposalName(e.target.value)}
+                        placeholder="Name this session..."
+                        style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
+                      />
                     </div>
                   </>
                 )}
@@ -455,6 +445,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             className="btn btn-primary"
             onClick={() => setStep(s => s + 1)}
             disabled={!canContinue()}
+            style={{ opacity: canContinue() ? 1 : 0.4, cursor: canContinue() ? 'pointer' : 'not-allowed' }}
           >
             Continue <ArrowRight size={14} />
           </button>
