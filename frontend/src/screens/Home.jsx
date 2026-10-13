@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Calendar, Clock, ChevronRight, Loader } from 'lucide-react'
-import { PAST_SESSIONS, WEAK_SPOTS, UPCOMING_MEETINGS, PERSONAS } from '../data.js'
+import { ArrowRight, Calendar, Clock, ChevronRight, Loader, Plus } from 'lucide-react'
+import { WEAK_SPOTS, UPCOMING_MEETINGS, PERSONAS } from '../data.js'
 import { loadSessions } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
 
@@ -21,24 +21,14 @@ function getGreeting() {
   return 'Good evening,'
 }
 
-function loadRecentSessions() {
-  const stored = loadSessions()
-  if (stored.length) {
-    return {
-      sessions: stored.slice(0, 3).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' })),
-      isReal: true,
-    }
-  }
-  return {
-    sessions: PAST_SESSIONS.flatMap(g => g.sessions.map(s => ({ ...s, proposal: g.proposal }))).slice(0, 3),
-    isReal: false,
-  }
-}
-
 export default function Home({ navigate }) {
-  const { sessions: recent, isReal } = loadRecentSessions()
+  const stored = loadSessions()
+  const recent = stored.slice(0, 4).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
+
   const [calEvents, setCalEvents] = useState(null)
   const [calLoading, setCalLoading] = useState(false)
+  const [hoveredMeeting, setHoveredMeeting] = useState(null)
+  const [hoveredSession, setHoveredSession] = useState(null)
 
   const connectCalendar = async () => {
     setCalLoading(true)
@@ -53,25 +43,30 @@ export default function Home({ navigate }) {
     }
   }
 
+  const meetings = calEvents !== null ? calEvents : UPCOMING_MEETINGS
+
   return (
     <div className="page" style={{ maxWidth: 1080, padding: '40px 48px' }}>
       <motion.div variants={container} initial="hidden" animate="show">
-        <motion.div variants={item}>
-          <div style={{ width: 36, height: 3, background: 'var(--app-accent)', borderRadius: 2, marginBottom: 20 }} />
+
+        {/* Hero */}
+        <motion.div variants={item} style={{ marginBottom: 44 }}>
+          <div style={{ width: 24, height: 3, background: 'var(--app-accent)', borderRadius: 2, marginBottom: 18 }} />
           <div className="home-greeting">
             {getGreeting()} Sun Jin.<br />
             <em>Ready to rehearse?</em>
           </div>
-          <button className="home-hero-btn" onClick={() => navigate('new')}>
-            Start a new rehearsal
-            <ArrowRight size={16} />
+          <button className="home-hero-btn" onClick={() => navigate('new')} style={{ marginTop: 20 }}>
+            Start a new rehearsal <ArrowRight size={15} />
           </button>
         </motion.div>
 
-        <div className="home-grid" style={{ marginTop: 48 }}>
+        {/* Two-column grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56 }}>
+
           {/* Upcoming meetings */}
           <motion.div variants={item}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Upcoming meetings</div>
               {calEvents === null && (
                 <button
@@ -81,130 +76,187 @@ export default function Home({ navigate }) {
                     display: 'flex', alignItems: 'center', gap: 5,
                     fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer',
                     background: 'none', border: 'none', fontFamily: 'var(--font-ui)',
+                    opacity: calLoading ? 0.6 : 1,
                   }}
                 >
                   {calLoading
                     ? <><Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> Connecting...</>
-                    : <><Calendar size={11} /> Connect Google Calendar</>
+                    : <><Calendar size={11} /> Connect Calendar</>
                   }
                 </button>
               )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {(calEvents !== null ? calEvents : UPCOMING_MEETINGS).map((m, i) => (
-                <div key={i} className="meeting-card" onClick={() => navigate('new')}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                    <div className="meeting-name">{m.name}</div>
-                    <span style={{
-                      fontSize: '0.6875rem', fontWeight: 600, padding: '3px 8px',
-                      background: m.daysLeft <= 5 ? 'rgba(245,158,11,0.1)' : 'var(--bg-hover)',
-                      color: m.daysLeft <= 5 ? '#D97706' : 'var(--text-muted)',
-                      borderRadius: 99, whiteSpace: 'nowrap', flexShrink: 0,
-                    }}>
-                      {m.daysLeft}d away
-                    </span>
-                  </div>
-                  <div className="meeting-date">
-                    <Calendar size={12} style={{ color: 'var(--text-muted)' }} />
-                    {m.date}
-                  </div>
-                  <button className="meeting-rehearse-btn" onClick={e => { e.stopPropagation(); navigate('new') }}>
-                    Rehearse now
-                  </button>
-                </div>
-              ))}
-              {calEvents !== null && calEvents.length === 0 && (
-                <div style={{
-                  padding: '12px 16px', borderRadius: 8,
-                  background: 'var(--bg-hover)', border: '1px dashed var(--border)',
-                  color: 'var(--text-muted)', fontSize: '0.8125rem',
-                }}>
+
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              {meetings.length === 0 ? (
+                <div style={{ padding: '20px 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                   No meetings in the next 7 days.
                 </div>
-              )}
+              ) : meetings.map((m, i) => (
+                <div
+                  key={i}
+                  onClick={() => navigate('new')}
+                  onMouseEnter={() => setHoveredMeeting(i)}
+                  onMouseLeave={() => setHoveredMeeting(null)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '11px 0',
+                    borderBottom: '1px solid var(--border)',
+                    cursor: 'pointer',
+                    background: hoveredMeeting === i ? 'rgba(180,83,9,0.025)' : 'transparent',
+                    marginLeft: hoveredMeeting === i ? -8 : 0,
+                    paddingLeft: hoveredMeeting === i ? 8 : 0,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{m.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Calendar size={10} style={{ flexShrink: 0 }} />
+                      {m.date}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
+                    background: m.daysLeft <= 5 ? 'rgba(245,158,11,0.1)' : 'var(--bg-hover)',
+                    color: m.daysLeft <= 5 ? '#D97706' : 'var(--text-muted)',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                  }}>{m.daysLeft}d</span>
+                  <ArrowRight
+                    size={13}
+                    style={{
+                      color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)',
+                      flexShrink: 0, transition: 'color 0.15s ease',
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           </motion.div>
 
           {/* Recent sessions */}
           <motion.div variants={item}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Recent sessions</div>
-              <button
-                onClick={() => navigate('past')}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-ui)' }}
-              >
-                View all <ChevronRight size={12} />
-              </button>
+              {recent.length > 0 && (
+                <button
+                  onClick={() => navigate('past')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-ui)' }}
+                >
+                  View all <ChevronRight size={12} />
+                </button>
+              )}
             </div>
 
-            {!isReal ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{
-                  padding: '12px 16px', borderRadius: 8,
-                  background: 'var(--bg-hover)', border: '1px dashed var(--border)',
-                  color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: 4,
-                }}>
-                  No real sessions yet. These are sample sessions.{' '}
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+              {recent.length === 0 ? (
+                <div style={{ padding: '20px 0' }}>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                    No sessions yet.
+                  </div>
                   <button
                     onClick={() => navigate('new')}
-                    style={{ color: 'var(--text-primary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', fontWeight: 600, padding: 0 }}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      fontSize: '0.8125rem', fontWeight: 600, color: 'var(--app-accent)',
+                      background: 'rgba(180,83,9,0.06)', border: '1px solid rgba(180,83,9,0.15)',
+                      borderRadius: 6, padding: '7px 12px', cursor: 'pointer',
+                      fontFamily: 'var(--font-ui)',
+                    }}
                   >
-                    Start your first rehearsal.
+                    <Plus size={13} /> Start your first rehearsal
                   </button>
                 </div>
-                {recent.map((s, idx) => <SessionCard key={idx} s={s} navigate={navigate} />)}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {recent.map((s, idx) => <SessionCard key={idx} s={s} navigate={navigate} />)}
-              </div>
-            )}
+              ) : recent.map((s, idx) => {
+                const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
+                const isGood = pct >= 60
+                const personas = s.personaIds?.length
+                  ? PERSONAS.filter(p => s.personaIds.includes(p.id))
+                  : PERSONAS
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => navigate('past')}
+                    onMouseEnter={() => setHoveredSession(idx)}
+                    onMouseLeave={() => setHoveredSession(null)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 0',
+                      borderBottom: '1px solid var(--border)',
+                      cursor: 'pointer',
+                      background: hoveredSession === idx ? 'rgba(180,83,9,0.025)' : 'transparent',
+                      marginLeft: hoveredSession === idx ? -8 : 0,
+                      paddingLeft: hoveredSession === idx ? 8 : 0,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                      {personas.map(p => (
+                        <div key={p.id} style={{
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: p.color, display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700,
+                          color: 'white', fontFamily: 'var(--font-ui)',
+                        }}>{p.initial}</div>
+                      ))}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{s.proposal}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Clock size={10} style={{ flexShrink: 0 }} />
+                        {s.date} · {s.duration}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
+                      background: isGood ? 'rgba(5,150,105,0.08)' : 'rgba(245,158,11,0.08)',
+                      color: isGood ? '#059669' : '#D97706',
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                    }}>{s.condMet}/{s.condTotal}</span>
+                    <ArrowRight
+                      size={13}
+                      style={{
+                        color: hoveredSession === idx ? 'var(--app-accent)' : 'var(--border)',
+                        flexShrink: 0, transition: 'color 0.15s ease',
+                      }}
+                    />
+                  </div>
+                )
+              })}
+            </div>
           </motion.div>
 
           {/* Weak spots */}
           <motion.div variants={item} style={{ gridColumn: '1 / -1' }}>
-            <div className="section-label">Your recurring weak spots</div>
-            <div className="weak-spots-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div className="section-label">Recurring weak spots</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
               {WEAK_SPOTS.map((w, i) => (
-                <div key={i} className="weak-spot-item">
-                  <div className="weak-spot-count">{w.count}</div>
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 14,
+                  padding: '16px 18px', borderRadius: 10,
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                }}>
+                  <div style={{
+                    fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',
+                    fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28,
+                  }}>{w.count}</div>
                   <div>
-                    <div className="weak-spot-text">{w.text}</div>
-                    <div className="weak-spot-sub">{w.sub}</div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{w.sub}</div>
                   </div>
                 </div>
               ))}
             </div>
           </motion.div>
+
         </div>
       </motion.div>
-    </div>
-  )
-}
-
-function SessionCard({ s, navigate }) {
-  const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
-  const isGood = pct >= 60
-  return (
-    <div className="session-card" onClick={() => navigate('past')}>
-      <div className="session-info">
-        <div className="session-name">{s.proposal}</div>
-        <div className="session-meta">
-          <Clock size={11} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
-          {s.date} · {s.mode} · {s.duration}
-        </div>
-      </div>
-      <div className="session-avatars">
-        {(s.personaIds?.length
-          ? PERSONAS.filter(p => s.personaIds.includes(p.id))
-          : PERSONAS
-        ).map((p, j) => (
-          <div key={p.id} className="session-avatar-pip" style={{ background: p.color }}>{p.initial}</div>
-        ))}
-      </div>
-      <span className={`conditions-met-badge ${isGood ? 'good' : 'partial'}`}>
-        {s.condMet}/{s.condTotal} met
-      </span>
     </div>
   )
 }
