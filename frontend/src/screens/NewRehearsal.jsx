@@ -122,7 +122,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         startTime: Date.now(),
       })
       navigate('room')
-    } catch {
+    } catch (err) {
+      console.error('[NewRehearsal] session/start failed:', err)
       // AI unavailable, enter room in demo mode
       updateSession({
         proposalText: text,

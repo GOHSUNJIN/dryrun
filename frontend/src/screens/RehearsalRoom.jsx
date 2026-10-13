@@ -408,7 +408,8 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             setTimeout(() => setRoomState('idle'), 3500)
           }
         }
-      } catch {
+      } catch (err) {
+        console.error('[RehearsalRoom] session/message failed:', err)
         setTypingPersonaId(null)
         setApiError(true)
         fallbackResponse()
@@ -580,7 +581,8 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       updateSession({ reportData, conditions: localConditions })
       navigate('report')
-    } catch {
+    } catch (err) {
+      console.error('[RehearsalRoom] session/end failed:', err)
       updateSession({ conditions: localConditions })
       navigate('report')
     } finally {
