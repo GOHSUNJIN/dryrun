@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT, SCRIPTED_RESPONSES } from '../data.js'
@@ -58,7 +58,7 @@ function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
       <div className="seat-role">{persona.role}</div>
 
       <div className="seat-conditions">
-        {persona.conditions.map(c => (
+        {(persona.conditions || []).map(c => (
           <div
             key={c.id}
             className={`seat-cond-dot ${c.met ? 'met' : ''}`}
@@ -76,8 +76,8 @@ function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
 }
 
 function TranscriptMsg({ msg, personas, appearing }) {
-  const isPresenter = msg.speaker === 'presenter'
-  const persona     = personas.find(p => p.id === msg.speaker)
+  const isPresenter  = msg.speaker === 'presenter'
+  const persona      = personas.find(p => p.id === msg.speaker)
   const replyPersona = msg.replyTo ? personas.find(p => p.id === msg.replyTo) : null
 
   return (
@@ -163,35 +163,35 @@ function StreamingText({ text }) {
 export default function RehearsalRoom({ navigate, session, updateSession }) {
   const hasRealSession = session.transcript.length > 0
 
-  const [localTranscript, setLocalTranscript] = useState(
-    hasRealSession ? session.transcript : DEMO_TRANSCRIPT
-  )
-  const [localConditions, setLocalConditions] = useState(
-    hasRealSession ? session.conditions : {}
-  )
-  const [roomState, setRoomState]         = useState(hasRealSession ? 'idle' : 'speaking')
-  const [activeSpeaker, setActiveSpeaker] = useState(hasRealSession ? (session.transcript[session.transcript.length - 1]?.speaker || 'finance') : 'finance')
-  const [interruptSpeaker, setInterruptSpeaker] = useState('ops')
-  const [inputValue, setInputValue]       = useState('')
-  const [mode, setMode]                   = useState(session.config?.mode || 'Type')
-  const [appearingMsgId, setAppearingMsgId] = useState(hasRealSession ? session.transcript[session.transcript.length - 1]?.id : 8)
-  const [typingPersonaId, setTypingPersonaId] = useState(null)
-  const [generatingReport, setGeneratingReport] = useState(false)
-  const [responseIdx, setResponseIdx]     = useState(0)
-  const [apiError, setApiError]           = useState(false)
-  const [listening, setListening]         = useState(false)
-  const [speechOn, setSpeechOn]           = useState(() => loadVoiceSettings().enabled)
+  const [localTranscript, setLocalTranscript]       = useState(hasRealSession ? [] : DEMO_TRANSCRIPT)
+  const [localConditions, setLocalConditions]       = useState(hasRealSession ? session.conditions : {})
+  const [roomState, setRoomState]                   = useState(hasRealSession ? 'thinking' : 'speaking')
+  const [activeSpeaker, setActiveSpeaker]           = useState(hasRealSession ? null : 'finance')
+  const [interruptSpeaker, setInterruptSpeaker]     = useState('ops')
+  const [inputValue, setInputValue]                 = useState('')
+  const [mode, setMode]                             = useState(session.config?.mode || 'Type')
+  const [appearingMsgId, setAppearingMsgId]         = useState(hasRealSession ? null : 8)
+  const [typingPersonaId, setTypingPersonaId]       = useState(null)
+  const [generatingReport, setGeneratingReport]     = useState(false)
+  const [responseIdx, setResponseIdx]               = useState(0)
+  const [apiError, setApiError]                     = useState(false)
+  const [listening, setListening]                   = useState(false)
+  const [speechOn, setSpeechOn]                     = useState(() => loadVoiceSettings().enabled)
+  const [openingsDone, setOpeningsDone]             = useState(!hasRealSession)
+
   const transcriptRef  = useRef(null)
   const recognitionRef = useRef(null)
   const roomStateRef   = useRef(roomState)
   const speechOnRef    = useRef(speechOn)
+  const ttsQueueRef    = useRef([])
+  const ttsBusyRef     = useRef(false)
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
   const allPersonaBase = [...PERSONAS, ...loadCustomPersonas()]
   const allPersonas = allPersonaBase.map(p => ({
     ...p,
-    conditions: p.conditions.map(c => ({
+    conditions: (p.conditions || []).map(c => ({
       ...c,
       met: localConditions[c.id] || false,
     })),
@@ -205,6 +205,60 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const spotlightX     = `${activePersona?.panelPct ?? 50}%`
   const spotlightColor = activePersona?.glow ?? 'transparent'
 
+  // TTS queue — personas speak one at a time in order
+  const flushTTS = useCallback(() => {
+    if (ttsBusyRef.current || ttsQueueRef.current.length === 0) return
+    if (!speechOnRef.current || typeof window === 'undefined' || !window.speechSynthesis) return
+    const { text, speakerId } = ttsQueueRef.current.shift()
+    const utter  = new SpeechSynthesisUtterance(text)
+    const params = PERSONA_VOICE[speakerId] || { pitch: 1.0, rate: 1.0 }
+    const vs     = loadVoiceSettings()
+    utter.pitch  = params.pitch
+    utter.rate   = params.rate * (vs.rate || 1.0)
+    utter.onend  = () => { ttsBusyRef.current = false; flushTTS() }
+    utter.onerror = () => { ttsBusyRef.current = false; flushTTS() }
+    ttsBusyRef.current = true
+    window.speechSynthesis.speak(utter)
+  }, [])
+
+  const enqueueSpeak = useCallback((text, speakerId) => {
+    if (!speechOnRef.current) return
+    ttsQueueRef.current.push({ text, speakerId })
+    flushTTS()
+  }, [flushTTS])
+
+  const cancelTTS = useCallback(() => {
+    ttsQueueRef.current = []
+    ttsBusyRef.current  = false
+    window.speechSynthesis?.cancel()
+  }, [])
+
+  // Stagger opening messages on fresh session load
+  useEffect(() => {
+    if (!hasRealSession) return
+    const msgs = session.transcript
+    let delay  = 600
+    msgs.forEach((msg, i) => {
+      const isLast = i === msgs.length - 1
+      setTimeout(() => {
+        setLocalTranscript(prev => [...prev, msg])
+        if (msg.speaker !== 'presenter') {
+          setActiveSpeaker(msg.speaker)
+          setAppearingMsgId(msg.id)
+          setRoomState('speaking')
+          enqueueSpeak(msg.text, msg.speaker)
+        }
+        if (isLast) {
+          setTimeout(() => {
+            setRoomState('idle')
+            setOpeningsDone(true)
+          }, 2800)
+        }
+      }, delay)
+      delay += msg.speaker === 'presenter' ? 300 : 2200
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (transcriptRef.current) {
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight
@@ -212,29 +266,13 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   }, [localTranscript, typingPersonaId])
 
   useEffect(() => { roomStateRef.current = roomState }, [roomState])
-  useEffect(() => { speechOnRef.current = speechOn }, [speechOn])
+  useEffect(() => { speechOnRef.current  = speechOn  }, [speechOn])
 
-  // Speak new AI messages as they appear
-  useEffect(() => {
-    if (!appearingMsgId) return
-    const msg = localTranscript.find(m => m.id === appearingMsgId)
-    if (!msg || msg.speaker === 'presenter') return
-    if (!speechOnRef.current || typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const utter = new SpeechSynthesisUtterance(msg.text)
-    const params = PERSONA_VOICE[msg.speaker] || { pitch: 1.0, rate: 1.0 }
-    const vs = loadVoiceSettings()
-    utter.pitch = params.pitch
-    utter.rate  = params.rate * (vs.rate || 1.0)
-    utter.volume = 1
-    window.speechSynthesis.speak(utter)
-  }, [appearingMsgId])
-
-  // Cancel speech and recognition on unmount
+  // Cancel TTS on unmount
   useEffect(() => () => {
     recognitionRef.current?.abort()
-    window.speechSynthesis?.cancel()
-  }, [])
+    cancelTTS()
+  }, [cancelTTS])
 
   const getElapsedTime = () => {
     if (!session.startTime) return ''
@@ -249,7 +287,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     if (!text || roomStateRef.current === 'thinking') return
 
     if (listening) stopListening()
-    window.speechSynthesis?.cancel()
+    cancelTTS()
 
     const userMsg = {
       id: Date.now(),
@@ -265,6 +303,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
     if (hasRealSession) {
       const nextPersona = visiblePersonas[0]
+      if (!nextPersona) return
       setTypingPersonaId(nextPersona.id)
 
       try {
@@ -304,6 +343,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         setLocalConditions(updatedConditions)
         setActiveSpeaker(data.speaker)
         setAppearingMsgId(replyMsg.id)
+        enqueueSpeak(replyMsg.text, replyMsg.speaker)
 
         updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
 
@@ -347,6 +387,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         setLocalTranscript(prev => [...prev, replyMsg])
         setActiveSpeaker(scripted.speaker)
         setAppearingMsgId(replyMsg.id)
+        enqueueSpeak(replyMsg.text, replyMsg.speaker)
 
         if (idx % 3 === 2) {
           setTimeout(() => setRoomState('condition-met'), 600)
@@ -381,11 +422,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     recognition.onresult = (e) => {
       const transcript = e.results[0][0].transcript.trim()
       setListening(false)
-      if (mode === 'Voice') {
-        handleSend(transcript)
-      } else {
-        setInputValue(transcript)
-      }
+      setInputValue(transcript)
     }
     recognitionRef.current = recognition
     recognition.start()
@@ -397,7 +434,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     setSpeechOn(prev => {
       const next = !prev
       saveVoiceSettings({ ...loadVoiceSettings(), enabled: next })
-      if (!next) window.speechSynthesis?.cancel()
+      if (!next) cancelTTS()
       return next
     })
   }
@@ -441,6 +478,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         condMet,
         condTotal,
         duration,
+        personaIds: session.personaIds || [],
       })
 
       updateSession({ reportData, conditions: localConditions })
@@ -465,14 +503,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     }
   }
 
-  const typingPersona = visiblePersonas.find(p => p.id === typingPersonaId)
+  const typingPersona  = visiblePersonas.find(p => p.id === typingPersonaId)
   const spotlightStyle = {
     background: `radial-gradient(ellipse 700px 440px at ${spotlightX} -60px, ${spotlightColor} 0%, rgba(242,211,162,0.05) 42%, transparent 68%)`,
     transition: 'background 0.8s ease',
   }
 
-  const turnLimit = session.config?.turnLimit || 15
-  const isInputDisabled = roomState !== 'idle' && roomState !== 'condition-met'
+  const turnLimit       = session.config?.turnLimit || 15
+  const isInputDisabled = !openingsDone || (roomState !== 'idle' && roomState !== 'condition-met')
 
   return (
     <div className="room">
@@ -494,14 +532,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
 
         <div className="room-topbar-center">
-          {['Type', 'Hybrid', 'Voice'].map(m => (
+          {['Type', 'Hybrid'].map(m => (
             <button
               key={m}
               className={`room-mode-btn ${mode === m ? 'active' : ''}`}
               onClick={() => setMode(m)}
-              disabled={m === 'Voice' && !speechSupported}
-              title={m === 'Voice' && !speechSupported ? 'Voice not supported in this browser — try Chrome or Edge' : undefined}
-              style={m === 'Voice' && !speechSupported ? { opacity: 0.35, cursor: 'default' } : undefined}
             >{m}</button>
           ))}
         </div>
@@ -511,9 +546,18 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             className="room-input-btn"
             onClick={toggleSpeech}
             title={speechOn ? 'Mute panel voices' : 'Unmute panel voices'}
-            style={{ background: 'transparent', border: 'none', color: speechOn ? 'var(--room-text-2)' : 'var(--room-text-3)', cursor: 'pointer', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center' }}
+            style={{
+              background: speechOn ? 'rgba(255,255,255,0.08)' : 'transparent',
+              border: 'none',
+              color: speechOn ? 'var(--room-text-2)' : 'var(--room-text-3)',
+              cursor: 'pointer', padding: '4px 8px', borderRadius: 6,
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: '0.75rem', fontFamily: 'var(--font-ui)',
+              transition: 'all 0.15s ease',
+            }}
           >
-            {speechOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            {speechOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            <span>{speechOn ? 'Voice on' : 'Voice off'}</span>
           </button>
           <span className="room-turn-counter">Turn {turnCount} of {turnLimit}</span>
           <button
@@ -574,9 +618,8 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           <textarea
             className="room-input"
             placeholder={
-              listening      ? 'Listening...' :
-              isInputDisabled ? 'Panel is responding...' :
-              mode === 'Voice' ? 'Press mic and speak...' :
+              listening        ? 'Listening...' :
+              isInputDisabled  ? 'Panel is responding...' :
               'Type your response...'
             }
             value={inputValue}
@@ -587,12 +630,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             style={listening ? { color: 'var(--amber)' } : undefined}
           />
           <div className="room-input-actions">
-            {mode !== 'Type' && (
+            {mode === 'Hybrid' && (
               <button
                 className={`room-input-btn mic ${listening ? 'listening' : ''}`}
                 onClick={toggleMic}
                 disabled={isInputDisabled || !speechSupported}
-                title={listening ? 'Stop listening' : 'Start voice input'}
+                title={
+                  !speechSupported        ? 'Voice input not supported — try Chrome or Edge' :
+                  listening               ? 'Stop listening' :
+                  'Start voice input'
+                }
               >
                 {listening ? <MicOff size={16} /> : <Mic size={16} />}
               </button>
@@ -610,7 +657,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         <div className="room-input-hint">Press Enter to send · Shift+Enter for new line</div>
       </div>
 
-      <div className="demo-controls">
+      {!hasRealSession && <div className="demo-controls">
         <span className="demo-label">Demo</span>
         {ROOM_STATES.map(s => (
           <button
@@ -629,7 +676,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         >
           Report
         </button>
-      </div>
+      </div>}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ExternalLink, Check } from 'lucide-react'
-import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
+import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults } from '../utils/storage.js'
 
 const NAV = ['Profile', 'Rehearsal defaults', 'Voice', 'Integrations', 'Privacy']
 
@@ -11,15 +11,17 @@ const INTEGRATIONS = [
 ]
 
 export default function Settings() {
-  const init = loadProfile()
-  const initVoice = loadVoiceSettings()
+  const init         = loadProfile()
+  const initVoice    = loadVoiceSettings()
+  const initDefaults = loadRehearsalDefaults()
   const [activeSection, setActiveSection] = useState('Profile')
   const [name, setName]           = useState(init.name)
   const [role, setRole]           = useState(init.role)
-  const [savedFeedback, setSavedFeedback] = useState(false)
-  const [defaultMode, setDefaultMode] = useState('Type')
-  const [toughness, setToughness] = useState('Balanced')
-  const [turnLimit, setTurnLimit] = useState('15')
+  const [savedFeedback, setSavedFeedback]       = useState(false)
+  const [savedDefaults, setSavedDefaults]       = useState(false)
+  const [defaultMode, setDefaultMode] = useState(initDefaults.mode)
+  const [toughness, setToughness]     = useState(initDefaults.toughness)
+  const [turnLimit, setTurnLimit]     = useState(initDefaults.turnLimit)
   const [voiceEnabled, setVoiceEnabled] = useState(initVoice.enabled)
   const [voiceRate, setVoiceRate]       = useState(String(initVoice.rate))
 
@@ -27,6 +29,12 @@ export default function Settings() {
     saveProfile(name, role)
     setSavedFeedback(true)
     setTimeout(() => setSavedFeedback(false), 2000)
+  }
+
+  const handleSaveDefaults = () => {
+    saveRehearsalDefaults({ mode: defaultMode, toughness, turnLimit })
+    setSavedDefaults(true)
+    setTimeout(() => setSavedDefaults(false), 2000)
   }
 
   const handleDeleteAll = () => {
@@ -135,6 +143,14 @@ export default function Settings() {
                     >{t}</button>
                   ))}
                 </div>
+              </div>
+              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+                {savedDefaults && (
+                  <span style={{ fontSize: '0.8125rem', color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Check size={13} /> Saved
+                  </span>
+                )}
+                <button className="btn btn-primary" onClick={handleSaveDefaults}>Save defaults</button>
               </div>
             </div>
           )}

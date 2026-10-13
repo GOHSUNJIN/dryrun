@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Clock, ChevronRight } from 'lucide-react'
-import { PAST_SESSIONS, WEAK_SPOTS, UPCOMING_MEETINGS, AVATAR_COLORS, AVATAR_INITIALS } from '../data.js'
+import { PAST_SESSIONS, WEAK_SPOTS, UPCOMING_MEETINGS, PERSONAS } from '../data.js'
 import { loadSessions } from '../utils/storage.js'
 
 const container = {
@@ -150,8 +150,11 @@ function SessionCard({ s, navigate }) {
         </div>
       </div>
       <div className="session-avatars">
-        {AVATAR_INITIALS.map((init, j) => (
-          <div key={j} className="session-avatar-pip" style={{ background: AVATAR_COLORS[j] }}>{init}</div>
+        {(s.personaIds?.length
+          ? PERSONAS.filter(p => s.personaIds.includes(p.id))
+          : PERSONAS
+        ).map((p, j) => (
+          <div key={p.id} className="session-avatar-pip" style={{ background: p.color }}>{p.initial}</div>
         ))}
       </div>
       <span className={`conditions-met-badge ${isGood ? 'good' : 'partial'}`}>

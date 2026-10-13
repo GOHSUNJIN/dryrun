@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle } from 'lucide-react'
-import { PAST_SESSIONS, AVATAR_COLORS, AVATAR_INITIALS } from '../data.js'
+import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X } from 'lucide-react'
+import { PAST_SESSIONS, PERSONAS } from '../data.js'
 import { loadSessions, deleteSession, groupSessionsByProposal } from '../utils/storage.js'
 
 function loadGroups() {
@@ -11,7 +11,7 @@ function loadGroups() {
 
 export default function PastSessions({ navigate }) {
   const [query, setQuery]       = useState('')
-  const [expanded, setExpanded] = useState({ 0: true, 1: true, 2: true })
+  const [collapsed, setCollapsed] = useState(new Set())
   const init                    = loadGroups()
   const [groups, setGroups]     = useState(init.groups)
   const [isReal, setIsReal]     = useState(init.isReal)
@@ -20,9 +20,14 @@ export default function PastSessions({ navigate }) {
     g.proposal.toLowerCase().includes(query.toLowerCase())
   )
 
-  const toggleGroup = (i) => setExpanded(e => ({ ...e, [i]: !e[i] }))
+  const toggleGroup = (name) => setCollapsed(prev => {
+    const next = new Set(prev)
+    next.has(name) ? next.delete(name) : next.add(name)
+    return next
+  })
 
   const handleDelete = (sessionId) => {
+    if (!window.confirm('Delete this session? This cannot be undone.')) return
     deleteSession(sessionId)
     const next = loadGroups()
     setGroups(next.groups)
@@ -62,23 +67,38 @@ export default function PastSessions({ navigate }) {
           value={query}
           onChange={e => setQuery(e.target.value)}
         />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px 4px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            title="Clear search"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
-      {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: '0.9375rem' }}>
-          No sessions match "{query}"
+      {filtered.length === 0 && query && (
+        <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '0.9375rem', marginBottom: 10 }}>No sessions match "{query}"</div>
+          <button
+            onClick={() => setQuery('')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--app-accent)', fontSize: '0.875rem', fontFamily: 'var(--font-ui)', fontWeight: 500 }}
+          >
+            Clear search
+          </button>
         </div>
       )}
 
       {filtered.map((group, gi) => (
         <div key={gi} className="proposal-group">
-          <div className="proposal-group-header" onClick={() => toggleGroup(gi)}>
+          <div className="proposal-group-header" onClick={() => toggleGroup(group.proposal)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <ChevronDown
                 size={16}
                 style={{
                   color: 'var(--text-muted)',
-                  transform: expanded[gi] ? 'rotate(0deg)' : 'rotate(-90deg)',
+                  transform: collapsed.has(group.proposal) ? 'rotate(-90deg)' : 'rotate(0deg)',
                   transition: 'transform 0.2s ease',
                 }}
               />
@@ -99,7 +119,7 @@ export default function PastSessions({ navigate }) {
             </div>
           </div>
 
-          {expanded[gi] && group.sessions.map((s, si) => {
+          {!collapsed.has(group.proposal) && group.sessions.map((s, si) => {
             const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
             const isGood = pct >= 60
             return (
@@ -112,18 +132,21 @@ export default function PastSessions({ navigate }) {
                 </div>
 
                 <div style={{ display: 'flex' }}>
-                  {AVATAR_INITIALS.map((init, j) => (
+                  {(s.personaIds?.length
+                    ? PERSONAS.filter(p => s.personaIds.includes(p.id))
+                    : PERSONAS
+                  ).map((p, j) => (
                     <div
-                      key={j}
+                      key={p.id}
                       style={{
                         width: 24, height: 24, borderRadius: '50%',
-                        background: AVATAR_COLORS[j],
+                        background: p.color,
                         border: '2px solid var(--bg-surface)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.5625rem', fontWeight: 700, color: 'white',
                         marginLeft: j > 0 ? -6 : 0,
                       }}
-                    >{init}</div>
+                    >{p.initial}</div>
                   ))}
                 </div>
 

@@ -2,6 +2,7 @@ const SESSIONS_KEY        = 'dryrun_sessions'
 const PROFILE_KEY         = 'dryrun_profile'
 const VOICE_KEY           = 'dryrun_voice'
 const CUSTOM_PERSONAS_KEY = 'dryrun_custom_personas'
+const DEFAULTS_KEY        = 'dryrun_defaults'
 
 export function loadSessions() {
   try {
@@ -75,11 +76,26 @@ export function deleteCustomPersona(id) {
   saveCustomPersonas(loadCustomPersonas().filter(p => p.id !== id))
 }
 
+export function loadRehearsalDefaults() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DEFAULTS_KEY) || '{}')
+    return {
+      mode:       d.mode       || 'Type',
+      toughness:  d.toughness  || 'Balanced',
+      turnLimit:  d.turnLimit  || '15',
+    }
+  } catch { return { mode: 'Type', toughness: 'Balanced', turnLimit: '15' } }
+}
+
+export function saveRehearsalDefaults(defaults) {
+  localStorage.setItem(DEFAULTS_KEY, JSON.stringify(defaults))
+}
+
 export function loadVoiceSettings() {
   try {
     const v = JSON.parse(localStorage.getItem(VOICE_KEY) || '{}')
-    return { enabled: v.enabled !== false, rate: Number(v.rate) || 1.0 }
-  } catch { return { enabled: true, rate: 1.0 } }
+    return { enabled: v.enabled === true, rate: Number(v.rate) || 1.0 }
+  } catch { return { enabled: false, rate: 1.0 } }
 }
 
 export function saveVoiceSettings(settings) {

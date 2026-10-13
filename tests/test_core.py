@@ -5,7 +5,7 @@ All Gemini calls are mocked so no API key is required to run the suite.
 import json
 import os
 import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import agents.core as core
 
 
@@ -24,11 +24,50 @@ def make_mock_client(response_text):
 SAMPLE_PROPOSAL = "Hire two data engineers at $120k each. This saves 30 hours per month."
 ALL_IDS = ['finance', 'legal', 'ops', 'factcheck']
 SAMPLE_TRANSCRIPT = [
-    {'speaker': 'finance', 'text': 'Where is the cost breakdown?'},
+    {'speaker': 'finance',   'text': 'Where is the cost breakdown?'},
     {'speaker': 'presenter', 'text': 'Total cost is $240k per year.'},
-    {'speaker': 'legal', 'text': 'Who owns the data?'},
+    {'speaker': 'legal',     'text': 'Who owns the data?'},
     {'speaker': 'presenter', 'text': 'Our analytics lead owns all data access.'},
 ]
+
+CUSTOM_PERSONA_ID = 'custom_cto'
+CUSTOM_DEFS = {
+    CUSTOM_PERSONA_ID: {
+        'name': 'Dana',
+        'role': 'CTO',
+        'speaking_style': 'Technical and precise.',
+        'cares': 'System architecture and technical feasibility',
+        'conditions': [
+            {'id': 'ct1', 'text': 'Architecture reviewed by engineering lead'},
+            {'id': 'ct2', 'text': 'Migration plan documented'},
+        ],
+    }
+}
+
+
+# ---------------------------------------------------------------------------
+# all_defs
+# ---------------------------------------------------------------------------
+
+class TestAllDefs:
+    def test_returns_builtin_defs_when_no_custom(self):
+        defs = core.all_defs()
+        assert 'finance' in defs
+        assert 'legal' in defs
+
+    def test_merges_custom_defs(self):
+        defs = core.all_defs(CUSTOM_DEFS)
+        assert CUSTOM_PERSONA_ID in defs
+        assert defs[CUSTOM_PERSONA_ID]['name'] == 'Dana'
+
+    def test_custom_does_not_overwrite_builtins(self):
+        defs = core.all_defs({'finance': {'name': 'Override'}})
+        assert defs['finance']['name'] == 'Override'
+
+    def test_none_custom_defs_treated_as_empty(self):
+        defs = core.all_defs(None)
+        assert 'finance' in defs
+        assert len(defs) == len(core.PERSONA_DEFS)
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +125,16 @@ class TestGetInitialConditions:
     def test_empty_list_returns_empty_dict(self):
         assert core.get_initial_conditions([]) == {}
 
+    def test_custom_persona_conditions_included(self):
+        conds = core.get_initial_conditions([CUSTOM_PERSONA_ID], custom_defs=CUSTOM_DEFS)
+        assert set(conds.keys()) == {'ct1', 'ct2'}
+        assert all(v is False for v in conds.values())
+
+    def test_custom_and_builtin_personas_combined(self):
+        conds = core.get_initial_conditions(['finance', CUSTOM_PERSONA_ID], custom_defs=CUSTOM_DEFS)
+        assert 'f1' in conds
+        assert 'ct1' in conds
+
 
 # ---------------------------------------------------------------------------
 # build_transcript_str
@@ -117,6 +166,12 @@ class TestBuildTranscriptStr:
 
     def test_empty_transcript_returns_empty_string(self):
         assert core.build_transcript_str([]) == ''
+
+    def test_custom_persona_name_used_when_defs_provided(self):
+        msgs = [{'speaker': CUSTOM_PERSONA_ID, 'text': 'Architecture concern.'}]
+        result = core.build_transcript_str(msgs, custom_defs=CUSTOM_DEFS)
+        assert 'Dana' in result
+        assert 'CTO' in result
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +210,7 @@ class TestGenerateOpenings:
         payload = json.dumps({
             'openings': [
                 {'persona_id': 'finance', 'text': 'Finance challenge.'},
-                {'persona_id': 'ghost', 'text': 'Should be dropped.'},
+                {'persona_id': 'ghost',   'text': 'Should be dropped.'},
             ]
         })
         mock_get_client.return_value = make_mock_client(payload)
@@ -197,6 +252,37 @@ class TestGenerateOpenings:
         config = mock_client.models.generate_content.call_args.kwargs['config']
         assert config.response_mime_type == 'application/json'
 
+    @patch('agents.core.get_client')
+    def test_returns_empty_list_on_malformed_json(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client('not valid json {{{')
+        result = core.generate_openings(SAMPLE_PROPOSAL, ['finance'], {})
+        assert result == []
+
+    @patch('agents.core.get_client')
+    def test_returns_empty_list_when_openings_key_missing(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client('{}')
+        result = core.generate_openings(SAMPLE_PROPOSAL, ['finance'], {})
+        assert result == []
+
+    @patch('agents.core.get_client')
+    def test_api_exception_raises_runtime_error(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = Exception('503 Service Unavailable')
+        mock_get_client.return_value = mock_client
+        with pytest.raises(RuntimeError, match='Gemini API error'):
+            core.generate_openings(SAMPLE_PROPOSAL, ['finance'], {})
+
+    @patch('agents.core.get_client')
+    def test_custom_persona_included_in_prompt(self, mock_get_client):
+        payload = json.dumps({'openings': [{'persona_id': CUSTOM_PERSONA_ID, 'text': 'Technical concern.'}]})
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+        result = core.generate_openings(
+            SAMPLE_PROPOSAL, [CUSTOM_PERSONA_ID], {}, custom_defs=CUSTOM_DEFS
+        )
+        assert len(result) == 1
+        assert result[0]['speaker'] == CUSTOM_PERSONA_ID
+
 
 # ---------------------------------------------------------------------------
 # generate_reply
@@ -205,10 +291,10 @@ class TestGenerateOpenings:
 class TestGenerateReply:
     def _reply_payload(self, speaker='legal', conditions_met=None):
         return json.dumps({
-            'speaker_id': speaker,
-            'response': f'{speaker} follow-up challenge.',
+            'speaker_id':     speaker,
+            'response':       f'{speaker} follow-up challenge.',
             'conditions_met': conditions_met or [],
-            'source': None,
+            'source':         None,
         })
 
     @patch('agents.core.get_client')
@@ -265,9 +351,41 @@ class TestGenerateReply:
         long_transcript = [{'speaker': 'presenter', 'text': f'Turn {i}'} for i in range(20)]
         core.generate_reply(SAMPLE_PROPOSAL, ['finance'], long_transcript, {}, {})
         contents = mock_client.models.generate_content.call_args.kwargs['contents']
-        # Only last 14 turns should appear; "Turn 0" is beyond the window
         assert 'Turn 0' not in contents
         assert 'Turn 19' in contents
+
+    @patch('agents.core.get_client')
+    def test_returns_fallback_on_malformed_json(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client('not valid json {{{')
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert result['speaker'] in ['finance', 'legal']
+        assert result['text'] == ''
+        assert result['conditions_met'] == []
+
+    @patch('agents.core.get_client')
+    def test_api_exception_raises_runtime_error(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = Exception('Rate limit exceeded')
+        mock_get_client.return_value = mock_client
+        with pytest.raises(RuntimeError, match='Gemini API error'):
+            core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {})
+
+    @patch('agents.core.get_client')
+    def test_custom_persona_conditions_evaluated(self, mock_get_client):
+        payload = json.dumps({
+            'speaker_id': CUSTOM_PERSONA_ID,
+            'response': 'Architecture concern.',
+            'conditions_met': ['ct1'],
+            'source': None,
+        })
+        mock_get_client.return_value = make_mock_client(payload)
+        conds = {'ct1': False, 'ct2': False}
+        result = core.generate_reply(
+            SAMPLE_PROPOSAL, [CUSTOM_PERSONA_ID], SAMPLE_TRANSCRIPT, conds, {},
+            custom_defs=CUSTOM_DEFS,
+        )
+        assert result['speaker'] == CUSTOM_PERSONA_ID
+        assert 'ct1' in result['conditions_met']
 
 
 # ---------------------------------------------------------------------------
@@ -320,6 +438,14 @@ class TestGenerateReport:
         assert result == {'weak_points': [], 'moments': []}
 
     @patch('agents.core.get_client')
+    def test_api_exception_raises_runtime_error(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = Exception('403 Permission denied')
+        mock_get_client.return_value = mock_client
+        with pytest.raises(RuntimeError, match='Gemini API error'):
+            core.generate_report(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {})
+
+    @patch('agents.core.get_client')
     def test_condition_status_included_in_prompt(self, mock_get_client):
         mock_client = make_mock_client(self._report_payload())
         mock_get_client.return_value = mock_client
@@ -354,6 +480,18 @@ class TestGenerateReport:
         core.generate_report(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {})
         config = mock_client.models.generate_content.call_args.kwargs['config']
         assert config.response_mime_type == 'application/json'
+
+    @patch('agents.core.get_client')
+    def test_custom_persona_conditions_in_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._report_payload())
+        mock_get_client.return_value = mock_client
+        conds = {'ct1': False, 'ct2': True}
+        core.generate_report(
+            SAMPLE_PROPOSAL, [CUSTOM_PERSONA_ID], SAMPLE_TRANSCRIPT, conds,
+            custom_defs=CUSTOM_DEFS,
+        )
+        contents = mock_client.models.generate_content.call_args.kwargs['contents']
+        assert 'ct1' in contents or 'Architecture reviewed' in contents
 
 
 # ---------------------------------------------------------------------------

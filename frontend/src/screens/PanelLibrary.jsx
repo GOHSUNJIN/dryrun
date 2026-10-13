@@ -37,6 +37,8 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
     onSave(form, palette)
   }
 
+  const inputStyle = (key) => ({ width: '100%', boxSizing: 'border-box', borderColor: errors[key] ? '#DC2626' : undefined })
+
   const field = (label, key, opts = {}) => (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
@@ -48,9 +50,9 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
           className="settings-input"
           value={form[key]}
           onChange={set(key)}
-          rows={2}
+          rows={opts.rows || 2}
           placeholder={opts.placeholder || ''}
-          style={{ resize: 'vertical', borderColor: errors[key] ? '#DC2626' : undefined }}
+          style={{ ...inputStyle(key), resize: 'vertical' }}
         />
       ) : (
         <input
@@ -58,7 +60,7 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
           value={form[key]}
           onChange={set(key)}
           placeholder={opts.placeholder || ''}
-          style={{ borderColor: errors[key] ? '#DC2626' : undefined }}
+          style={inputStyle(key)}
         />
       )}
     </div>
@@ -71,7 +73,7 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
     }}>
       <div style={{
         background: 'var(--bg-surface)', border: '1px solid var(--border)',
-        borderRadius: 12, padding: 28, width: '100%', maxWidth: 520,
+        borderRadius: 12, padding: 32, width: '100%', maxWidth: 560,
         maxHeight: '90vh', overflowY: 'auto',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -89,19 +91,19 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
               <span>Name</span>
               {errors.name && <span style={{ color: '#DC2626', fontWeight: 400 }}>{errors.name}</span>}
             </div>
-            <input className="settings-input" value={form.name} onChange={set('name')} placeholder="e.g. Sarah" style={{ borderColor: errors.name ? '#DC2626' : undefined }} />
+            <input className="settings-input" value={form.name} onChange={set('name')} placeholder="e.g. Sarah" style={inputStyle('name')} />
           </div>
           <div>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
               <span>Role title</span>
               {errors.role && <span style={{ color: '#DC2626', fontWeight: 400 }}>{errors.role}</span>}
             </div>
-            <input className="settings-input" value={form.role} onChange={set('role')} placeholder="e.g. CTO" style={{ borderColor: errors.role ? '#DC2626' : undefined }} />
+            <input className="settings-input" value={form.role} onChange={set('role')} placeholder="e.g. CTO" style={inputStyle('role')} />
           </div>
         </div>
 
         {field('Main concerns', 'cares', { placeholder: 'What this persona cares about, comma-separated' })}
-        {field('Speaking style', 'speaking_style', { textarea: true, placeholder: 'One or two sentences describing how they communicate and challenge.' })}
+        {field('Speaking style', 'speaking_style', { textarea: true, rows: 3, placeholder: 'One or two sentences describing how they communicate and challenge.' })}
 
         <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '20px 0 12px', borderTop: '1px solid var(--border)', paddingTop: 20 }}>
           Conviction conditions
@@ -291,7 +293,7 @@ export default function PanelLibrary() {
                 {p.cares.map((c, i) => <li key={i}>{c}</li>)}
               </ul>
               <div className="panel-card-conditions-label">Conviction conditions</div>
-              {p.conditions.map(c => (
+              {(p.conditions || []).map(c => (
                 <div key={c.id} className="panel-card-condition">
                   <div style={{
                     width: 14, height: 14, borderRadius: '50%',

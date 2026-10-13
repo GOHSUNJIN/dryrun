@@ -153,7 +153,12 @@ Return ONLY valid JSON with no markdown fences:
     },
   });
 
-  const data = JSON.parse(response.text);
+  let data;
+  try {
+    data = JSON.parse(response.text);
+  } catch {
+    return [];
+  }
   return (data.openings || [])
     .filter(o => personaIds.includes(o.persona_id))
     .map((o, i) => ({
@@ -237,7 +242,12 @@ Return ONLY valid JSON with no markdown fences:
     },
   });
 
-  const data = JSON.parse(response.text);
+  let data;
+  try {
+    data = JSON.parse(response.text);
+  } catch {
+    return { speaker: personaIds[0], text: '', conditions_met: [] };
+  }
   let speakerId = data.speaker_id || personaIds[0];
   if (!personaIds.includes(speakerId)) speakerId = personaIds[0];
 

@@ -33,25 +33,31 @@ const item = {
 export default function Report({ navigate, session }) {
   const [copied, setCopied] = useState(false)
 
-  const weakPoints   = session?.reportData?.weak_points?.length
-    ? session.reportData.weak_points
-    : FALLBACK_WEAK_POINTS
+  const hasRealReport = Boolean(session?.reportData?.weak_points?.length)
+  const weakPoints    = hasRealReport ? session.reportData.weak_points : FALLBACK_WEAK_POINTS
 
   const conditions   = session?.conditions || {}
   const condMet      = Object.values(conditions).filter(Boolean).length
   const condTotal    = Object.keys(conditions).length || 11
   const turns        = session?.transcript?.filter(m => m.speaker === 'presenter').length || 6
   const proposalName = session?.proposalName || 'Data Engineering Hires'
-  const duration     = session?.startTime
-    ? `${Math.floor((Date.now() - session.startTime) / 60000)} min`
-    : '18 min'
+
+  // Snapshot both values once on mount so they don't drift if the page stays open
+  const [duration] = useState(() =>
+    session?.startTime
+      ? `${Math.floor((Date.now() - session.startTime) / 60000)} min`
+      : '18 min'
+  )
+  const [reportDate] = useState(() =>
+    new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  )
 
   const personas = session?.personaIds?.length
     ? PERSONAS
         .filter(p => session.personaIds.includes(p.id))
         .map(p => ({
           ...p,
-          conditions: p.conditions.map(c => ({ ...c, met: conditions[c.id] || false })),
+          conditions: (p.conditions || []).map(c => ({ ...c, met: conditions[c.id] || false })),
         }))
     : PERSONAS
 
@@ -62,7 +68,7 @@ export default function Report({ navigate, session }) {
       '',
       'CONDITIONS',
       ...personas.flatMap(p =>
-        p.conditions.map(c => `${c.met ? '[MET]' : '[   ]'} ${p.name} (${p.role}): ${c.text}`)
+        (p.conditions || []).map(c => `${c.met ? '[MET]' : '[   ]'} ${p.name} (${p.role}): ${c.text}`)
       ),
       '',
       'WEAK POINTS',
@@ -78,7 +84,7 @@ export default function Report({ navigate, session }) {
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
           <div className="report-hero">
-            <div className="report-hero-label">Session complete · {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+            <div className="report-hero-label">Session complete · {reportDate}</div>
             <div className="report-hero-title">
               "Here is what to prepare<br />before the real meeting."
             </div>
@@ -92,8 +98,17 @@ export default function Report({ navigate, session }) {
               <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={() => navigate('room')}>
                 <RotateCcw size={13} /> Rehearse again
               </button>
-              <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={copyReport}>
-                {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy report</>}
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={copyReport}
+                style={{
+                  background:   copied ? 'rgba(5,150,105,0.18)' : 'rgba(255,255,255,0.08)',
+                  borderColor:  copied ? 'rgba(5,150,105,0.4)'  : 'rgba(255,255,255,0.12)',
+                  color:        copied ? '#34D399' : '#E8E5DF',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy report</>}
               </button>
             </div>
           </div>
@@ -116,7 +131,7 @@ export default function Report({ navigate, session }) {
                   <div className="report-cond-count">{metCount}/{p.conditions.length} conditions met</div>
                 </div>
                 <div className="report-conditions">
-                  {p.conditions.map(c => (
+                  {(p.conditions || []).map(c => (
                     <div key={c.id} className="report-condition">
                       <div className={`report-cond-icon ${c.met ? 'met' : 'unmet'}`}>
                         {c.met ? <Check size={11} /> : <X size={11} />}
@@ -132,7 +147,18 @@ export default function Report({ navigate, session }) {
 
         <motion.div variants={item}>
           <div className="weak-points-section">
-            <div className="section-label">Top weak points to address</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div className="section-label" style={{ marginBottom: 0 }}>Top weak points to address</div>
+              {!hasRealReport && (
+                <span style={{
+                  fontSize: '0.6875rem', fontWeight: 600, padding: '3px 8px', borderRadius: 99,
+                  background: 'rgba(245,158,11,0.1)', color: '#D97706',
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
+                }}>
+                  Sample data
+                </span>
+              )}
+            </div>
             {weakPoints.map((w, i) => (
               <div key={i} className="weak-point-card">
                 <div className="weak-point-label">{w.label}</div>

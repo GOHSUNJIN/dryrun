@@ -52,6 +52,11 @@ PERSONA_DEFS = {
 }
 
 
+def all_defs(custom_defs: dict = None) -> dict:
+    """Merge built-in personas with any custom persona definitions."""
+    return {**PERSONA_DEFS, **(custom_defs or {})}
+
+
 def get_client() -> genai.Client:
     api_key = os.environ.get('GEMINI_API_KEY')
     if not api_key:
@@ -86,38 +91,47 @@ def fact_check_proposal(proposal_text: str) -> str:
         return ''
 
 
-def get_initial_conditions(persona_ids: list) -> dict:
+def get_initial_conditions(persona_ids: list, custom_defs: dict = None) -> dict:
+    defs = all_defs(custom_defs)
     conditions = {}
     for pid in persona_ids:
-        for c in PERSONA_DEFS.get(pid, {}).get('conditions', []):
+        for c in defs.get(pid, {}).get('conditions', []):
             conditions[c['id']] = False
     return conditions
 
 
-def build_transcript_str(transcript: list) -> str:
+def build_transcript_str(transcript: list, custom_defs: dict = None) -> str:
+    defs = all_defs(custom_defs)
     lines = []
     for msg in transcript:
         if msg.get('speaker') == 'presenter':
             lines.append(f"Presenter: {msg['text']}")
         else:
-            p = PERSONA_DEFS.get(msg.get('speaker', ''), {})
+            p = defs.get(msg.get('speaker', ''), {})
             name = p.get('name', msg.get('speaker', 'Panel'))
             role = p.get('role', '')
             lines.append(f"{name} ({role}): {msg['text']}")
     return '\n'.join(lines)
 
 
-def generate_openings(proposal_text: str, persona_ids: list, config: dict, fact_check_notes: str = '') -> list:
+def generate_openings(
+    proposal_text: str,
+    persona_ids: list,
+    config: dict,
+    fact_check_notes: str = '',
+    custom_defs: dict = None,
+) -> list:
     """Generate all panel opening challenges in a single Gemini call."""
     client = get_client()
+    defs = all_defs(custom_defs)
     toughness = config.get('toughness', 'Balanced')
     industry = config.get('industry', '')
 
     panel_desc_lines = []
     for pid in persona_ids:
-        if pid not in PERSONA_DEFS:
+        p = defs.get(pid)
+        if not p:
             continue
-        p = PERSONA_DEFS[pid]
         line = f"- {pid}: {p['name']}, {p['role']}. Cares about: {p['cares']}."
         if pid == 'factcheck' and fact_check_notes:
             line += f"\n  Sam's verified research briefing (cite these facts specifically): {fact_check_notes}"
@@ -152,17 +166,24 @@ Return ONLY valid JSON with no markdown fences:
 
     prompt = f"Here is the proposal:\n\n{proposal_text}\n\nGenerate each panelist's opening challenge."
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system,
-            response_mime_type='application/json',
-            max_output_tokens=700,
-        ),
-    )
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                response_mime_type='application/json',
+                max_output_tokens=700,
+            ),
+        )
+    except Exception as exc:
+        raise RuntimeError(f'Gemini API error in generate_openings: {exc}') from exc
 
-    data = json.loads(response.text)
+    try:
+        data = json.loads(response.text)
+    except (json.JSONDecodeError, AttributeError):
+        return []
+
     openings = []
     for i, o in enumerate(data.get('openings', [])):
         pid = o.get('persona_id', '')
@@ -184,9 +205,11 @@ def generate_reply(
     conditions: dict,
     config: dict,
     fact_check_notes: str = '',
+    custom_defs: dict = None,
 ) -> dict:
     """Pick the next speaker and generate their response in a single Gemini call."""
     client = get_client()
+    defs = all_defs(custom_defs)
     toughness = config.get('toughness', 'Balanced')
 
     last_speaker = None
@@ -197,7 +220,7 @@ def generate_reply(
 
     panel_lines = []
     for pid in persona_ids:
-        p = PERSONA_DEFS.get(pid)
+        p = defs.get(pid)
         if not p:
             continue
         conds = p.get('conditions', [])
@@ -218,7 +241,7 @@ def generate_reply(
         )
 
     panel_summary = '\n\n'.join(panel_lines)
-    transcript_str = build_transcript_str(transcript[-14:])
+    transcript_str = build_transcript_str(transcript[-14:], custom_defs)
 
     presenter_msg = ''
     for msg in reversed(transcript):
@@ -259,17 +282,25 @@ Return ONLY valid JSON with no markdown fences:
         "Pick the next speaker and write their response."
     )
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=content,
-        config=types.GenerateContentConfig(
-            system_instruction=system,
-            response_mime_type='application/json',
-            max_output_tokens=250,
-        ),
-    )
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=content,
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                response_mime_type='application/json',
+                max_output_tokens=250,
+            ),
+        )
+    except Exception as exc:
+        raise RuntimeError(f'Gemini API error in generate_reply: {exc}') from exc
 
-    data = json.loads(response.text)
+    try:
+        data = json.loads(response.text)
+    except (json.JSONDecodeError, AttributeError):
+        # Malformed JSON: fall back to first persona with an empty response
+        return {'speaker': persona_ids[0], 'text': '', 'conditions_met': []}
+
     speaker_id = data.get('speaker_id', persona_ids[0])
     if speaker_id not in persona_ids:
         speaker_id = persona_ids[0]
@@ -277,7 +308,7 @@ Return ONLY valid JSON with no markdown fences:
     all_cond_ids = {
         c['id']
         for pid in persona_ids
-        for c in PERSONA_DEFS.get(pid, {}).get('conditions', [])
+        for c in defs.get(pid, {}).get('conditions', [])
     }
     conditions_met = [
         c for c in data.get('conditions_met', [])
@@ -299,18 +330,20 @@ def generate_report(
     persona_ids: list,
     transcript: list,
     conditions: dict,
+    custom_defs: dict = None,
 ) -> dict:
     """Generate coaching report from a completed session."""
     client = get_client()
+    defs = all_defs(custom_defs)
 
     cond_lines = []
     for pid in persona_ids:
-        p = PERSONA_DEFS.get(pid, {})
+        p = defs.get(pid, {})
         for c in p.get('conditions', []):
             status = 'MET' if conditions.get(c['id']) else 'UNMET'
             cond_lines.append(f"[{status}] {p.get('name', pid)}: {c['text']}")
 
-    transcript_str = build_transcript_str(transcript)
+    transcript_str = build_transcript_str(transcript, custom_defs)
 
     system = """You are a preparation coach analysing a stakeholder rehearsal session.
 
@@ -351,17 +384,18 @@ Rules:
         "Generate the coaching report."
     )
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system,
-            response_mime_type='application/json',
-            max_output_tokens=2000,
-        ),
-    )
-
     try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                response_mime_type='application/json',
+                max_output_tokens=2000,
+            ),
+        )
         return json.loads(response.text)
     except (json.JSONDecodeError, AttributeError):
         return {'weak_points': [], 'moments': []}
+    except Exception as exc:
+        raise RuntimeError(f'Gemini API error in generate_report: {exc}') from exc

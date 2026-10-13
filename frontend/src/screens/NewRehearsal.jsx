@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, FileText, Check, ArrowRight, ArrowLeft, Keyboard, MicIcon, Radio, Plus, X, Loader } from 'lucide-react'
+import { Upload, FileText, Check, ArrowRight, ArrowLeft, Keyboard, Radio, Plus, X, Loader } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas } from '../utils/storage.js'
+import { loadCustomPersonas, loadRehearsalDefaults } from '../utils/storage.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
@@ -34,13 +34,14 @@ function buildCustomDefs(customPersonas) {
 export default function NewRehearsal({ navigate, session, updateSession, resetSession }) {
   const customPersonas = loadCustomPersonas()
   const allPersonas    = [...PERSONAS, ...customPersonas]
+  const defaults       = loadRehearsalDefaults()
   const [step, setStep]           = useState(0)
   const [uploaded, setUploaded]   = useState(false)
   const [proposalText, setProposalText] = useState('')
   const [proposalName, setProposalName] = useState('')
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
-  const [mode, setMode]           = useState('Type')
-  const [toughness, setToughness] = useState('Balanced')
+  const [mode, setMode]           = useState(defaults.mode)
+  const [toughness, setToughness] = useState(defaults.toughness)
   const [industry, setIndustry]   = useState('')
   const [companySize, setCompanySize] = useState('')
   const [focus, setFocus]         = useState('')
