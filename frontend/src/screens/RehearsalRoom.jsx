@@ -1,8 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Send, ExternalLink, Loader } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT, SCRIPTED_RESPONSES } from '../data.js'
-import { saveSession } from '../utils/storage.js'
+import { saveSession, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
+
+const PERSONA_VOICE = {
+  finance:   { pitch: 0.85, rate: 0.92 },
+  legal:     { pitch: 1.0,  rate: 0.88 },
+  ops:       { pitch: 0.8,  rate: 1.0  },
+  factcheck: { pitch: 1.05, rate: 0.9  },
+}
 
 const ROOM_STATES = ['idle', 'thinking', 'speaking', 'interrupting', 'condition-met']
 const STATE_LABELS = {
@@ -173,9 +180,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [responseIdx, setResponseIdx]     = useState(0)
   const [apiError, setApiError]           = useState(false)
   const [listening, setListening]         = useState(false)
+  const [speechOn, setSpeechOn]           = useState(() => loadVoiceSettings().enabled)
   const transcriptRef  = useRef(null)
   const recognitionRef = useRef(null)
   const roomStateRef   = useRef(roomState)
+  const speechOnRef    = useRef(speechOn)
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
@@ -202,9 +211,29 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   }, [localTranscript, typingPersonaId])
 
   useEffect(() => { roomStateRef.current = roomState }, [roomState])
+  useEffect(() => { speechOnRef.current = speechOn }, [speechOn])
 
-  // Stop recognition and clean up on unmount
-  useEffect(() => () => recognitionRef.current?.abort(), [])
+  // Speak new AI messages as they appear
+  useEffect(() => {
+    if (!appearingMsgId) return
+    const msg = localTranscript.find(m => m.id === appearingMsgId)
+    if (!msg || msg.speaker === 'presenter') return
+    if (!speechOnRef.current || typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const utter = new SpeechSynthesisUtterance(msg.text)
+    const params = PERSONA_VOICE[msg.speaker] || { pitch: 1.0, rate: 1.0 }
+    const vs = loadVoiceSettings()
+    utter.pitch = params.pitch
+    utter.rate  = params.rate * (vs.rate || 1.0)
+    utter.volume = 1
+    window.speechSynthesis.speak(utter)
+  }, [appearingMsgId])
+
+  // Cancel speech and recognition on unmount
+  useEffect(() => () => {
+    recognitionRef.current?.abort()
+    window.speechSynthesis?.cancel()
+  }, [])
 
   const getElapsedTime = () => {
     if (!session.startTime) return ''
@@ -219,6 +248,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     if (!text || roomStateRef.current === 'thinking') return
 
     if (listening) stopListening()
+    window.speechSynthesis?.cancel()
 
     const userMsg = {
       id: Date.now(),
@@ -361,6 +391,15 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const toggleMic = () => listening ? stopListening() : startListening()
 
+  const toggleSpeech = () => {
+    setSpeechOn(prev => {
+      const next = !prev
+      saveVoiceSettings({ ...loadVoiceSettings(), enabled: next })
+      if (!next) window.speechSynthesis?.cancel()
+      return next
+    })
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -465,6 +504,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
 
         <div className="room-topbar-right">
+          <button
+            className="room-input-btn"
+            onClick={toggleSpeech}
+            title={speechOn ? 'Mute panel voices' : 'Unmute panel voices'}
+            style={{ background: 'transparent', border: 'none', color: speechOn ? 'var(--room-text-2)' : 'var(--room-text-3)', cursor: 'pointer', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center' }}
+          >
+            {speechOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+          </button>
           <span className="room-turn-counter">Turn {turnCount} of {turnLimit}</span>
           <button
             className="room-end-btn"

@@ -1,5 +1,6 @@
 const SESSIONS_KEY = 'dryrun_sessions'
 const PROFILE_KEY  = 'dryrun_profile'
+const VOICE_KEY    = 'dryrun_voice'
 
 export function loadSessions() {
   try {
@@ -50,6 +51,17 @@ export function loadProfile() {
 
 export function saveProfile(name, role) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, role }))
+}
+
+export function loadVoiceSettings() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VOICE_KEY) || '{}')
+    return { enabled: v.enabled !== false, rate: Number(v.rate) || 1.0 }
+  } catch { return { enabled: true, rate: 1.0 } }
+}
+
+export function saveVoiceSettings(settings) {
+  localStorage.setItem(VOICE_KEY, JSON.stringify(settings))
 }
 
 export function groupSessionsByProposal(sessions) {

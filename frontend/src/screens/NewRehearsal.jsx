@@ -35,7 +35,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [focus, setFocus]         = useState('')
   const [drag, setDrag]           = useState(false)
   const [launching, setLaunching] = useState(false)
-  const [launchError, setLaunchError] = useState('')
   const fileInputRef = useRef(null)
 
   const togglePersona = (id) => {
@@ -65,7 +64,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   }
 
   const enterRoom = async () => {
-    setLaunchError('')
     setLaunching(true)
     resetSession()
 
@@ -100,9 +98,19 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         startTime: Date.now(),
       })
       navigate('room')
-    } catch (err) {
-      setLaunchError(err.message)
-      setLaunching(false)
+    } catch {
+      // AI unavailable — enter room in demo mode
+      updateSession({
+        proposalText: text,
+        proposalName: proposalName || 'Untitled proposal',
+        personaIds: selected,
+        config,
+        transcript: [],
+        conditions: {},
+        factCheckNotes: '',
+        startTime: Date.now(),
+      })
+      navigate('room')
     }
   }
 
@@ -317,11 +325,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                   </div>
                 </div>
 
-                {launchError && (
-                  <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#DC2626', fontSize: '0.875rem' }}>
-                    {launchError}
-                  </div>
-                )}
+
               </>
             )}
           </div>

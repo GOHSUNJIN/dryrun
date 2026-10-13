@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ExternalLink, Check } from 'lucide-react'
-import { loadProfile, saveProfile, exportSessions, deleteAllSessions } from '../utils/storage.js'
+import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
 
 const NAV = ['Profile', 'Rehearsal defaults', 'Voice', 'Integrations', 'Privacy']
 
@@ -12,6 +12,7 @@ const INTEGRATIONS = [
 
 export default function Settings() {
   const init = loadProfile()
+  const initVoice = loadVoiceSettings()
   const [activeSection, setActiveSection] = useState('Profile')
   const [name, setName]           = useState(init.name)
   const [role, setRole]           = useState(init.role)
@@ -19,6 +20,8 @@ export default function Settings() {
   const [defaultMode, setDefaultMode] = useState('Type')
   const [toughness, setToughness] = useState('Balanced')
   const [turnLimit, setTurnLimit] = useState('15')
+  const [voiceEnabled, setVoiceEnabled] = useState(initVoice.enabled)
+  const [voiceRate, setVoiceRate]       = useState(String(initVoice.rate))
 
   const handleSaveProfile = () => {
     saveProfile(name, role)
@@ -139,33 +142,61 @@ export default function Settings() {
           {activeSection === 'Voice' && (
             <div className="settings-section">
               <div className="settings-section-title">Voice settings</div>
-              {comingSoonNote('Voice mode is coming soon. These preferences will apply once voice input is available.')}
-              {[
-                { label: 'Morgan (Finance)', voice: 'Professional' },
-                { label: 'Alex (Legal)',     voice: 'Precise' },
-                { label: 'Jordan (Ops)',     voice: 'Direct' },
-                { label: 'Sam (Fact-check)', voice: 'Neutral' },
-              ].map(({ label, voice }) => (
-                <div key={label} className="settings-row" style={{ opacity: 0.45, pointerEvents: 'none' }}>
-                  <div>
-                    <div className="settings-label">{label}</div>
-                    <div className="settings-sublabel">{voice}</div>
-                  </div>
-                  <select className="settings-select" disabled>
-                    <option>Professional</option>
-                    <option>Authoritative</option>
-                    <option>Warm</option>
-                  </select>
+              <div className="settings-row">
+                <div>
+                  <div className="settings-label">Panel voices</div>
+                  <div className="settings-sublabel">Panel members read their challenges aloud during rehearsal</div>
                 </div>
-              ))}
-              <div className="settings-row" style={{ opacity: 0.45, pointerEvents: 'none' }}>
-                <div><div className="settings-label">Speaking speed</div></div>
-                <select className="settings-select" disabled>
-                  <option>Normal (1×)</option>
-                  <option>Slightly faster (1.2×)</option>
-                  <option>Fast (1.5×)</option>
+                <button
+                  onClick={() => {
+                    const next = !voiceEnabled
+                    setVoiceEnabled(next)
+                    saveVoiceSettings({ enabled: next, rate: Number(voiceRate) })
+                    if (!next) window.speechSynthesis?.cancel()
+                  }}
+                  style={{
+                    padding: '7px 16px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
+                    borderColor: voiceEnabled ? '#059669' : 'var(--border)',
+                    background: voiceEnabled ? 'rgba(5,150,105,0.1)' : 'transparent',
+                    color: voiceEnabled ? '#059669' : 'var(--text-secondary)',
+                    transition: 'all 0.15s ease', whiteSpace: 'nowrap',
+                  }}
+                >{voiceEnabled ? 'On' : 'Off'}</button>
+              </div>
+              <div className="settings-row">
+                <div>
+                  <div className="settings-label">Speaking speed</div>
+                  <div className="settings-sublabel">Multiplier applied to all panel voices</div>
+                </div>
+                <select
+                  className="settings-select"
+                  value={voiceRate}
+                  onChange={e => {
+                    setVoiceRate(e.target.value)
+                    saveVoiceSettings({ enabled: voiceEnabled, rate: Number(e.target.value) })
+                  }}
+                >
+                  <option value="0.8">Slow (0.8×)</option>
+                  <option value="1">Normal (1×)</option>
+                  <option value="1.2">Slightly faster (1.2×)</option>
+                  <option value="1.5">Fast (1.5×)</option>
                 </select>
               </div>
+              <div className="settings-section-title" style={{ marginTop: 24, fontSize: '0.75rem' }}>Persona voices</div>
+              {[
+                { label: 'Morgan (Finance)', desc: 'Low pitch, measured pace' },
+                { label: 'Alex (Legal)',     desc: 'Neutral pitch, deliberate pace' },
+                { label: 'Jordan (Ops)',     desc: 'Low pitch, direct pace' },
+                { label: 'Sam (Fact-check)', desc: 'Slightly higher pitch, careful pace' },
+              ].map(({ label, desc }) => (
+                <div key={label} className="settings-row" style={{ opacity: 0.6 }}>
+                  <div>
+                    <div className="settings-label">{label}</div>
+                    <div className="settings-sublabel">{desc}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
