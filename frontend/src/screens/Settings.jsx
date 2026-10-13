@@ -148,10 +148,10 @@ export default function Settings() {
             <div className="settings-section">
               <div className="settings-section-title">Voice settings</div>
               {[
-                { label: 'Morgan (Finance)', voice: 'Professional,measured' },
-                { label: 'Alex (Legal)',     voice: 'Precise,deliberate' },
-                { label: 'Jordan (Ops)',     voice: 'Direct,brisk' },
-                { label: 'Sam (Fact-check)', voice: 'Neutral,clear' },
+                { label: 'Morgan (Finance)', voice: 'Professional' },
+                { label: 'Alex (Legal)',     voice: 'Precise' },
+                { label: 'Jordan (Ops)',     voice: 'Direct' },
+                { label: 'Sam (Fact-check)', voice: 'Neutral' },
               ].map(({ label, voice }) => (
                 <div key={label} className="settings-row">
                   <div>
@@ -159,9 +159,9 @@ export default function Settings() {
                     <div className="settings-sublabel">{voice}</div>
                   </div>
                   <select className="settings-select">
-                    <option>Professional,measured</option>
-                    <option>Authoritative,clipped</option>
-                    <option>Warm,clear</option>
+                    <option>Professional</option>
+                    <option>Authoritative</option>
+                    <option>Warm</option>
                   </select>
                 </div>
               ))}
