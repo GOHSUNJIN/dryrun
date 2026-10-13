@@ -142,7 +142,7 @@ function SessionCard({ s, navigate }) {
   const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
   const isGood = pct >= 60
   return (
-    <div className="session-card" onClick={() => navigate('report')}>
+    <div className="session-card" onClick={() => navigate('past')}>
       <div className="session-info">
         <div className="session-name">{s.proposal}</div>
         <div className="session-meta">

@@ -4,7 +4,8 @@
 
 Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal, they push back with hard questions, pile on when your answers contradict each other and only back down when you address their specific concerns with real data. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix.
 
-**Live:** https://dryrun-swart.vercel.app
+**Live (Firebase):** https://dry-run-1608.web.app
+**Live (Vercel):** https://dryrun-swart.vercel.app
 
 ---
 
@@ -24,7 +25,7 @@ The primary users are professionals who present proposals to approval committees
 
 1. **Upload your proposal.** Paste text or drop in a file. The panel reads it and generates challenges specific to your content.
 2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library.
-3. **Configure the session.** Set industry context, company size, panel toughness, turn limit and session mode.
+3. **Configure the session.** Set industry context, company size, panel toughness and turn limit.
 4. **Enter the room.** A random panelist fires the first question immediately. The rest stagger in. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer was specific enough to satisfy any conditions and sometimes triggers a second panelist to pile on.
 5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually. The AI analyses the full transcript and generates a coaching report.
 6. **Read the debrief.** Every key moment is annotated with what was asked, what you said, why it worked or fell short and a stronger version to try.
@@ -41,8 +42,10 @@ The primary users are professionals who present proposals to approval committees
 | Icons | Lucide React |
 | AI model | Gemini 3.8 Flash via `@google/genai` JS SDK |
 | Fact-checking | Gemini 3.8 Flash with Google Search grounding |
-| API layer | JavaScript serverless functions on Vercel |
-| Cloud Run target | FastAPI + uvicorn (Dockerfile ready) |
+| API layer (primary) | Firebase Cloud Functions v2 (Node 22, ES modules) |
+| API layer (secondary) | JavaScript serverless functions on Vercel |
+| Hosting | Firebase Hosting (SPA with function rewrites) |
+| Secrets | Firebase Secret Manager (`GEMINI_API_KEY`) |
 | State management | React `useState` with session lifted to `App.jsx` |
 | Persistence | `localStorage` for past sessions and custom personas |
 | Styling | Plain CSS with CSS custom properties |
@@ -58,21 +61,26 @@ Browser (React SPA)
         |  POST /api/session/message       (one call per presenter turn)
         |  POST /api/session/end
         v
-Vercel JS serverless functions
-  frontend/api/session/start.js
-  frontend/api/session/message.js
-  frontend/api/session/end.js
+Firebase Hosting rewrite
+        |
+        v
+Firebase Cloud Functions v2 (us-central1, Node 22)
+  functions/index.js          sessionStart | sessionMessage | sessionEnd
         |
         |  imports
         v
-  frontend/api/_lib/core.js            (all Gemini logic)
+  functions/core.js            all Gemini logic
+  functions/fallback.js        scripted demo data (no-key or AI failure path)
         |
         |  @google/genai SDK
         v
   Gemini 3.8 Flash
+  (+ Google Search grounding for factCheckProposal)
 ```
 
-The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript and the current condition state. The JS functions hold no memory between calls.
+The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript and the current condition state. Functions hold no memory between calls.
+
+**Demo mode fallback:** If `GEMINI_API_KEY` is not set or any Gemini call fails, the function returns scripted responses (`demo: true` in the response body). The browser logs the failure reason via `console.error`. All screens remain fully functional.
 
 ---
 
@@ -82,15 +90,16 @@ The API is fully stateless. Every request includes the full proposal text, the a
 frontend/
   api/
     _lib/
-      core.js            Gemini logic: generateOpenings, generateReply, generateReport
+      core.js            Gemini logic (Vercel deployment path)
+      fallback.js        scripted demo data (Vercel deployment path)
     session/
-      start.js           POST /api/session/start
-      message.js         POST /api/session/message
-      end.js             POST /api/session/end
+      start.js           POST /api/session/start  (Vercel)
+      message.js         POST /api/session/message  (Vercel)
+      end.js             POST /api/session/end  (Vercel)
   src/
     App.jsx              root: screen routing and session state
     components/
-      Sidebar.jsx        left nav
+      Sidebar.jsx        left nav with profile footer
     screens/
       Home.jsx           dashboard: greeting, upcoming meetings, recent sessions, weak spots
       NewRehearsal.jsx   3-step setup wizard: upload, choose panel, configure
@@ -99,19 +108,27 @@ frontend/
       Debrief.jsx        moment-by-moment coaching with timeline and analysis
       PastSessions.jsx   history grouped by proposal
       PanelLibrary.jsx   browse built-in roles and create custom ones
-      Settings.jsx       preferences: voice rate, defaults
+      Settings.jsx       preferences: voice rate and rehearsal defaults
     utils/
       storage.js         localStorage helpers
-    data.js              static personas, demo openings and scripted fallback responses
+    data.js              static personas and demo openings
     index.css            design system: tokens, components, room theme
-  vercel.json            function timeout config
-agents/
-  core.py                FastAPI-compatible Gemini logic for Cloud Run
-server.py                FastAPI server (for Cloud Run deployment)
-Dockerfile               multi-stage: Node 20 builds React, Python 3.12 runs FastAPI
-main.py                  terminal rehearsal entry point (original prototype)
+  vercel.json            function timeout config (maxDuration 60s for session/start)
+functions/
+  index.js               Firebase Cloud Functions v2: sessionStart, sessionMessage, sessionEnd
+  core.js                Gemini logic: factCheckProposal, generateOpenings, generateReply, generateReport
+  fallback.js            scripted demo data: getDemoOpenings, getDemoConditions, getDemoReply, getDemoReport
+  package.json           Node 22, ES module, firebase-functions v2 and @google/genai
+firebase.json            hosting rewrites: /api/* -> Cloud Functions, ** -> index.html
+.firebaserc              project alias: dry-run-1608
+backend/
+  agents/
+    core.py              Python Gemini logic (Cloud Run path)
+  main.py                terminal rehearsal entry point (original prototype)
+  server.py              FastAPI server (for Cloud Run deployment)
+  Dockerfile             multi-stage: Node 20 builds React, Python 3.12 runs FastAPI
 tests/
-  test_core.py           66 pytest tests for agents/core.py
+  test_core.py           pytest tests for backend/agents/core.py
 ```
 
 ---
@@ -126,23 +143,20 @@ Called at session start if the Fact-Checker persona is selected. Uses Gemini's G
 
 ### `generateOpenings`
 
-Called once. Returns one opening challenge per selected panelist written specifically around the proposal content. Openings are shuffled on the client so a random panelist always fires first.
+Called once. Returns one opening challenge per selected panelist written specifically around the proposal content.
 
 ### `generateReply`
 
 Called after every presenter turn. The system prompt applies several layers of intelligence:
 
 - **Speaker selection.** Picks the panelist with the most unmet conditions. Avoids repeating the last speaker.
-- **Answer quality assessment.** Classifies the presenter's answer as poor, medium or good based on word count, hedging phrases and presence of specific data. Poor answers are called out directly and cannot satisfy any conditions.
-- **Contradiction tracking.** If the current answer conflicts with something said in an earlier turn the panelist references the contradiction explicitly.
-- **Condition acknowledgment.** When a condition is met the speaker briefly acknowledges it before pressing on to the next concern.
-- **Satisfied panelist mode.** When all of a panelist's conditions are met they shift from challenging to supportive or cooperative.
-- **Near-limit urgency.** When three or fewer turns remain the panelist explicitly names the most critical unmet conditions.
-- **Multi-voice pile-on.** An optional `follow_up` field lets a second panelist jump in immediately when the answer creates a new issue for them or directly contradicts their concern.
+- **Condition acknowledgment.** Only marks a condition as met when the presenter's latest message explicitly and specifically addressed it with concrete information.
+- **Push-back.** Calls out vague or hedged answers directly without softening.
+- **Satisfied panelist mode.** When all of a panelist's conditions are met they shift from challenging to supportive.
 
 ### `generateReport`
 
-Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested fixes) and `moments` (4 to 7 annotated turning points).
+Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested fixes) and `moments` (4 to 7 annotated turning points). Framed as preparation coaching only: no approval predictions or probability scores.
 
 ---
 
@@ -171,7 +185,6 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   proposalName: '',           // display name from filename or title
   personaIds: [...],          // active persona IDs
   config: {
-    mode: 'Type',             // Type | Hybrid
     toughness: 'Balanced',    // Supportive | Balanced | Tough
     turnLimit: 15,            // 5 | 10 | 15 | 20 | 25
     industry: '',
@@ -184,6 +197,7 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   customPersonaDefs: {},      // serialised custom personas for API calls
   reportData: null,           // weak_points + moments from generateReport
   startTime: null,            // Date.now() at session start
+  demoMode: false,            // true when AI is unavailable (see browser console for reason)
 }
 ```
 
@@ -214,6 +228,8 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
 }
 ```
 
+If AI is unavailable the response also includes `"demo": true` and `"demo_reason": "<error message>"`.
+
 ### `POST /api/session/message`
 
 **Request**
@@ -223,7 +239,7 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   "persona_ids": ["finance", "legal", "ops", "factcheck"],
   "transcript": [...],
   "conditions": { "f1": false, "f2": true },
-  "config": { "turns_remaining": 4 },
+  "config": {},
   "fact_check": "...",
   "custom_personas": {}
 }
@@ -235,17 +251,9 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   "speaker": "legal",
   "text": "...",
   "conditions_met": ["l1"],
-  "source": null,
-  "follow_up": {
-    "speaker": "finance",
-    "text": "...",
-    "conditions_met": [],
-    "source": null
-  }
+  "source": null
 }
 ```
-
-`follow_up` is `null` when only one panelist responds.
 
 ### `POST /api/session/end`
 
@@ -295,9 +303,11 @@ Set `GEMINI_API_KEY` in `frontend/.env`:
 GEMINI_API_KEY=your_google_ai_studio_key_here
 ```
 
+The Vite dev server proxies `/api/*` to the local Vercel functions in `frontend/api/`. Gemini calls go directly from the function.
+
 ### Web app without AI (demo mode)
 
-Run the same `npm run dev` command without an API key. The room falls back to scripted responses with multi-voice pile-on pairs. All screens and navigation work.
+Run the same `npm run dev` command without an API key. The room falls back to scripted responses. All screens and navigation work.
 
 ### Terminal (original prototype)
 
@@ -313,14 +323,35 @@ Type at the `You:` prompt. Type `quit` to end and receive a coaching report in t
 
 ## Deploy
 
-### Vercel (current)
+### Firebase (primary)
+
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Build frontend
+cd frontend && npm run build && cd ..
+
+# Deploy hosting + functions
+firebase deploy
+```
+
+The `GEMINI_API_KEY` is stored in Firebase Secret Manager (not an environment variable). Set it once with:
+
+```bash
+firebase functions:secrets:set GEMINI_API_KEY
+```
+
+Firebase Hosting rewrites `/api/*` paths to the corresponding Cloud Function. Everything else serves `index.html` for client-side routing.
+
+### Vercel (secondary)
 
 ```bash
 cd frontend
 vercel --prod
 ```
 
-Set `GEMINI_API_KEY` as a Vercel environment variable. The JS functions in `frontend/api/` are picked up automatically.
+Set `GEMINI_API_KEY` as a Vercel environment variable in the dashboard. The JS functions in `frontend/api/` are picked up automatically.
 
 ### Cloud Run (planned)
 
@@ -339,9 +370,11 @@ The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then P
 
 ## Environment variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes | Google AI Studio key. Set in Vercel dashboard or `frontend/.env` locally. |
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `GEMINI_API_KEY` | Firebase Secret Manager | Set with `firebase functions:secrets:set GEMINI_API_KEY`. Required for live AI. |
+| `GEMINI_API_KEY` | Vercel dashboard | Set as an environment variable for the Vercel deployment. |
+| `GEMINI_API_KEY` | `frontend/.env` | For local development with `npm run dev`. |
 
 ---
 
@@ -350,16 +383,48 @@ The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then P
 Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterprise Productivity". Submission deadline: 18 October 2026.
 
 **Requirements checklist:**
-- [x] Gemini AI (@google/genai SDK, `gemini-3.8-flash`)
-- [x] Live deployment link
-- [ ] Google Cloud Run backend (ready in `server.py` and `Dockerfile`, pending billing setup)
+- [x] Gemini AI (`gemini-3.8-flash` via `@google/genai` SDK)
+- [x] Google Search grounding (`factCheckProposal` uses Gemini's built-in Google Search tool)
+- [x] Firebase Cloud Functions v2 (Google Cloud serverless compute)
+- [x] Firebase Hosting (Google Cloud static hosting with rewrite rules)
+- [x] Firebase Secret Manager (Google Cloud secrets for API key)
+- [x] Live deployment: https://dry-run-1608.web.app
+- [ ] Google Cloud Run backend (Python FastAPI ready in `server.py` and `Dockerfile`, pending billing setup)
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
 
-**Planned before submission:**
+**Planned integrations before submission:**
 - [ ] Google Drive: import proposals directly into the upload step
 - [ ] Google Docs: export session reports as formatted documents
 - [ ] Google Calendar: sync upcoming meetings to the Home screen dashboard
+
+---
+
+## Progress and what is left
+
+### Done
+- Full React SPA with sidebar navigation, 7 screens and a shared design system
+- 3-step rehearsal setup: file upload, panel selection and session configuration
+- Live rehearsal room: panel seats, transcript, speaking animations and input bar
+- AI-driven panel with per-persona conditions, speaker rotation logic and fact-checking
+- Post-session coaching report with weak points and annotated moments
+- Demo mode fallback: scripted responses when AI is unavailable
+- Custom persona creation in the Panel Library
+- Past sessions persisted to `localStorage` with replay navigation
+- Firebase Cloud Functions v2 deployment with Secret Manager
+- Vercel deployment as a secondary live URL
+- Google Search grounding for the Fact-Checker persona
+
+### In progress
+- No active in-progress items
+
+### Still to do
+- Google Cloud Run backend (Dockerfile ready)
+- 3-minute demo video
+- PDF pitch deck
+- Google Drive proposal import
+- Google Docs report export
+- Google Calendar upcoming meetings sync
 
 ---
 
