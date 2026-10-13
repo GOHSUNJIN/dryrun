@@ -28,6 +28,7 @@ export const sessionStart = onRequest(opts, async (req, res) => {
       conditions: getDemoConditions(persona_ids),
       fact_check: '',
       demo: true,
+      demo_reason: 'GEMINI_API_KEY not set',
     })
   }
 
@@ -48,6 +49,7 @@ export const sessionStart = onRequest(opts, async (req, res) => {
       conditions: getDemoConditions(persona_ids),
       fact_check: '',
       demo: true,
+      demo_reason: err.message,
     })
   }
 })

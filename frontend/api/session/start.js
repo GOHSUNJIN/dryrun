@@ -18,6 +18,7 @@ export default async function handler(req, res) {
       conditions: getDemoConditions(persona_ids),
       fact_check: '',
       demo: true,
+      demo_reason: 'GEMINI_API_KEY not set',
     });
   }
 
@@ -38,6 +39,7 @@ export default async function handler(req, res) {
       conditions: getDemoConditions(persona_ids),
       fact_check: '',
       demo: true,
+      demo_reason: err.message,
     });
   }
 }

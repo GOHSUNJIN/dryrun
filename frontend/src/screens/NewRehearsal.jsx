@@ -94,7 +94,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       }
 
       const data = await res.json()
-      if (data.demo) console.warn('[NewRehearsal] AI unavailable, server returned demo data')
+      if (data.demo) console.error('[NewRehearsal] AI unavailable, demo mode. Reason:', data.demo_reason || 'unknown')
       resetSession()
       updateSession({
         proposalText: text,
