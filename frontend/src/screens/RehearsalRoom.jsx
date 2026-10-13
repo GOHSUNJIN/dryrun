@@ -707,7 +707,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             borderRadius: 8, color: '#D97706', fontSize: '0.8125rem',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            <span>AI unavailable. Running on scripted demo responses. Add a Gemini API key in Vercel to enable live AI.</span>
+            <span>AI unavailable. Running on scripted demo responses. Add a Gemini API key to Firebase to enable live AI.</span>
           </div>
         </div>
       )}
