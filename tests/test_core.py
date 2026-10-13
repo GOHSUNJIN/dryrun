@@ -252,6 +252,24 @@ class TestGenerateOpenings:
         config = mock_client.models.generate_content.call_args.kwargs['config']
         assert config.response_mime_type == 'application/json'
 
+    def test_empty_persona_ids_raises_value_error(self):
+        with pytest.raises(ValueError, match='persona_ids'):
+            core.generate_openings(SAMPLE_PROPOSAL, [], {})
+
+    @patch('agents.core.get_client')
+    def test_response_text_none_returns_empty_list(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(None)
+        result = core.generate_openings(SAMPLE_PROPOSAL, ['finance'], {})
+        assert result == []
+
+    @patch('agents.core.get_client')
+    def test_industry_config_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._openings_payload())
+        mock_get_client.return_value = mock_client
+        core.generate_openings(SAMPLE_PROPOSAL, ['finance', 'legal', 'ops'], {'industry': 'Healthcare'})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'Healthcare' in config.system_instruction
+
     @patch('agents.core.get_client')
     def test_returns_empty_list_on_malformed_json(self, mock_get_client):
         mock_get_client.return_value = make_mock_client('not valid json {{{')
@@ -354,6 +372,18 @@ class TestGenerateReply:
         assert 'Turn 0' not in contents
         assert 'Turn 19' in contents
 
+    def test_empty_persona_ids_raises_value_error(self):
+        with pytest.raises(ValueError, match='persona_ids'):
+            core.generate_reply(SAMPLE_PROPOSAL, [], SAMPLE_TRANSCRIPT, {}, {})
+
+    @patch('agents.core.get_client')
+    def test_response_text_none_returns_fallback(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(None)
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert result['speaker'] in ['finance', 'legal']
+        assert result['text'] == ''
+        assert result['conditions_met'] == []
+
     @patch('agents.core.get_client')
     def test_returns_fallback_on_malformed_json(self, mock_get_client):
         mock_get_client.return_value = make_mock_client('not valid json {{{')
@@ -361,6 +391,37 @@ class TestGenerateReply:
         assert result['speaker'] in ['finance', 'legal']
         assert result['text'] == ''
         assert result['conditions_met'] == []
+
+    @patch('agents.core.get_client')
+    def test_fact_check_notes_injected_in_reply_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply_payload('factcheck'))
+        mock_get_client.return_value = mock_client
+        notes = 'BLS 2025 confirms $120k median salary.'
+        core.generate_reply(
+            SAMPLE_PROPOSAL, ['factcheck'], SAMPLE_TRANSCRIPT, {}, {},
+            fact_check_notes=notes,
+        )
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert notes in config.system_instruction
+
+    @patch('agents.core.get_client')
+    def test_last_speaker_injected_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply_payload('ops'))
+        mock_get_client.return_value = mock_client
+        transcript = [
+            {'speaker': 'finance',   'text': 'Cost question.'},
+            {'speaker': 'presenter', 'text': 'Here are the numbers.'},
+            {'speaker': 'ops',       'text': 'Who owns the transition?'},
+        ]
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal', 'ops'], transcript, {}, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'ops' in config.system_instruction
+
+    @patch('agents.core.get_client')
+    def test_empty_transcript_handled_gracefully(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._reply_payload('finance'))
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], [], {}, {})
+        assert result['speaker'] == 'finance'
 
     @patch('agents.core.get_client')
     def test_api_exception_raises_runtime_error(self, mock_get_client):
@@ -431,9 +492,19 @@ class TestGenerateReport:
         result = core.generate_report(SAMPLE_PROPOSAL, ALL_IDS, SAMPLE_TRANSCRIPT, {})
         assert isinstance(result['moments'], list)
 
+    def test_empty_persona_ids_raises_value_error(self):
+        with pytest.raises(ValueError, match='persona_ids'):
+            core.generate_report(SAMPLE_PROPOSAL, [], SAMPLE_TRANSCRIPT, {})
+
     @patch('agents.core.get_client')
     def test_returns_empty_structure_on_invalid_json(self, mock_get_client):
         mock_get_client.return_value = make_mock_client('this is not json {')
+        result = core.generate_report(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {})
+        assert result == {'weak_points': [], 'moments': []}
+
+    @patch('agents.core.get_client')
+    def test_response_text_none_returns_empty_structure(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(None)
         result = core.generate_report(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {})
         assert result == {'weak_points': [], 'moments': []}
 

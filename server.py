@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 app = FastAPI(title='Dry Run API')
 
@@ -21,6 +21,7 @@ class StartRequest(BaseModel):
     proposal_text: str
     persona_ids: List[str] = ['finance', 'legal', 'ops', 'factcheck']
     config: Dict[str, Any] = {}
+    custom_personas: Dict[str, Any] = {}
 
 
 class MessageRequest(BaseModel):
@@ -29,6 +30,8 @@ class MessageRequest(BaseModel):
     transcript: List[Dict[str, Any]]
     conditions: Dict[str, bool]
     config: Dict[str, Any] = {}
+    fact_check: str = ''
+    custom_personas: Dict[str, Any] = {}
 
 
 class EndRequest(BaseModel):
@@ -36,17 +39,31 @@ class EndRequest(BaseModel):
     persona_ids: List[str]
     transcript: List[Dict[str, Any]]
     conditions: Dict[str, bool]
+    custom_personas: Dict[str, Any] = {}
 
 
 # ── API routes ───────────────────────────────────────────────────────────────
 
 @app.post('/api/session/start')
 async def session_start(body: StartRequest):
-    from agents.core import generate_openings, get_initial_conditions
+    from agents.core import fact_check_proposal, generate_openings, get_initial_conditions
     try:
-        messages = generate_openings(body.proposal_text, body.persona_ids, body.config)
-        conditions = get_initial_conditions(body.persona_ids)
-        return {'messages': messages, 'conditions': conditions}
+        fact_check = (
+            fact_check_proposal(body.proposal_text)
+            if 'factcheck' in body.persona_ids
+            else ''
+        )
+        messages = generate_openings(
+            body.proposal_text,
+            body.persona_ids,
+            body.config,
+            fact_check_notes=fact_check,
+            custom_defs=body.custom_personas or None,
+        )
+        conditions = get_initial_conditions(body.persona_ids, custom_defs=body.custom_personas or None)
+        return {'messages': messages, 'conditions': conditions, 'fact_check': fact_check}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except EnvironmentError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
@@ -63,7 +80,11 @@ async def session_message(body: MessageRequest):
             body.transcript,
             body.conditions,
             body.config,
+            fact_check_notes=body.fact_check,
+            custom_defs=body.custom_personas or None,
         )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except EnvironmentError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
@@ -79,7 +100,10 @@ async def session_end(body: EndRequest):
             body.persona_ids,
             body.transcript,
             body.conditions,
+            custom_defs=body.custom_personas or None,
         )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except EnvironmentError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:

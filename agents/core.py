@@ -122,6 +122,8 @@ def generate_openings(
     custom_defs: dict = None,
 ) -> list:
     """Generate all panel opening challenges in a single Gemini call."""
+    if not persona_ids:
+        raise ValueError('persona_ids must not be empty')
     client = get_client()
     defs = all_defs(custom_defs)
     toughness = config.get('toughness', 'Balanced')
@@ -181,7 +183,7 @@ Return ONLY valid JSON with no markdown fences:
 
     try:
         data = json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError):
+    except (json.JSONDecodeError, AttributeError, TypeError):
         return []
 
     openings = []
@@ -208,6 +210,8 @@ def generate_reply(
     custom_defs: dict = None,
 ) -> dict:
     """Pick the next speaker and generate their response in a single Gemini call."""
+    if not persona_ids:
+        raise ValueError('persona_ids must not be empty')
     client = get_client()
     defs = all_defs(custom_defs)
     toughness = config.get('toughness', 'Balanced')
@@ -297,8 +301,7 @@ Return ONLY valid JSON with no markdown fences:
 
     try:
         data = json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError):
-        # Malformed JSON: fall back to first persona with an empty response
+    except (json.JSONDecodeError, AttributeError, TypeError):
         return {'speaker': persona_ids[0], 'text': '', 'conditions_met': []}
 
     speaker_id = data.get('speaker_id', persona_ids[0])
@@ -333,6 +336,8 @@ def generate_report(
     custom_defs: dict = None,
 ) -> dict:
     """Generate coaching report from a completed session."""
+    if not persona_ids:
+        raise ValueError('persona_ids must not be empty')
     client = get_client()
     defs = all_defs(custom_defs)
 
@@ -394,8 +399,10 @@ Rules:
                 max_output_tokens=2000,
             ),
         )
-        return json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError):
-        return {'weak_points': [], 'moments': []}
     except Exception as exc:
         raise RuntimeError(f'Gemini API error in generate_report: {exc}') from exc
+
+    try:
+        return json.loads(response.text)
+    except (json.JSONDecodeError, AttributeError, TypeError):
+        return {'weak_points': [], 'moments': []}
