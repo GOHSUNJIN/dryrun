@@ -101,6 +101,21 @@ export function saveVoiceSettings(settings) {
   localStorage.setItem(VOICE_KEY, JSON.stringify(settings))
 }
 
+const MEETINGS_KEY = 'dryrun_meetings'
+
+export function loadLocalMeetings() {
+  try { return JSON.parse(localStorage.getItem(MEETINGS_KEY) || '[]') }
+  catch { return [] }
+}
+
+export function addLocalMeeting(meeting) {
+  localStorage.setItem(MEETINGS_KEY, JSON.stringify([...loadLocalMeetings(), meeting]))
+}
+
+export function deleteLocalMeeting(id) {
+  localStorage.setItem(MEETINGS_KEY, JSON.stringify(loadLocalMeetings().filter(m => m.id !== id)))
+}
+
 export function renameProposal(oldName, newName) {
   saveSessions(loadSessions().map(s => s.proposal === oldName ? { ...s, proposal: newName } : s))
 }

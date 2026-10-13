@@ -25,10 +25,11 @@ const DEFAULT_SESSION = {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState('home')
-  const [session, setSession] = useState(DEFAULT_SESSION)
+  const [screen, setScreen]       = useState('home')
+  const [navPayload, setNavPayload] = useState({})
+  const [session, setSession]     = useState(DEFAULT_SESSION)
 
-  const navigate = (s) => setScreen(s)
+  const navigate = (s, payload = {}) => { setScreen(s); setNavPayload(payload) }
   const showSidebar = SCREENS_WITH_SIDEBAR.includes(screen)
 
   const updateSession = (updates) =>
@@ -39,7 +40,7 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case 'home':     return <Home navigate={navigate} />
-      case 'new':      return <NewRehearsal navigate={navigate} session={session} updateSession={updateSession} resetSession={resetSession} />
+      case 'new':      return <NewRehearsal navigate={navigate} session={session} updateSession={updateSession} resetSession={resetSession} navPayload={navPayload} />
       case 'room':     return <RehearsalRoom navigate={navigate} session={session} updateSession={updateSession} />
       case 'report':   return <Report navigate={navigate} session={session} />
       case 'debrief':  return <Debrief navigate={navigate} session={session} />

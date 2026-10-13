@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen } from 'lucide-react'
+import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadCustomPersonas, loadRehearsalDefaults, loadSessions } from '../utils/storage.js'
-import { listDriveDocs, fetchDocText } from '../utils/google.js'
+import { listDriveItems, fetchDocText } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
@@ -16,11 +16,11 @@ function buildCustomDefs(customPersonas) {
   return defs
 }
 
-export default function NewRehearsal({ navigate, session, updateSession, resetSession }) {
+export default function NewRehearsal({ navigate, session, updateSession, resetSession, navPayload = {} }) {
   const customPersonas = loadCustomPersonas()
   const allPersonas    = [...PERSONAS, ...customPersonas]
   const defaults       = loadRehearsalDefaults()
-  const autoName = useRef(`Rehearsal ${loadSessions().length + 1}`)
+  const autoName = useRef(navPayload.meetingName || `Rehearsal ${loadSessions().length + 1}`)
   const [step, setStep]           = useState(0)
   const [uploaded, setUploaded]   = useState(false)
   const [proposalText, setProposalText] = useState('')
@@ -33,8 +33,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [companySize, setCompanySize] = useState('')
   const [focus, setFocus]         = useState('')
   const [launching, setLaunching] = useState(false)
+  const [driveOpen, setDriveOpen]       = useState(false)
   const [driveLoading, setDriveLoading] = useState(false)
-  const [driveFiles, setDriveFiles] = useState(null)
+  const [driveItems, setDriveItems]     = useState([])
+  const [driveStack, setDriveStack]     = useState([])
   const fileInputRef = useRef(null)
 
   const togglePersona = (id) => {
@@ -51,21 +53,50 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     reader.readAsText(file)
   }
 
-  const handleDriveImport = async () => {
+  const openDrivePicker = async () => {
     setDriveLoading(true)
-    setDriveFiles(null)
+    setDriveStack([])
     try {
-      const files = await listDriveDocs()
-      setDriveFiles(files)
+      const items = await listDriveItems('root')
+      setDriveItems(items)
+      setDriveOpen(true)
     } catch (err) {
-      console.error('[Drive] failed to list docs:', err)
+      console.error('[Drive] failed to open picker:', err)
+    } finally {
+      setDriveLoading(false)
+    }
+  }
+
+  const navigateDriveFolder = async (folder) => {
+    setDriveLoading(true)
+    try {
+      const items = await listDriveItems(folder.id)
+      setDriveItems(items)
+      setDriveStack(prev => [...prev, { id: folder.id, name: folder.name }])
+    } catch (err) {
+      console.error('[Drive] folder nav failed:', err)
+    } finally {
+      setDriveLoading(false)
+    }
+  }
+
+  const navigateDriveTo = async (stackIndex) => {
+    const newStack = driveStack.slice(0, stackIndex)
+    const folderId = newStack[newStack.length - 1]?.id || 'root'
+    setDriveLoading(true)
+    try {
+      const items = await listDriveItems(folderId)
+      setDriveItems(items)
+      setDriveStack(newStack)
+    } catch (err) {
+      console.error('[Drive] breadcrumb nav failed:', err)
     } finally {
       setDriveLoading(false)
     }
   }
 
   const selectDriveFile = async (file) => {
-    setDriveFiles(null)
+    setDriveOpen(false)
     setDriveLoading(true)
     try {
       const text = await fetchDocText(file.id)
@@ -218,17 +249,17 @@ const canContinue = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 16 }}>
                       <button
                         className="btn btn-secondary btn-sm"
-                        onClick={handleDriveImport}
-                        disabled={driveLoading}
+                        onClick={openDrivePicker}
+                        disabled={driveLoading && !driveOpen}
                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                       >
-                        {driveLoading ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <FolderOpen size={13} />}
+                        {driveLoading && !driveOpen ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <FolderOpen size={13} />}
                         Import from Google Drive
                       </button>
 
-                      {driveFiles !== null && (
+                      {driveOpen && (
                         <div style={{
-                          width: '100%', maxWidth: 400,
+                          width: '100%', maxWidth: 420,
                           border: '1px solid var(--border)', borderRadius: 10,
                           background: 'var(--bg-surface)',
                           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
@@ -237,44 +268,70 @@ const canContinue = () => {
                           <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '9px 14px', borderBottom: '1px solid var(--border)',
-                            background: 'var(--bg-hover)',
+                            background: 'var(--bg-hover)', gap: 8,
                           }}>
-                            <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                              Recent documents
-                            </span>
-                            <button onClick={() => setDriveFiles(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => navigateDriveTo(0)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, color: driveStack.length === 0 ? 'var(--text-primary)' : 'var(--app-accent)', padding: 0, fontFamily: 'var(--font-ui)' }}
+                              >
+                                My Drive
+                              </button>
+                              {driveStack.map((folder, i) => (
+                                <Fragment key={folder.id}>
+                                  <ChevronRight size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                  <button
+                                    onClick={() => navigateDriveTo(i + 1)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, color: i === driveStack.length - 1 ? 'var(--text-primary)' : 'var(--app-accent)', padding: 0, fontFamily: 'var(--font-ui)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                  >
+                                    {folder.name}
+                                  </button>
+                                </Fragment>
+                              ))}
+                            </div>
+                            <button onClick={() => setDriveOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex', flexShrink: 0 }}>
                               <X size={13} />
                             </button>
                           </div>
-                          <div style={{ maxHeight: 260, overflowY: 'auto' }}>
-                            {driveFiles.length === 0 ? (
-                              <div style={{ padding: '16px', fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                                No Google Docs found.
+                          <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+                            {driveLoading ? (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                                <Loader size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-muted)' }} />
                               </div>
-                            ) : driveFiles.map((f, i) => (
+                            ) : driveItems.length === 0 ? (
+                              <div style={{ padding: '16px', fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                                No files found in this folder.
+                              </div>
+                            ) : driveItems.map((item, i) => (
                               <button
-                                key={f.id}
-                                onClick={() => selectDriveFile(f)}
+                                key={item.id}
+                                onClick={() => item.isFolder ? navigateDriveFolder(item) : selectDriveFile(item)}
                                 onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                 style={{
                                   display: 'flex', alignItems: 'center', gap: 10,
                                   width: '100%', padding: '9px 14px',
                                   background: 'transparent', border: 'none',
-                                  borderBottom: i < driveFiles.length - 1 ? '1px solid var(--border)' : 'none',
+                                  borderBottom: i < driveItems.length - 1 ? '1px solid var(--border)' : 'none',
                                   cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-ui)',
                                   color: 'var(--text-primary)', transition: 'background 0.1s ease',
                                 }}
                               >
-                                <FileText size={14} style={{ color: '#4285F4', flexShrink: 0 }} />
+                                {item.isFolder
+                                  ? <Folder size={14} style={{ color: '#F59E0B', flexShrink: 0 }} />
+                                  : <FileText size={14} style={{ color: '#4285F4', flexShrink: 0 }} />
+                                }
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: '0.8125rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {f.name}
+                                  <div style={{ fontSize: '0.8125rem', fontWeight: item.isFolder ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {item.name}
                                   </div>
-                                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 1 }}>
-                                    {new Date(f.modifiedTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                  </div>
+                                  {!item.isFolder && item.modifiedTime && (
+                                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: 1 }}>
+                                      {new Date(item.modifiedTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </div>
+                                  )}
                                 </div>
+                                {item.isFolder && <ChevronRight size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
                               </button>
                             ))}
                           </div>

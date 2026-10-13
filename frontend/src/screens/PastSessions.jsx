@@ -8,15 +8,21 @@ function loadGroups() {
 }
 
 export default function PastSessions({ navigate }) {
+  const INITIAL_LIMIT = 5
+
   const [query, setQuery]               = useState('')
   const [collapsed, setCollapsed]       = useState(new Set())
   const [groups, setGroups]             = useState(loadGroups)
+  const [showAll, setShowAll]           = useState(false)
   const [editingProposal, setEditingProposal] = useState(null)
   const [editingName, setEditingName]   = useState('')
 
   const filtered = groups.filter(g =>
     g.proposal.toLowerCase().includes(query.toLowerCase())
   )
+
+  const visibleGroups  = (showAll || query) ? filtered : filtered.slice(0, INITIAL_LIMIT)
+  const hiddenCount    = Math.max(0, filtered.length - INITIAL_LIMIT)
 
   const toggleGroup = (name) => {
     if (editingProposal) return
@@ -96,7 +102,7 @@ export default function PastSessions({ navigate }) {
                 Clear search
               </button>
             </div>
-          ) : filtered.map((group, gi) => (
+          ) : visibleGroups.map((group, gi) => (
             <div key={gi} className="proposal-group">
               <div className="proposal-group-header" onClick={() => toggleGroup(group.proposal)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -228,6 +234,24 @@ export default function PastSessions({ navigate }) {
               })}
             </div>
           ))}
+
+          {!showAll && !query && hiddenCount > 0 && (
+            <button
+              onClick={() => setShowAll(true)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '100%', padding: '12px', marginTop: 4,
+                background: 'none', border: '1px dashed var(--border)',
+                borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                fontSize: '0.8125rem', color: 'var(--text-muted)',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-muted)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
+            >
+              Show {hiddenCount} more proposal{hiddenCount !== 1 ? 's' : ''}
+            </button>
+          )}
         </>
       )}
     </div>

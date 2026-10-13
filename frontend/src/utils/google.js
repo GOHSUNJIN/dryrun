@@ -49,6 +49,24 @@ async function gfetch(url, opts = {}) {
 }
 
 // Drive
+export async function listDriveItems(folderId = 'root') {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`)
+  const fields = 'files(id,name,mimeType,modifiedTime)'
+  const r = await gfetch(
+    `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=folder,name&pageSize=50`
+  )
+  const data = await r.json()
+  return (data.files || [])
+    .map(f => ({
+      id: f.id,
+      name: f.name,
+      isFolder: f.mimeType === 'application/vnd.google-apps.folder',
+      isDoc: f.mimeType === 'application/vnd.google-apps.document',
+      modifiedTime: f.modifiedTime,
+    }))
+    .filter(f => f.isFolder || f.isDoc)
+}
+
 export async function listDriveDocs() {
   const q = encodeURIComponent("mimeType='application/vnd.google-apps.document' and trashed=false")
   const r = await gfetch(

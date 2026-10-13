@@ -23,7 +23,7 @@ The primary users are professionals who present proposals to approval committees
 
 ## How it works
 
-1. **Upload your proposal.** Paste text or drop in a file. The panel reads it and generates challenges specific to your content.
+1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. The panel reads it and generates challenges specific to your content.
 2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library.
 3. **Configure the session.** Set industry context, company size, panel toughness and turn limit.
 4. **Enter the room.** A random panelist fires the first question immediately. The rest stagger in. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer was specific enough to satisfy any conditions and sometimes triggers a second panelist to pile on.
@@ -394,9 +394,9 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - [ ] PDF pitch deck
 
 **Planned integrations before submission:**
-- [ ] Google Drive: import proposals directly into the upload step
-- [ ] Google Docs: export session reports as formatted documents
-- [ ] Google Calendar: sync upcoming meetings to the Home screen dashboard
+- [x] Google Drive: import proposals with full folder navigation breadcrumb
+- [x] Google Docs: export session reports as formatted documents
+- [x] Google Calendar: sync upcoming meetings to the Home screen dashboard
 
 ---
 
@@ -414,17 +414,19 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Firebase Cloud Functions v2 deployment with Secret Manager
 - Vercel deployment as a secondary live URL
 - Google Search grounding for the Fact-Checker persona
-
-### In progress
-- No active in-progress items
+- Google Drive proposal import with folder navigation and breadcrumb trail
+- Google Docs report export
+- Google Calendar sync for upcoming meetings on the Home screen
+- Manual meeting creation from the Home screen (stored in localStorage)
+- Session naming: custom name pre-filled from meeting title or auto-numbered
+- Proposal rename inline from Past Sessions (pencil icon on group header)
+- Pagination on Past Sessions: shows first 5 groups with "Show N more" expand
+- Home screen redesigned to card rows matching Past Sessions style
 
 ### Still to do
 - Google Cloud Run backend (Dockerfile ready)
 - 3-minute demo video
 - PDF pitch deck
-- Google Drive proposal import
-- Google Docs report export
-- Google Calendar upcoming meetings sync
 
 ---
 
