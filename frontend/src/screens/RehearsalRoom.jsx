@@ -186,12 +186,13 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [openingsDone, setOpeningsDone]             = useState(openingMsgs.length === 0)
   const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
 
-  const transcriptRef  = useRef(null)
-  const recognitionRef = useRef(null)
-  const roomStateRef   = useRef(roomState)
-  const speechOnRef    = useRef(speechOn)
-  const ttsQueueRef    = useRef([])
-  const ttsBusyRef     = useRef(false)
+  const transcriptRef    = useRef(null)
+  const recognitionRef   = useRef(null)
+  const roomStateRef     = useRef(roomState)
+  const speechOnRef      = useRef(speechOn)
+  const ttsQueueRef      = useRef([])
+  const ttsBusyRef       = useRef(false)
+  const openingsFiredRef = useRef(false)
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
@@ -242,8 +243,10 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   // Stagger opening messages — first one fires immediately, rest follow in sequence.
   // Shuffle so a random panelist always goes first.
+  // openingsFiredRef guards against React StrictMode double-invocation.
   useEffect(() => {
-    if (openingMsgs.length === 0) return
+    if (openingsFiredRef.current || openingMsgs.length === 0) return
+    openingsFiredRef.current = true
     const [first, ...rest] = [...openingMsgs].sort(() => Math.random() - 0.5)
     const ordered = [first, ...rest]
     let delay = 300

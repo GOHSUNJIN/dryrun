@@ -701,7 +701,6 @@ ul { list-style: none; }
   padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   position: relative;
   z-index: 2;
   scrollbar-width: thin;
@@ -711,7 +710,9 @@ ul { list-style: none; }
 .room-transcript-inner {
   width: 100%;
   max-width: 880px;
-  margin: 0 auto;
+  margin-top: auto;
+  margin-left: auto;
+  margin-right: auto;
   padding: 24px 32px 16px;
   display: flex;
   flex-direction: column;
@@ -858,7 +859,7 @@ ul { list-style: none; }
 
 .room-input-wrap {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
   background: var(--room-surface);
   border: 1px solid var(--room-border);
