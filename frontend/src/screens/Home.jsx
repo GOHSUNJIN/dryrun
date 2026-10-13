@@ -41,7 +41,7 @@ export default function Home({ navigate }) {
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
           <div className="home-greeting">
-            {getGreeting()}<br />
+            {getGreeting()} Sun Jin.<br />
             <em>Ready to rehearse?</em>
           </div>
           <button className="home-hero-btn" onClick={() => navigate('new')}>

@@ -236,12 +236,15 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     window.speechSynthesis?.cancel()
   }, [])
 
-  // Stagger opening messages for both real sessions and the live demo
+  // Stagger opening messages — first one fires immediately, rest follow in sequence.
+  // Shuffle so a random panelist always goes first.
   useEffect(() => {
     if (openingMsgs.length === 0) return
-    let delay = 600
-    openingMsgs.forEach((msg, i) => {
-      const isLast = i === openingMsgs.length - 1
+    const [first, ...rest] = [...openingMsgs].sort(() => Math.random() - 0.5)
+    const ordered = [first, ...rest]
+    let delay = 300
+    ordered.forEach((msg, i) => {
+      const isLast = i === ordered.length - 1
       setTimeout(() => {
         setLocalTranscript(prev => [...prev, msg])
         setActiveSpeaker(msg.speaker)

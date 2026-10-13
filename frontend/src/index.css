@@ -701,6 +701,7 @@ ul { list-style: none; }
   padding: 24px 80px 16px;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 20px;
   position: relative;
   z-index: 2;
@@ -835,7 +836,7 @@ ul { list-style: none; }
 .room-input-area {
   position: relative;
   z-index: 2;
-  padding: 16px 80px 24px;
+  padding: 16px 80px 32px;
   flex-shrink: 0;
 }
 

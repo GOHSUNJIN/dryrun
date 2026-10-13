@@ -32,6 +32,7 @@ const item = {
 
 export default function Report({ navigate, session }) {
   const [copied, setCopied] = useState(false)
+  const [activeTab, setActiveTab] = useState('conditions')
 
   const hasRealReport = Boolean(session?.reportData?.weak_points?.length)
   const weakPoints    = hasRealReport ? session.reportData.weak_points : FALLBACK_WEAK_POINTS
@@ -115,59 +116,81 @@ export default function Report({ navigate, session }) {
         </motion.div>
 
         <motion.div variants={item}>
-          <div className="section-label" style={{ marginBottom: 16 }}>Conditions by persona</div>
-          {personas.map(p => {
-            const metCount = p.conditions.filter(c => c.met).length
-            return (
-              <div key={p.id} className="report-persona-section">
-                <div className="report-persona-header">
-                  <div className="report-persona-pip" style={{ background: p.color }} />
-                  <div className="report-persona-name">
-                    {p.name}{' '}
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.875rem', fontWeight: 400, color: 'var(--text-secondary)' }}>
-                      · {p.role}
-                    </span>
-                  </div>
-                  <div className="report-cond-count">{metCount}/{p.conditions.length} conditions met</div>
-                </div>
-                <div className="report-conditions">
-                  {(p.conditions || []).map(c => (
-                    <div key={c.id} className="report-condition">
-                      <div className={`report-cond-icon ${c.met ? 'met' : 'unmet'}`}>
-                        {c.met ? <Check size={11} /> : <X size={11} />}
-                      </div>
-                      <span className={`report-cond-text ${c.met ? '' : 'unmet'}`}>{c.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </motion.div>
-
-        <motion.div variants={item}>
-          <div className="weak-points-section">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div className="section-label" style={{ marginBottom: 0 }}>Top weak points to address</div>
-              {!hasRealReport && (
-                <span style={{
-                  fontSize: '0.6875rem', fontWeight: 600, padding: '3px 8px', borderRadius: 99,
-                  background: 'rgba(245,158,11,0.1)', color: '#D97706',
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                }}>
-                  Sample data
-                </span>
-              )}
-            </div>
-            {weakPoints.map((w, i) => (
-              <div key={i} className="weak-point-card">
-                <div className="weak-point-label">{w.label}</div>
-                <div className="weak-point-issue">{w.issue}</div>
-                <div className="weak-point-fix-label">Suggested fix</div>
-                <div className="weak-point-fix">{w.fix}</div>
-              </div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+            {[
+              { id: 'conditions', label: 'Conditions' },
+              { id: 'coaching',   label: 'Coaching' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: '8px 16px', border: 'none', background: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '0.875rem', fontWeight: 500,
+                  color: activeTab === tab.id ? 'var(--text-primary)' : 'var(--text-muted)',
+                  borderBottom: activeTab === tab.id ? '2px solid var(--text-primary)' : '2px solid transparent',
+                  marginBottom: -1, transition: 'color 0.15s ease',
+                }}
+              >{tab.label}</button>
             ))}
           </div>
+
+          {activeTab === 'conditions' && (
+            <>
+              {personas.map(p => {
+                const metCount = p.conditions.filter(c => c.met).length
+                return (
+                  <div key={p.id} className="report-persona-section">
+                    <div className="report-persona-header">
+                      <div className="report-persona-pip" style={{ background: p.color }} />
+                      <div className="report-persona-name">
+                        {p.name}{' '}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.875rem', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                          · {p.role}
+                        </span>
+                      </div>
+                      <div className="report-cond-count">{metCount}/{p.conditions.length} conditions met</div>
+                    </div>
+                    <div className="report-conditions">
+                      {(p.conditions || []).map(c => (
+                        <div key={c.id} className="report-condition">
+                          <div className={`report-cond-icon ${c.met ? 'met' : 'unmet'}`}>
+                            {c.met ? <Check size={11} /> : <X size={11} />}
+                          </div>
+                          <span className={`report-cond-text ${c.met ? '' : 'unmet'}`}>{c.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
+
+          {activeTab === 'coaching' && (
+            <div className="weak-points-section">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div className="section-label" style={{ marginBottom: 0 }}>Top weak points to address</div>
+                {!hasRealReport && (
+                  <span style={{
+                    fontSize: '0.6875rem', fontWeight: 600, padding: '3px 8px', borderRadius: 99,
+                    background: 'rgba(245,158,11,0.1)', color: '#D97706',
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                  }}>
+                    Sample data
+                  </span>
+                )}
+              </div>
+              {weakPoints.map((w, i) => (
+                <div key={i} className="weak-point-card">
+                  <div className="weak-point-label">{w.label}</div>
+                  <div className="weak-point-issue">{w.issue}</div>
+                  <div className="weak-point-fix-label">Suggested fix</div>
+                  <div className="weak-point-fix">{w.fix}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         <motion.div variants={item}>
