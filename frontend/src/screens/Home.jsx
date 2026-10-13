@@ -25,7 +25,7 @@ const rowCard = (hovered) => ({
   display: 'flex', alignItems: 'center', gap: 12,
   padding: '12px 16px', marginBottom: 8,
   borderRadius: 8, border: '1px solid var(--border)',
-  background: hovered ? 'var(--bg-hover)' : 'var(--bg-card)',
+  background: hovered ? 'var(--bg-hover)' : 'var(--bg-surface)',
   cursor: 'pointer', transition: 'background 0.15s ease',
 })
 
@@ -224,7 +224,7 @@ export default function Home({ navigate }) {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'flex-start', gap: 14,
                   padding: '16px 18px', borderRadius: 10,
-                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
                 }}>
                   <div style={{
                     fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',

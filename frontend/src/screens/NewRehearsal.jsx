@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas, loadRehearsalDefaults } from '../utils/storage.js'
+import { loadCustomPersonas, loadRehearsalDefaults, loadSessions } from '../utils/storage.js'
 import { listDriveDocs, fetchDocText } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
@@ -20,10 +20,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const customPersonas = loadCustomPersonas()
   const allPersonas    = [...PERSONAS, ...customPersonas]
   const defaults       = loadRehearsalDefaults()
+  const autoName = useRef(`Rehearsal ${loadSessions().length + 1}`)
   const [step, setStep]           = useState(0)
   const [uploaded, setUploaded]   = useState(false)
   const [proposalText, setProposalText] = useState('')
-  const [proposalName, setProposalName] = useState('')
+  const [proposalName, setProposalName] = useState(autoName.current)
   const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
@@ -44,7 +45,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     const reader = new FileReader()
     reader.onload = (e) => {
       setProposalText(e.target.result)
-      setProposalName(file.name.replace(/\.[^.]+$/, ''))
+      setProposalName(prev => prev === autoName.current ? file.name.replace(/\.[^.]+$/, '') : prev)
       setUploaded(true)
     }
     reader.readAsText(file)
@@ -69,7 +70,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     try {
       const text = await fetchDocText(file.id)
       setProposalText(text)
-      setProposalName(file.name)
+      setProposalName(prev => prev === autoName.current ? file.name : prev)
       setUploaded(true)
     } catch (err) {
       console.error('[Drive] failed to fetch doc:', err)
@@ -183,6 +184,17 @@ const canContinue = () => {
                 <div className="step-title">Upload your proposal</div>
                 <div className="step-desc">Drag in a PDF or text file, or import directly from Google Drive.</div>
 
+                <div style={{ marginBottom: 24 }}>
+                  <div className="question-label">Session name</div>
+                  <input
+                    className="settings-input"
+                    value={proposalName}
+                    onChange={e => setProposalName(e.target.value)}
+                    placeholder="Name this session..."
+                    style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
+                  />
+                </div>
+
                 {!uploaded ? (
                   <>
                     <div
@@ -218,7 +230,7 @@ const canContinue = () => {
                         <div style={{
                           width: '100%', maxWidth: 400,
                           border: '1px solid var(--border)', borderRadius: 10,
-                          background: 'var(--bg-card)',
+                          background: 'var(--bg-surface)',
                           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                           overflow: 'hidden',
                         }}>
@@ -292,16 +304,6 @@ const canContinue = () => {
                       >
                         <X size={16} />
                       </button>
-                    </div>
-                    <div style={{ marginTop: 20 }}>
-                      <div className="question-label">Session name</div>
-                      <input
-                        className="settings-input"
-                        value={proposalName}
-                        onChange={e => setProposalName(e.target.value)}
-                        placeholder="Name this session..."
-                        style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
-                      />
                     </div>
                   </>
                 )}
