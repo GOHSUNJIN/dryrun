@@ -341,6 +341,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           updatedConditions[cid] = true
         }
 
+        const hasCondMet = (data.conditions_met || []).length > 0
+        const followUp   = data.follow_up || null
+
         setTypingPersonaId(null)
         setLocalTranscript(updatedTranscript)
         setLocalConditions(updatedConditions)
@@ -348,14 +351,55 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         setAppearingMsgId(replyMsg.id)
         enqueueSpeak(replyMsg.text, replyMsg.speaker)
 
-        updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
-
-        if ((data.conditions_met || []).length > 0) {
-          setRoomState('condition-met')
-          setTimeout(() => setRoomState('idle'), 2200)
-        } else {
+        if (followUp) {
+          // Keep 'speaking' so input stays disabled during the follow-up sequence
           setRoomState('speaking')
-          setTimeout(() => setRoomState('idle'), 3500)
+          updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+
+          setTimeout(() => {
+            setTypingPersonaId(followUp.speaker)
+            setRoomState('thinking')
+          }, 2500)
+
+          setTimeout(() => {
+            const fuCondsMet = followUp.conditions_met || []
+            const finalConditions = { ...updatedConditions }
+            for (const cid of fuCondsMet) finalConditions[cid] = true
+
+            const fuMsg = {
+              id: Date.now() + 2,
+              speaker: followUp.speaker,
+              text: followUp.text,
+              time: getElapsedTime(),
+              ...(followUp.source ? { source: followUp.source } : {}),
+            }
+            const finalTranscript = [...updatedTranscript, fuMsg]
+
+            setTypingPersonaId(null)
+            setLocalTranscript(finalTranscript)
+            setLocalConditions(finalConditions)
+            setActiveSpeaker(followUp.speaker)
+            setAppearingMsgId(fuMsg.id)
+            enqueueSpeak(fuMsg.text, followUp.speaker)
+            updateSession({ transcript: finalTranscript, conditions: finalConditions })
+
+            if (hasCondMet || fuCondsMet.length > 0) {
+              setRoomState('condition-met')
+              setTimeout(() => setRoomState('idle'), 2200)
+            } else {
+              setRoomState('speaking')
+              setTimeout(() => setRoomState('idle'), 3500)
+            }
+          }, 4500)
+        } else {
+          updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+          if (hasCondMet) {
+            setRoomState('condition-met')
+            setTimeout(() => setRoomState('idle'), 2200)
+          } else {
+            setRoomState('speaking')
+            setTimeout(() => setRoomState('idle'), 3500)
+          }
         }
       } catch {
         setTypingPersonaId(null)
@@ -369,16 +413,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const fallbackResponse = () => {
     setResponseIdx(r => {
-      const scripted = SCRIPTED_RESPONSES[r % SCRIPTED_RESPONSES.length]
-      const speakerId = visiblePersonas.find(p => p.id === scripted.speaker)?.id
+      const scripted   = SCRIPTED_RESPONSES[r % SCRIPTED_RESPONSES.length]
+      const speakerId  = visiblePersonas.find(p => p.id === scripted.speaker)?.id
         || visiblePersonas[r % visiblePersonas.length]?.id
+
+      if (!speakerId) return r + 1
 
       setActiveSpeaker(speakerId)
       setTypingPersonaId(speakerId)
 
       setTimeout(() => {
-        setTypingPersonaId(null)
-        setRoomState('speaking')
         const replyMsg = {
           id: Date.now() + 1,
           speaker: speakerId,
@@ -386,20 +430,60 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           ...(scripted.source ? { source: scripted.source } : {}),
           time: getElapsedTime(),
         }
+        setTypingPersonaId(null)
+        setRoomState('speaking')
         setLocalTranscript(prev => [...prev, replyMsg])
         setActiveSpeaker(speakerId)
         setAppearingMsgId(replyMsg.id)
         enqueueSpeak(replyMsg.text, speakerId)
 
-        if (r % 3 === 2) {
-          setLocalConditions(prev => {
-            const unmet = Object.keys(prev).find(k => !prev[k])
-            return unmet ? { ...prev, [unmet]: true } : prev
-          })
-          setTimeout(() => setRoomState('condition-met'), 600)
-          setTimeout(() => setRoomState('idle'), 2200)
+        const tickCondition = r % 3 === 2
+        const fuDef         = scripted.follow_up
+        const fuSpeakerId   = fuDef ? (visiblePersonas.find(p => p.id === fuDef.speaker)?.id || null) : null
+
+        if (fuSpeakerId) {
+          setTimeout(() => {
+            setTypingPersonaId(fuSpeakerId)
+            setRoomState('thinking')
+          }, 2500)
+
+          setTimeout(() => {
+            const fuMsg = {
+              id: Date.now() + 2,
+              speaker: fuSpeakerId,
+              text: fuDef.text,
+              ...(fuDef.source ? { source: fuDef.source } : {}),
+              time: getElapsedTime(),
+            }
+            setTypingPersonaId(null)
+            setLocalTranscript(prev => [...prev, fuMsg])
+            setActiveSpeaker(fuSpeakerId)
+            setAppearingMsgId(fuMsg.id)
+            enqueueSpeak(fuMsg.text, fuSpeakerId)
+
+            if (tickCondition) {
+              setLocalConditions(prev => {
+                const unmet = Object.keys(prev).find(k => !prev[k])
+                return unmet ? { ...prev, [unmet]: true } : prev
+              })
+              setTimeout(() => setRoomState('condition-met'), 600)
+              setTimeout(() => setRoomState('idle'), 2800)
+            } else {
+              setRoomState('speaking')
+              setTimeout(() => setRoomState('idle'), 3500)
+            }
+          }, 4500)
         } else {
-          setTimeout(() => setRoomState('idle'), 3500)
+          if (tickCondition) {
+            setLocalConditions(prev => {
+              const unmet = Object.keys(prev).find(k => !prev[k])
+              return unmet ? { ...prev, [unmet]: true } : prev
+            })
+            setTimeout(() => setRoomState('condition-met'), 600)
+            setTimeout(() => setRoomState('idle'), 2200)
+          } else {
+            setTimeout(() => setRoomState('idle'), 3500)
+          }
         }
       }, 1600)
 

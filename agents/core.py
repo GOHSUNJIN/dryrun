@@ -268,16 +268,26 @@ Rules:
 - Keep the response under 90 words.
 - Be direct, specific and challenging. Push back on vague or incomplete answers.
 - Do not use em dashes.
+- If a condition is being marked as met, the panelist briefly acknowledges the presenter addressed that specific point (one short sentence), then immediately pivots to their next unmet concern or presses for more detail.
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
 - If Sam (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
+- Set follow_up to a second panelist ONLY when: (a) the presenter's answer directly contradicts or creates a new issue for a different panelist, triggering them to jump in, OR (b) a second panelist would naturally pile on with a related challenge. The follow_up speaker must differ from speaker_id and must have at least one unmet condition. The follow_up response must be under 60 words. Set follow_up to null when one voice is sufficient.
 
 Return ONLY valid JSON with no markdown fences:
 {{
   "speaker_id": "<persona_id>",
   "response": "...",
   "conditions_met": ["id1"],
-  "source": null
-}}"""
+  "source": null,
+  "follow_up": {{
+    "speaker_id": "<persona_id>",
+    "response": "...",
+    "conditions_met": [],
+    "source": null
+  }}
+}}
+
+Set follow_up to null (not an object) when no second voice is needed."""
 
     content = (
         f"Proposal (first 600 chars):\n{proposal_text[:600]}\n\n"
@@ -293,7 +303,7 @@ Return ONLY valid JSON with no markdown fences:
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 response_mime_type='application/json',
-                max_output_tokens=250,
+                max_output_tokens=400,
             ),
         )
     except Exception as exc:
@@ -325,6 +335,23 @@ Return ONLY valid JSON with no markdown fences:
     }
     if data.get('source'):
         result['source'] = {'label': data['source']}
+
+    # Parse optional follow_up (second panelist jumping in)
+    raw_fu = data.get('follow_up')
+    if raw_fu and isinstance(raw_fu, dict):
+        fu_speaker = raw_fu.get('speaker_id', '')
+        if fu_speaker in persona_ids and fu_speaker != speaker_id:
+            fu_conds = [
+                c for c in (raw_fu.get('conditions_met') or [])
+                if c in all_cond_ids and not conditions.get(c, False)
+            ]
+            fu_text = raw_fu.get('response', '').strip()
+            if fu_text:
+                follow_up = {'speaker': fu_speaker, 'text': fu_text, 'conditions_met': fu_conds}
+                if raw_fu.get('source'):
+                    follow_up['source'] = {'label': raw_fu['source']}
+                result['follow_up'] = follow_up
+
     return result
 
 

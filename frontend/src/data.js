@@ -113,19 +113,30 @@ export const SCRIPTED_RESPONSES = [
   {
     speaker: 'finance',
     text: "You've mentioned AWS but not itemised it. AWS data pipeline costs scale with data volume. Give me a three-year TCO model, not a single-year snapshot.",
+    follow_up: {
+      speaker: 'legal',
+      text: "Agreed on the cost gap. And while we're itemising: if those pipelines touch compensation data, we need vendor DPAs scoped before any contract is signed. Has that been looked at?",
+    },
   },
   {
     speaker: 'legal',
     text: "If these engineers have access to employee compensation data, we need a DPA in place before day one. Which vendors are you evaluating and have any of them completed a SOC 2 audit?",
+    follow_up: null,
   },
   {
     speaker: 'ops',
     text: "Month three is 'development and QA' but who owns the QA? You've listed three engineers plus a PM. None of them are from our current reporting team. Who validates the output is correct?",
+    follow_up: {
+      speaker: 'factcheck',
+      source: { label: 'Gartner Data Pipeline Benchmarks 2024' },
+      text: "Supporting Jordan: projects of this scope average 10 to 14 months to full production. A six-month timeline is an outlier without exceptional resourcing. Source: Gartner Data Pipeline Benchmarks 2024.",
+    },
   },
   {
     speaker: 'factcheck',
     source: { label: 'McKinsey Analytics Benchmark 2023' },
     text: 'Automation projects of this scope typically take 9 to 14 months to reach full productivity, not six. The compressed timeline is an outlier. Source: McKinsey Analytics Benchmark 2023.',
+    follow_up: null,
   },
 ];
 
