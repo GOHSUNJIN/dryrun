@@ -241,32 +241,24 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     window.speechSynthesis?.cancel()
   }, [])
 
-  // Stagger opening messages — first one fires immediately, rest follow in sequence.
-  // Shuffle so a random panelist always goes first.
+  // Fire one random opening question, then hand off to the AI for the rest.
   // openingsFiredRef guards against React StrictMode double-invocation.
   useEffect(() => {
     if (openingsFiredRef.current || openingMsgs.length === 0) return
     openingsFiredRef.current = true
-    const [first, ...rest] = [...openingMsgs].sort(() => Math.random() - 0.5)
-    const ordered = [first, ...rest]
-    let delay = 300
-    ordered.forEach((msg, i) => {
-      const isLast = i === ordered.length - 1
+    const shuffled = [...openingMsgs].sort(() => Math.random() - 0.5)
+    const msg = shuffled[0]
+    setTimeout(() => {
+      setLocalTranscript(prev => [...prev, msg])
+      setActiveSpeaker(msg.speaker)
+      setAppearingMsgId(msg.id)
+      setRoomState('speaking')
+      enqueueSpeak(msg.text, msg.speaker)
       setTimeout(() => {
-        setLocalTranscript(prev => [...prev, msg])
-        setActiveSpeaker(msg.speaker)
-        setAppearingMsgId(msg.id)
-        setRoomState('speaking')
-        enqueueSpeak(msg.text, msg.speaker)
-        if (isLast) {
-          setTimeout(() => {
-            setRoomState('idle')
-            setOpeningsDone(true)
-          }, 2800)
-        }
-      }, delay)
-      delay += 2200
-    })
+        setRoomState('idle')
+        setOpeningsDone(true)
+      }, 2800)
+    }, 300)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
