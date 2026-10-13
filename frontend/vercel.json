@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/session/start.js":   { "maxDuration": 30 },
+    "api/session/start.js":   { "maxDuration": 60 },
     "api/session/message.js": { "maxDuration": 30 },
     "api/session/end.js":     { "maxDuration": 60 }
   },

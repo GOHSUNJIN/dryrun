@@ -65,7 +65,7 @@ async function withRetry(fn, retries = 2) {
     } catch (err) {
       const isOverloaded = String(err).includes('503') || String(err).includes('UNAVAILABLE')
       if (i < retries && isOverloaded) {
-        await new Promise(r => setTimeout(r, 2000 * (i + 1)))
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)))
         continue
       }
       throw err
