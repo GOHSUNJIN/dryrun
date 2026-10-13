@@ -3,9 +3,9 @@
     "public": "frontend/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
-      { "source": "/api/session/start",   "function": "sessionStart"   },
-      { "source": "/api/session/message", "function": "sessionMessage" },
-      { "source": "/api/session/end",     "function": "sessionEnd"     },
+      { "source": "/api/session/start",   "function": "sessionStart",   "region": "us-central1" },
+      { "source": "/api/session/message", "function": "sessionMessage", "region": "us-central1" },
+      { "source": "/api/session/end",     "function": "sessionEnd",     "region": "us-central1" },
       { "source": "**", "destination": "/index.html" }
     ]
   },
