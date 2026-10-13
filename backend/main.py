@@ -1,5 +1,5 @@
 """
-Dry Run — terminal rehearsal script (Milestone 1).
+Dry Run: terminal rehearsal script (Milestone 1).
 
 Usage:
     python main.py
@@ -41,13 +41,13 @@ def main() -> None:
     transcript: list[dict] = []
 
     print("=" * 62)
-    print("  DRY RUN — Stakeholder Rehearsal")
+    print("  DRY RUN: Stakeholder Rehearsal")
     print("=" * 62)
     print("  Panel: " + "  |  ".join(f"{p.name} ({p.role})" for p in PERSONAS))
     print("\n  Proposal loaded. The panel has reviewed it.")
     print("  Type your response at the prompt. Type 'quit' to end.\n")
 
-    # Opening round — each persona states their biggest concern unprompted.
+    # Opening round: each persona states their biggest concern unprompted.
     print("─" * 62)
     print("  OPENING CHALLENGES")
     print("─" * 62)
@@ -94,11 +94,11 @@ def main() -> None:
         turns += 1
 
     if turns >= TURN_LIMIT:
-        print(f"\n[Turn limit of {TURN_LIMIT} reached — ending session.]")
+        print(f"\n[Turn limit of {TURN_LIMIT} reached. Ending session.]")
 
     # Feedback report.
     print("\n" + "=" * 62)
-    print("  SESSION ENDED — Generating feedback report…")
+    print("  SESSION ENDED. Generating feedback report...")
     print("=" * 62 + "\n")
 
     report = generate_report(proposal_text, format_transcript(transcript))

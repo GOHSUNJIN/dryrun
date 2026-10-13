@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ExternalLink, Check, Zap } from 'lucide-react'
 import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults } from '../utils/storage.js'
 
-const NAV = ['Profile', 'Rehearsal defaults', 'Voice', 'Integrations', 'Privacy']
+const NAV = ['Profile', 'Rehearsal Defaults', 'Voice', 'Integrations', 'Privacy']
 
 const INTEGRATIONS = [
   { icon: '📁', name: 'Google Drive',    desc: 'Import proposals from Drive'    },
@@ -166,9 +166,9 @@ export default function Settings() {
             </div>
           )}
 
-          {activeSection === 'Rehearsal defaults' && (
+          {activeSection === 'Rehearsal Defaults' && (
             <div className="settings-section">
-              <SectionTitle>Rehearsal defaults</SectionTitle>
+              <SectionTitle>Rehearsal Defaults</SectionTitle>
               <Row label="Turn limit" sublabel="Maximum turns before the session auto-ends">
                 <select className="settings-select" value={turnLimit} onChange={e => setTurnLimit(e.target.value)}>
                   {['5', '10', '15', '20', '25'].map(v => <option key={v}>{v}</option>)}

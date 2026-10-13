@@ -24,7 +24,7 @@ export const PERSONAS = [
     glow: 'rgba(82,207,195,0.22)',
     dimColor: 'rgba(82,207,195,0.35)',
     panelPct: 37.5,
-    cares: ['Data privacy & GDPR compliance', 'Vendor contract terms', 'Accountability if it fails'],
+    cares: ['Data privacy and GDPR compliance', 'Vendor contract terms', 'Accountability if it fails'],
     conditions: [
       { id: 'l1', text: 'Data privacy plan confirmed',      met: false },
       { id: 'l2', text: 'Vendor contract terms addressed',  met: false },

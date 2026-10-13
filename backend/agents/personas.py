@@ -11,7 +11,7 @@ class PersonaCard:
     speaking_style: str
 
 
-# The three default panelists. All role-based — no real people imitated.
+# The three default panelists. All role-based. No real people imitated.
 PERSONAS: list[PersonaCard] = [
     PersonaCard(
         id="finance",
