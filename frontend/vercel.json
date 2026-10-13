@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/session/start.py":   { "maxDuration": 30 },
+    "api/session/message.py": { "maxDuration": 30 },
+    "api/session/end.py":     { "maxDuration": 60 }
+  }
+}
