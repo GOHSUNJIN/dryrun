@@ -95,6 +95,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       }
 
       const data = await res.json()
+      if (data.demo) console.warn('[NewRehearsal] AI unavailable, server returned demo data')
       updateSession({
         proposalText: text,
         proposalName: proposalName || 'Untitled proposal',
@@ -105,6 +106,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         factCheckNotes: data.fact_check || '',
         customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         startTime: Date.now(),
+        demoMode: !!data.demo,
       })
       navigate('room')
     } catch (err) {
