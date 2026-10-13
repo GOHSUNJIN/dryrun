@@ -1,25 +1,38 @@
 import { Home, PlusCircle, Clock, Users, Settings, ChevronRight } from 'lucide-react'
+import { loadProfile } from '../utils/storage.js'
 
 const NAV_ITEMS = [
-  { id: 'home',     label: 'Home',           icon: Home       },
-  { id: 'past',     label: 'Past Sessions',  icon: Clock      },
-  { id: 'library',  label: 'Panel Library',  icon: Users      },
-  { id: 'settings', label: 'Settings',       icon: Settings   },
+  { id: 'home',     label: 'Home',          shortLabel: 'Home',     icon: Home     },
+  { id: 'past',     label: 'Past Sessions', shortLabel: 'Past',     icon: Clock    },
+  { id: 'library',  label: 'Panel Library', shortLabel: 'Panel',    icon: Users    },
+  { id: 'settings', label: 'Settings',      shortLabel: 'Settings', icon: Settings },
 ]
 
-function getProfile() {
-  try {
-    const p = JSON.parse(localStorage.getItem('dryrun_profile') || '{}')
-    return {
-      name:    p.name || 'Sun Jin',
-      role:    p.role || 'Product Manager',
-      initial: (p.name || 'Sun Jin').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
-    }
-  } catch { return { name: 'Sun Jin', role: 'Product Manager', initial: 'SJ' } }
+export function MobileNav({ current, navigate }) {
+  const [left, right] = [NAV_ITEMS.slice(0, 2), NAV_ITEMS.slice(2)]
+  return (
+    <nav className="mobile-nav">
+      {left.map(({ id, shortLabel, icon: Icon }) => (
+        <button key={id} className={`mobile-nav-item ${current === id ? 'active' : ''}`} onClick={() => navigate(id)}>
+          <Icon size={20} strokeWidth={current === id ? 2.2 : 1.8} />
+          <span>{shortLabel}</span>
+        </button>
+      ))}
+      <button className="mobile-nav-new" onClick={() => navigate('new')} aria-label="New rehearsal">
+        <PlusCircle size={22} />
+      </button>
+      {right.map(({ id, shortLabel, icon: Icon }) => (
+        <button key={id} className={`mobile-nav-item ${current === id ? 'active' : ''}`} onClick={() => navigate(id)}>
+          <Icon size={20} strokeWidth={current === id ? 2.2 : 1.8} />
+          <span>{shortLabel}</span>
+        </button>
+      ))}
+    </nav>
+  )
 }
 
 export default function Sidebar({ current, navigate }) {
-  const profile = getProfile()
+  const profile = loadProfile()
 
   return (
     <aside className="sidebar">
@@ -54,11 +67,7 @@ export default function Sidebar({ current, navigate }) {
       <nav className="sidebar-nav">
         <div className="sidebar-section-label">Workspace</div>
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            className={`sidebar-item ${current === id ? 'active' : ''}`}
-            onClick={() => navigate(id)}
-          >
+          <button key={id} className={`sidebar-item ${current === id ? 'active' : ''}`} onClick={() => navigate(id)}>
             <Icon size={15} strokeWidth={current === id ? 2.2 : 1.8} />
             {label}
           </button>

@@ -1,32 +1,20 @@
 import { useState } from 'react'
 import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle } from 'lucide-react'
-import { PAST_SESSIONS } from '../data.js'
+import { PAST_SESSIONS, AVATAR_COLORS, AVATAR_INITIALS } from '../data.js'
+import { loadSessions, deleteSession, groupSessionsByProposal } from '../utils/storage.js'
 
-const AVATAR_COLORS   = ['#F59E0B', '#0FB8AA', '#9061F9', '#5B8FD6']
-const AVATAR_INITIALS = ['M', 'A', 'J', 'S']
-
-function loadSessions() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
-    if (stored.length) {
-      const groups = {}
-      for (const s of stored) {
-        const key = s.proposal || 'Untitled proposal'
-        if (!groups[key]) groups[key] = { proposal: key, sessions: [] }
-        groups[key].sessions.push(s)
-      }
-      return { groups: Object.values(groups), isReal: true }
-    }
-  } catch {}
+function loadGroups() {
+  const stored = loadSessions()
+  if (stored.length) return { groups: groupSessionsByProposal(stored), isReal: true }
   return { groups: PAST_SESSIONS, isReal: false }
 }
 
 export default function PastSessions({ navigate }) {
   const [query, setQuery]       = useState('')
   const [expanded, setExpanded] = useState({ 0: true, 1: true, 2: true })
-  const { groups: initGroups, isReal: initIsReal } = loadSessions()
-  const [groups, setGroups]     = useState(initGroups)
-  const [isReal, setIsReal]     = useState(initIsReal)
+  const init                    = loadGroups()
+  const [groups, setGroups]     = useState(init.groups)
+  const [isReal, setIsReal]     = useState(init.isReal)
 
   const filtered = groups.filter(g =>
     g.proposal.toLowerCase().includes(query.toLowerCase())
@@ -34,15 +22,11 @@ export default function PastSessions({ navigate }) {
 
   const toggleGroup = (i) => setExpanded(e => ({ ...e, [i]: !e[i] }))
 
-  const deleteSession = (groupIdx, sessionId) => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
-      const updated = stored.filter(s => s.id !== sessionId)
-      localStorage.setItem('dryrun_sessions', JSON.stringify(updated))
-      const { groups: g, isReal: r } = loadSessions()
-      setGroups(g)
-      setIsReal(r)
-    } catch {}
+  const handleDelete = (sessionId) => {
+    deleteSession(sessionId)
+    const next = loadGroups()
+    setGroups(next.groups)
+    setIsReal(next.isReal)
   }
 
   return (
@@ -171,7 +155,7 @@ export default function PastSessions({ navigate }) {
                   <button
                     className="session-action-btn"
                     style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.2)' }}
-                    onClick={e => { e.stopPropagation(); deleteSession(gi, s.id) }}
+                    onClick={e => { e.stopPropagation(); handleDelete(s.id) }}
                   >
                     <Trash2 size={12} />
                   </button>

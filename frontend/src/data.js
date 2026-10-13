@@ -77,7 +77,7 @@ export const DEMO_TRANSCRIPT = [
   },
   {
     id: 3, speaker: 'ops', type: 'opening',
-    text: 'We have no data engineering function today. Someone is doing this work manually right now. Who is that person, and what happens to their role during and after the transition?',
+    text: 'We have no data engineering function today. Someone is doing this work manually right now. Who is that person and what happens to their role during and after the transition?',
     time: '0:36',
   },
   {
@@ -116,7 +116,7 @@ export const SCRIPTED_RESPONSES = [
   },
   {
     speaker: 'legal',
-    text: "If these engineers have access to employee compensation data, we need a DPA in place before day one. Which vendors are you evaluating, and have any of them completed a SOC 2 audit?",
+    text: "If these engineers have access to employee compensation data, we need a DPA in place before day one. Which vendors are you evaluating and have any of them completed a SOC 2 audit?",
   },
   {
     speaker: 'ops',
@@ -168,6 +168,9 @@ export const DEBRIEF_MOMENTS = [
   { id: 6, type: 'cond',    turn: 'Turn 8', excerpt: 'Salary range verified (Fact-Checker)',         tag: 'Condition Met' },
   { id: 7, type: 'strong',  turn: 'Turn 11',excerpt: '"HR owns the data; we have a DPA template."', tag: 'Strong Answer' },
 ];
+
+export const AVATAR_COLORS   = ['#F59E0B', '#0FB8AA', '#9061F9', '#5B8FD6']
+export const AVATAR_INITIALS = ['M', 'A', 'J', 'S']
 
 export const UPCOMING_MEETINGS = [
   { name: 'Budget Review: Q4 Headcount',     date: 'Oct 17, 2026',  daysLeft: 4 },

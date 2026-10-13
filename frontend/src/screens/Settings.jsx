@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ExternalLink, Check } from 'lucide-react'
+import { loadProfile, saveProfile, exportSessions, deleteAllSessions } from '../utils/storage.js'
 
 const NAV = ['Profile', 'Rehearsal defaults', 'Voice', 'Integrations', 'Privacy']
 
@@ -8,13 +9,6 @@ const INTEGRATIONS = [
   { icon: '📝', name: 'Google Docs',     desc: 'Export session reports to Docs'   },
   { icon: '📅', name: 'Google Calendar', desc: 'Sync upcoming meetings'           },
 ]
-
-function loadProfile() {
-  try {
-    const p = JSON.parse(localStorage.getItem('dryrun_profile') || '{}')
-    return { name: p.name || 'Sun Jin', role: p.role || 'Product Manager' }
-  } catch { return { name: 'Sun Jin', role: 'Product Manager' } }
-}
 
 export default function Settings() {
   const init = loadProfile()
@@ -26,26 +20,15 @@ export default function Settings() {
   const [toughness, setToughness] = useState('Balanced')
   const [turnLimit, setTurnLimit] = useState('15')
 
-  const saveProfile = () => {
-    localStorage.setItem('dryrun_profile', JSON.stringify({ name, role }))
+  const handleSaveProfile = () => {
+    saveProfile(name, role)
     setSavedFeedback(true)
     setTimeout(() => setSavedFeedback(false), 2000)
   }
 
-  const exportData = () => {
-    const data = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `dryrun-sessions-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const deleteAllSessions = () => {
+  const handleDeleteAll = () => {
     if (window.confirm('This will permanently delete all rehearsal data. This cannot be undone.')) {
-      localStorage.removeItem('dryrun_sessions')
+      deleteAllSessions()
     }
   }
 
@@ -101,7 +84,7 @@ export default function Settings() {
                     <Check size={13} /> Saved
                   </span>
                 )}
-                <button className="btn btn-primary" onClick={saveProfile}>Save profile</button>
+                <button className="btn btn-primary" onClick={handleSaveProfile}>Save profile</button>
               </div>
             </div>
           )}
@@ -220,7 +203,7 @@ export default function Settings() {
                     <div className="settings-label">Export all session data</div>
                     <div className="settings-sublabel">Download a full JSON archive of your sessions</div>
                   </div>
-                  <button className="btn btn-secondary btn-sm" onClick={exportData}>
+                  <button className="btn btn-secondary btn-sm" onClick={exportSessions}>
                     <ExternalLink size={12} /> Export
                   </button>
                 </div>
@@ -233,7 +216,7 @@ export default function Settings() {
                     <div className="settings-label">Delete all sessions</div>
                     <div className="settings-sublabel">Permanently removes all rehearsal data. This cannot be undone.</div>
                   </div>
-                  <button className="btn-danger" onClick={deleteAllSessions}>Delete all sessions</button>
+                  <button className="btn-danger" onClick={handleDeleteAll}>Delete all sessions</button>
                 </div>
               </div>
             </>

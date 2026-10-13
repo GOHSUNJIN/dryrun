@@ -1,9 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Clock, ChevronRight } from 'lucide-react'
-import { PERSONAS, PAST_SESSIONS, WEAK_SPOTS, UPCOMING_MEETINGS } from '../data.js'
-
-const AVATAR_COLORS   = ['#F59E0B', '#0FB8AA', '#9061F9', '#5B8FD6']
-const AVATAR_INITIALS = ['M', 'A', 'J', 'S']
+import { PAST_SESSIONS, WEAK_SPOTS, UPCOMING_MEETINGS, AVATAR_COLORS, AVATAR_INITIALS } from '../data.js'
+import { loadSessions } from '../utils/storage.js'
 
 const container = {
   hidden: {},
@@ -22,15 +20,13 @@ function getGreeting() {
 }
 
 function loadRecentSessions() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
-    if (stored.length) {
-      return {
-        sessions: stored.slice(0, 3).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' })),
-        isReal: true,
-      }
+  const stored = loadSessions()
+  if (stored.length) {
+    return {
+      sessions: stored.slice(0, 3).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' })),
+      isReal: true,
     }
-  } catch {}
+  }
   return {
     sessions: PAST_SESSIONS.flatMap(g => g.sessions.map(s => ({ ...s, proposal: g.proposal }))).slice(0, 3),
     isReal: false,
@@ -123,7 +119,7 @@ export default function Home({ navigate }) {
           {/* Weak spots */}
           <motion.div variants={item} style={{ gridColumn: '1 / -1' }}>
             <div className="section-label">Your recurring weak spots</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div className="weak-spots-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {WEAK_SPOTS.map((w, i) => (
                 <div key={i} className="weak-spot-item">
                   <div className="weak-spot-count">{w.count}</div>

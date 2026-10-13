@@ -2,7 +2,7 @@
 
 **Rehearse your pitch before the meeting that matters.**
 
-Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal, they push back with hard questions and they only become satisfied when you have addressed their specific concerns. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix before the real meeting.
+Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal and they push back with hard questions. They only become satisfied when you have addressed their specific concerns. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix before the real meeting.
 
 **Live:** https://dryrun-swart.vercel.app
 
@@ -39,9 +39,9 @@ The primary users are professionals who present proposals to approval committees
 | Frontend framework | React 18 with Vite 5 |
 | Animations | Framer Motion |
 | Icons | Lucide React |
-| AI model | Gemini 2.0 Flash via `google-genai` Python SDK |
-| Fact-checking | Gemini 2.0 Flash with Google Search grounding (live web verification) |
-| API layer | Python serverless functions on Vercel |
+| AI model | Gemini 3.8 Flash via `@google/genai` JS SDK |
+| Fact-checking | Gemini 3.8 Flash with Google Search grounding (live web verification) |
+| API layer | JavaScript serverless functions on Vercel |
 | Cloud Run target | FastAPI + uvicorn (Dockerfile ready) |
 | State management | React `useState` with session lifted to `App.jsx` |
 | Persistence | `localStorage` for past sessions |
@@ -53,26 +53,26 @@ The primary users are professionals who present proposals to approval committees
 
 ```
 Browser (React SPA)
-        │
-        │  POST /api/session/start
-        │  POST /api/session/message       (one call per presenter turn)
-        │  POST /api/session/end
-        ▼
-Vercel Python serverless functions
-  frontend/api/session/start.py
-  frontend/api/session/message.py
-  frontend/api/session/end.py
-        │
-        │  imports
-        ▼
-  frontend/api/_agents/core.py            (all Gemini logic)
-        │
-        │  google-genai SDK
-        ▼
-  Gemini 2.0 Flash
+        |
+        |  POST /api/session/start
+        |  POST /api/session/message       (one call per presenter turn)
+        |  POST /api/session/end
+        v
+Vercel JS serverless functions
+  frontend/api/session/start.js
+  frontend/api/session/message.js
+  frontend/api/session/end.js
+        |
+        |  imports
+        v
+  frontend/api/_lib/core.js            (all Gemini logic)
+        |
+        |  @google/genai SDK
+        v
+  Gemini 3.8 Flash
 ```
 
-The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript so far and the current condition state. This means the Python functions hold no memory between calls and scale to zero on Vercel serverless without any coordination layer.
+The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript so far and the current condition state. This means the JS functions hold no memory between calls and scale to zero on Vercel serverless without any coordination layer.
 
 ---
 
@@ -81,12 +81,12 @@ The API is fully stateless. Every request includes the full proposal text, the a
 ```
 frontend/
   api/
-    _agents/
-      core.py            Gemini logic: generate_openings, generate_reply, generate_report
+    _lib/
+      core.js            Gemini logic: generateOpenings, generateReply, generateReport
     session/
-      start.py           POST /api/session/start  — panel opening challenges
-      message.py         POST /api/session/message — next speaker reply
-      end.py             POST /api/session/end     — coaching report
+      start.js           POST /api/session/start  (panel opening challenges)
+      message.js         POST /api/session/message (next speaker reply)
+      end.js             POST /api/session/end     (coaching report)
   src/
     App.jsx              root: screen routing and session state
     components/
@@ -100,12 +100,13 @@ frontend/
       PastSessions.jsx   history grouped by proposal with progress tracking
       PanelLibrary.jsx   browse and customise persona cards
       Settings.jsx       preferences
+    utils/
+      storage.js         localStorage helpers shared across screens
     data.js              static personas, fallback transcript and demo data
     index.css            design system: tokens, components, room theme
-  requirements.txt       google-genai for Vercel Python runtime
   vercel.json            function timeout config (30s start/message, 60s end)
 agents/
-  core.py                same Gemini logic as api/_agents/core.py, used for Cloud Run
+  core.py                FastAPI-compatible Gemini logic for Cloud Run
 server.py                FastAPI server (for Cloud Run deployment)
 Dockerfile               multi-stage: Node 20 builds React, Python 3.12 runs FastAPI
 main.py                  terminal rehearsal entry point (original prototype)
@@ -117,19 +118,19 @@ main.py                  terminal rehearsal entry point (original prototype)
 
 All three AI calls use a single batch approach: one Gemini call returns the complete response as structured JSON. There is no streaming and no multi-turn conversation stored on the server side.
 
-### `fact_check_proposal` — Google Search grounding
+### `factCheckProposal` (Google Search grounding)
 
-Called at session start if the Fact-Checker persona is selected. Uses Gemini's `google_search` grounding tool to verify the proposal's key quantitative claims against live web data: salary benchmarks, time estimates, cost projections and productivity figures. The verified findings are injected into Sam's context so every challenge Sam makes in the session is grounded in real market data, not generated claims. This is a separate Gemini call that runs before `generate_openings` so Sam's very first challenge already references the verified facts.
+Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding tool to verify the proposal's key quantitative claims against live web data: salary benchmarks, time estimates, cost projections and productivity figures. The verified findings are injected into Sam's context so every challenge Sam makes in the session is grounded in real market data, not generated claims. This is a separate Gemini call that runs before `generateOpenings` so Sam's very first challenge already references the verified facts.
 
-### `generate_openings`
+### `generateOpenings`
 
 Called once at the start of a session. Takes the proposal text, the selected persona IDs and the session config. Returns one opening challenge per panelist, each written specifically around the proposal content. The system prompt instructs Gemini not to use generic questions and not to let panelists introduce themselves.
 
-### `generate_reply`
+### `generateReply`
 
 Called after every presenter turn. Takes the full transcript, the current condition state and the proposal. Gemini picks the panelist whose concerns are least addressed (avoiding the last speaker unless everyone else is satisfied), writes their response and returns which conditions were met by the presenter's last message. The condition check is strict: a condition is only marked met if the presenter explicitly addressed it with concrete information.
 
-### `generate_report`
+### `generateReport`
 
 Called when the presenter ends the session. Takes the full transcript and all condition states. Returns two arrays: `weak_points` (2 to 4 gaps with concrete suggested fixes) and `moments` (4 to 7 annotated turning points with type, what was asked, what was said, why it worked or fell short and a stronger version to try).
 
@@ -165,7 +166,7 @@ Session state lives in `App.jsx` and is passed down as props. It is never stored
   },
   transcript: [],         // full message history
   conditions: {},         // { f1: false, f2: true, ... }
-  reportData: null,       // weak_points + moments from generate_report
+  reportData: null,       // weak_points + moments from generateReport
   startTime: null,        // Date.now() at session start
 }
 ```
@@ -183,9 +184,9 @@ Shows a dashboard with upcoming meetings (static demo data), recent sessions rea
 ### New Rehearsal
 
 A three-step wizard:
-1. **Upload proposal** — drag-and-drop file upload with a `FileReader`, or use the built-in sample proposal about hiring data engineers.
-2. **Choose panel** — toggle cards for each persona. Minimum two required.
-3. **Configure** — set company size, industry, panel focus, toughness level and session mode. Clicking "Enter the room" calls `/api/session/start` and shows a spinner while Gemini generates the opening challenges.
+1. **Upload proposal:** drag-and-drop file upload with a `FileReader`, or use the built-in sample proposal about hiring data engineers.
+2. **Choose panel:** toggle cards for each persona. Minimum two required.
+3. **Configure:** set company size, industry, panel focus, toughness level and session mode. Clicking "Enter the room" calls `/api/session/start` and shows a spinner while Gemini generates the opening challenges.
 
 ### Rehearsal Room
 
@@ -300,19 +301,16 @@ All sessions grouped by proposal. Shows the conditions-met progress bar for each
 ### Web app with live AI
 
 ```bash
-# terminal 1: Python backend
-cp .env.example .env
-# add GEMINI_API_KEY=your_key to .env
-pip install -r requirements.txt
-uvicorn server:app --reload --port 8000
-
-# terminal 2: React frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The Vite dev server proxies `/api` to `localhost:8000`.
+Set `GEMINI_API_KEY` in a `.env` file at `frontend/.env` (it is read by the Vite dev server and the serverless functions):
+
+```
+GEMINI_API_KEY=your_google_ai_studio_key_here
+```
 
 ### Web app without AI (demo mode)
 
@@ -345,7 +343,7 @@ cd frontend
 vercel --prod
 ```
 
-Set `GEMINI_API_KEY` as a Vercel environment variable (sensitive type). The Python functions in `frontend/api/` are picked up automatically by the Vercel Python runtime.
+Set `GEMINI_API_KEY` as a Vercel environment variable (sensitive type). The JS functions in `frontend/api/` are picked up automatically by the Vercel Node runtime.
 
 ### Cloud Run (planned)
 
@@ -366,7 +364,7 @@ The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then P
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes | Google AI Studio key. Set in Vercel dashboard or `.env` locally. |
+| `GEMINI_API_KEY` | Yes | Google AI Studio key. Set in Vercel dashboard or `frontend/.env` locally. |
 
 ---
 
@@ -375,12 +373,34 @@ The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then P
 Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterprise Productivity". Submission deadline: 18 October 2026.
 
 **Requirements checklist:**
-- [x] Gemini AI (google-genai SDK, `gemini-2.0-flash`)
+- [x] Gemini AI (@google/genai SDK, `gemini-3.8-flash`)
 - [x] Live deployment link
 - [ ] Google Cloud Run backend (ready in `server.py` and `Dockerfile`, pending billing setup)
 - [ ] Firebase Hosting (planned alongside Cloud Run migration)
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
+
+---
+
+## Roadmap
+
+Features being built in this order:
+
+### 1. Voice input (in progress)
+Web Speech API (`SpeechRecognition`) for hands-free presenter turns. The mic button in Hybrid mode captures one turn at a time and populates the input field for review before sending. Voice mode auto-sends on result. Chrome and Edge only — Whisper API is the planned fallback for Safari.
+
+### 2. Panel text-to-speech
+Web Speech Synthesis API to give each persona a distinct voice. Each persona gets a different pitch and rate. The voice settings in the Settings screen become functional and map to browser voice indices. An ElevenLabs integration is the higher-quality upgrade path.
+
+### 3. Custom panel roles
+A create/edit form for personas stored in `localStorage` under `dryrun_custom_personas`. Custom personas are merged with the built-in ones at runtime. The API already handles arbitrary persona IDs — the system prompt builds persona context dynamically from whatever IDs are passed so no backend changes are needed.
+
+### 4. Google integrations
+- **Drive import:** Google Picker API to select a doc and fetch its text into the proposal field.
+- **Docs export:** Docs API to write the session report into a new Google Doc and return a link.
+- **Calendar sync:** Calendar API to pull upcoming meetings onto the Home dashboard.
+
+All three require OAuth 2.0 setup via Google Cloud Console (client ID and consent screen).
 
 ---
 

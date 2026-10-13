@@ -1,4 +1,5 @@
 import { generateReply } from '../_lib/core.js';
+import { getDemoReply } from '../_lib/fallback.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -6,12 +7,17 @@ export default async function handler(req, res) {
   try {
     const {
       proposal_text = '',
-      persona_ids = ['finance', 'legal', 'ops', 'factcheck'],
+      persona_ids = ['finance', 'legal', 'ops'],
       transcript = [],
       conditions = {},
       config = {},
       fact_check = '',
     } = req.body;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(200).json(getDemoReply(persona_ids, transcript));
+    }
+
     res.status(200).json(
       await generateReply(proposal_text, persona_ids, transcript, conditions, config, fact_check)
     );

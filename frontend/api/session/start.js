@@ -1,4 +1,5 @@
 import { factCheckProposal, generateOpenings, getInitialConditions } from '../_lib/core.js';
+import { getDemoOpenings, getDemoConditions } from '../_lib/fallback.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -6,9 +7,19 @@ export default async function handler(req, res) {
   try {
     const {
       proposal_text = '',
-      persona_ids = ['finance', 'legal', 'ops', 'factcheck'],
+      persona_ids = ['finance', 'legal', 'ops'],
       config = {},
     } = req.body;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(200).json({
+        messages: getDemoOpenings(persona_ids),
+        conditions: getDemoConditions(persona_ids),
+        fact_check: '',
+        demo: true,
+      });
+    }
+
     const factCheck = persona_ids.includes('factcheck')
       ? await factCheckProposal(proposal_text)
       : '';

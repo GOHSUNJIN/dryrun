@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import Sidebar from './components/Sidebar.jsx'
+import Sidebar, { MobileNav } from './components/Sidebar.jsx'
 import Home from './screens/Home.jsx'
 import NewRehearsal from './screens/NewRehearsal.jsx'
 import RehearsalRoom from './screens/RehearsalRoom.jsx'
@@ -66,6 +66,7 @@ export default function App() {
           {renderScreen()}
         </motion.div>
       </AnimatePresence>
+      {showSidebar && <MobileNav current={screen} navigate={navigate} />}
     </div>
   )
 }

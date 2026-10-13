@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, Send, ExternalLink, Loader } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT, SCRIPTED_RESPONSES } from '../data.js'
+import { saveSession } from '../utils/storage.js'
 
 const ROOM_STATES = ['idle', 'thinking', 'speaking', 'interrupting', 'condition-met']
 const STATE_LABELS = {
@@ -171,7 +172,10 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [generatingReport, setGeneratingReport] = useState(false)
   const [responseIdx, setResponseIdx]     = useState(0)
   const [apiError, setApiError]           = useState(false)
-  const transcriptRef = useRef(null)
+  const [listening, setListening]         = useState(false)
+  const transcriptRef  = useRef(null)
+  const recognitionRef = useRef(null)
+  const roomStateRef   = useRef(roomState)
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
@@ -197,6 +201,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     }
   }, [localTranscript, typingPersonaId])
 
+  useEffect(() => { roomStateRef.current = roomState }, [roomState])
+
+  // Stop recognition and clean up on unmount
+  useEffect(() => () => recognitionRef.current?.abort(), [])
+
   const getElapsedTime = () => {
     if (!session.startTime) return ''
     const elapsed = Math.floor((Date.now() - session.startTime) / 1000)
@@ -205,13 +214,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     return `${m}:${String(s).padStart(2, '0')}`
   }
 
-  const handleSend = async () => {
-    if (!inputValue.trim() || roomState === 'thinking') return
+  const handleSend = async (textOverride) => {
+    const text = textOverride !== undefined ? String(textOverride).trim() : inputValue.trim()
+    if (!text || roomStateRef.current === 'thinking') return
+
+    if (listening) stopListening()
 
     const userMsg = {
       id: Date.now(),
       speaker: 'presenter',
-      text: inputValue.trim(),
+      text,
       time: getElapsedTime(),
     }
 
@@ -281,35 +293,73 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   }
 
   const fallbackResponse = (transcript) => {
-    const nextPersona = PERSONAS[turnCount % PERSONAS.length]
+    const presenterTurns = transcript.filter(m => m.speaker === 'presenter').length
+    const nextPersona    = PERSONAS[presenterTurns % PERSONAS.length]
     setActiveSpeaker(nextPersona.id)
     setTypingPersonaId(nextPersona.id)
 
-    const scripted = SCRIPTED_RESPONSES[responseIdx % SCRIPTED_RESPONSES.length]
-    setResponseIdx(r => r + 1)
+    setResponseIdx(r => {
+      const idx     = r
+      const scripted = SCRIPTED_RESPONSES[idx % SCRIPTED_RESPONSES.length]
 
-    setTimeout(() => {
-      setTypingPersonaId(null)
-      setRoomState('speaking')
-      const replyMsg = {
-        id: Date.now() + 1,
-        speaker: scripted.speaker,
-        text: scripted.text,
-        source: scripted.source,
-        time: getElapsedTime(),
-      }
-      setLocalTranscript(prev => [...prev, replyMsg])
-      setActiveSpeaker(scripted.speaker)
-      setAppearingMsgId(replyMsg.id)
+      setTimeout(() => {
+        setTypingPersonaId(null)
+        setRoomState('speaking')
+        const replyMsg = {
+          id: Date.now() + 1,
+          speaker: scripted.speaker,
+          text: scripted.text,
+          source: scripted.source,
+          time: getElapsedTime(),
+        }
+        setLocalTranscript(prev => [...prev, replyMsg])
+        setActiveSpeaker(scripted.speaker)
+        setAppearingMsgId(replyMsg.id)
 
-      if (responseIdx % 3 === 2) {
-        setTimeout(() => setRoomState('condition-met'), 600)
-        setTimeout(() => setRoomState('idle'), 2200)
-      } else {
-        setTimeout(() => setRoomState('idle'), 3500)
-      }
-    }, 1600)
+        if (idx % 3 === 2) {
+          setTimeout(() => setRoomState('condition-met'), 600)
+          setTimeout(() => setRoomState('idle'), 2200)
+        } else {
+          setTimeout(() => setRoomState('idle'), 3500)
+        }
+      }, 1600)
+
+      return r + 1
+    })
   }
+
+  const speechSupported = typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
+
+  const stopListening = () => {
+    recognitionRef.current?.stop()
+    setListening(false)
+  }
+
+  const startListening = () => {
+    if (!speechSupported || roomStateRef.current === 'thinking') return
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SR()
+    recognition.lang = 'en-US'
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.onstart  = () => setListening(true)
+    recognition.onend    = () => setListening(false)
+    recognition.onerror  = (e) => { console.warn('Speech error:', e.error); setListening(false) }
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript.trim()
+      setListening(false)
+      if (mode === 'Voice') {
+        handleSend(transcript)
+      } else {
+        setInputValue(transcript)
+      }
+    }
+    recognitionRef.current = recognition
+    recognition.start()
+  }
+
+  const toggleMic = () => listening ? stopListening() : startListening()
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -341,7 +391,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         ? `${Math.floor((Date.now() - session.startTime) / 60000)} min`
         : ''
 
-      const saved = {
+      saveSession({
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -349,9 +399,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         condMet,
         condTotal,
         duration,
-      }
-      const prev = JSON.parse(localStorage.getItem('dryrun_sessions') || '[]')
-      localStorage.setItem('dryrun_sessions', JSON.stringify([saved, ...prev].slice(0, 20)))
+      })
 
       updateSession({ reportData, conditions: localConditions })
       navigate('report')
@@ -404,14 +452,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
 
         <div className="room-topbar-center">
-          {['Type', 'Hybrid'].map(m => (
+          {['Type', 'Hybrid', 'Voice'].map(m => (
             <button
               key={m}
               className={`room-mode-btn ${mode === m ? 'active' : ''}`}
               onClick={() => setMode(m)}
+              disabled={m === 'Voice' && !speechSupported}
+              title={m === 'Voice' && !speechSupported ? 'Voice not supported in this browser — try Chrome or Edge' : undefined}
+              style={m === 'Voice' && !speechSupported ? { opacity: 0.35, cursor: 'default' } : undefined}
             >{m}</button>
           ))}
-          <button className="room-mode-btn" style={{ opacity: 0.35, cursor: 'default' }} title="Coming soon">Voice</button>
         </div>
 
         <div className="room-topbar-right">
@@ -464,7 +514,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           borderRadius: 8, color: '#FCA5A5', fontSize: '0.8125rem',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         }}>
-          <span>AI unavailable — using scripted responses. Check your API key in Vercel settings.</span>
+          <span>AI unavailable. Using scripted responses. Check your API key in Vercel settings.</span>
           <button onClick={() => setApiError(false)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0, fontSize: '1rem', lineHeight: 1 }}>×</button>
         </div>
       )}
@@ -473,22 +523,33 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         <div className="room-input-wrap">
           <textarea
             className="room-input"
-            placeholder={isInputDisabled ? 'Panel is responding...' : 'Type your response...'}
+            placeholder={
+              listening      ? 'Listening...' :
+              isInputDisabled ? 'Panel is responding...' :
+              mode === 'Voice' ? 'Press mic and speak...' :
+              'Type your response...'
+            }
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
             disabled={isInputDisabled}
+            style={listening ? { color: 'var(--amber)' } : undefined}
           />
           <div className="room-input-actions">
             {mode !== 'Type' && (
-              <button className="room-input-btn" title="Voice input coming soon" style={{ opacity: 0.4, cursor: 'default' }}>
-                <Mic size={16} />
+              <button
+                className={`room-input-btn mic ${listening ? 'listening' : ''}`}
+                onClick={toggleMic}
+                disabled={isInputDisabled || !speechSupported}
+                title={listening ? 'Stop listening' : 'Start voice input'}
+              >
+                {listening ? <MicOff size={16} /> : <Mic size={16} />}
               </button>
             )}
             <button
               className="room-input-btn send"
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!inputValue.trim() || isInputDisabled}
               title="Send (Enter)"
             >
