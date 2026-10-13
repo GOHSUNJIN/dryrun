@@ -74,14 +74,18 @@ export default function Sidebar({ current, navigate }) {
         ))}
       </nav>
 
-      <div className="sidebar-footer">
+      <button
+        className="sidebar-footer"
+        onClick={() => navigate('settings')}
+        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+      >
         <div className="sidebar-avatar">{profile.initial}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="sidebar-user-name">{profile.name}</div>
           <div className="sidebar-user-role">{profile.role}</div>
         </div>
         <ChevronRight size={13} style={{ color: 'var(--sidebar-icon)', flexShrink: 0 }} />
-      </div>
+      </button>
     </aside>
   )
 }

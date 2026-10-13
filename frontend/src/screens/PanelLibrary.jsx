@@ -307,9 +307,7 @@ export default function PanelLibrary() {
               ))}
             </div>
             <div className="panel-card-footer">
-              <button className="btn btn-secondary btn-sm" disabled style={{ gap: 6, opacity: 0.45, cursor: 'default' }}>
-                <Edit2 size={12} /> Edit role
-              </button>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Read-only</span>
             </div>
           </div>
         ))}
