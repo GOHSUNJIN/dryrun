@@ -42,7 +42,7 @@ export default function Home({ navigate }) {
         <motion.div variants={item}>
           <div className="home-greeting">
             {getGreeting()}<br />
-            <em>ready to rehearse?</em>
+            <em>Ready to rehearse?</em>
           </div>
           <button className="home-hero-btn" onClick={() => navigate('new')}>
             Start a new rehearsal
