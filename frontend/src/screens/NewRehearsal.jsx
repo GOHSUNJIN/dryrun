@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, Check, ArrowRight, ArrowLeft, Loader } from 'lucide-react'
+import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadCustomPersonas, loadRehearsalDefaults } from '../utils/storage.js'
 
-const STEPS = ['Your proposal', 'Choose panel', 'Configure and launch']
+const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
 const SAMPLE_PROPOSAL = `Title: Data Engineering Team Hire
 
@@ -17,18 +17,6 @@ Proposed solution: Hire two senior data engineers to build an automated pipeline
 Cost: $240,000 per year in base salary.
 Expected savings: 30 analyst hours per month and elimination of reporting errors.
 Timeline: 6 months from hire to full deployment.`
-
-function extractName(text) {
-  const first = text.split('\n').find(l => l.trim()) || ''
-  const line  = first.trim()
-  if (!line) return ''
-  if (line.toLowerCase().startsWith('title:')) return line.slice(6).trim()
-  return line.length > 60 ? line.slice(0, 60) + '…' : line
-}
-
-function wordCount(text) {
-  return text.trim().split(/\s+/).filter(Boolean).length
-}
 
 function buildCustomDefs(customPersonas) {
   const defs = {}
@@ -43,9 +31,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const allPersonas    = [...PERSONAS, ...customPersonas]
   const defaults       = loadRehearsalDefaults()
   const [step, setStep]           = useState(0)
+  const [uploaded, setUploaded]   = useState(false)
   const [proposalText, setProposalText] = useState('')
   const [proposalName, setProposalName] = useState('')
-  const [nameManuallySet, setNameManuallySet] = useState(false)
+  const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
   const [turnLimit, setTurnLimit] = useState(15)
@@ -62,25 +51,21 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const readFile = (file) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      const text = e.target.result
-      setProposalText(text)
-      if (!nameManuallySet) setProposalName(file.name.replace(/\.[^.]+$/, ''))
+      setProposalText(e.target.result)
+      setProposalName(file.name.replace(/\.[^.]+$/, ''))
+      setUploaded(true)
     }
     reader.readAsText(file)
   }
 
   const useSampleProposal = () => {
     setProposalText(SAMPLE_PROPOSAL)
-    if (!nameManuallySet) setProposalName('Data Engineering Hires')
-  }
-
-  const handleProposalChange = (text) => {
-    setProposalText(text)
-    if (!nameManuallySet) setProposalName(extractName(text))
+    setProposalName('Data Engineering Hires')
+    setUploaded(true)
   }
 
   const canContinue = () => {
-    if (step === 0) return proposalText.trim().length > 0
+    if (step === 0) return uploaded
     if (step === 1) return selected.length >= 2
     return true
   }
@@ -175,55 +160,61 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
           transition={{ duration: 0.22, ease: 'easeOut' }}
         >
           <div className="step-content">
-            {/* Step 0: Proposal */}
+            {/* Step 0: Upload */}
             {step === 0 && (
               <>
-                <div className="step-title">Your proposal</div>
-                <div className="step-desc">Paste or type your proposal. The panel will read it before asking questions.</div>
+                <div className="step-title">Upload your proposal</div>
+                <div className="step-desc">Drag in a PDF or text file, or use the sample proposal to try the demo.</div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".txt,.md,.pdf,.doc,.docx"
-                  style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files[0]; if (f) readFile(f) }}
-                />
-
-                <textarea
-                  className="proposal-input"
-                  placeholder="Paste your proposal here..."
-                  value={proposalText}
-                  onChange={e => handleProposalChange(e.target.value)}
-                  rows={10}
-                />
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {proposalText.trim() ? `${wordCount(proposalText)} words` : ''}
-                  </span>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    {!proposalText.trim() && (
-                      <button className="btn btn-ghost btn-sm" onClick={useSampleProposal}>
-                        Try sample
+                {!uploaded ? (
+                  <>
+                    <div
+                      className={`upload-zone ${drag ? 'drag-over' : ''}`}
+                      onDragOver={e => { e.preventDefault(); setDrag(true) }}
+                      onDragLeave={() => setDrag(false)}
+                      onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) readFile(f) }}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".txt,.md,.pdf,.doc,.docx"
+                        style={{ display: 'none' }}
+                        onChange={e => { const f = e.target.files[0]; if (f) readFile(f) }}
+                      />
+                      <div className="upload-icon"><Upload size={22} /></div>
+                      <div className="upload-primary">Drop your file here, or click to browse</div>
+                      <div className="upload-secondary">TXT, Markdown, Word or PDF</div>
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={useSampleProposal}>
+                        Use sample proposal
                       </button>
-                    )}
-                    <button className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current?.click()}>
-                      <Upload size={13} /> Upload file
-                    </button>
-                  </div>
-                </div>
-
-                {proposalText.trim() && (
-                  <div style={{ marginTop: 20 }}>
-                    <div className="question-label">Proposal name</div>
-                    <input
-                      className="settings-input"
-                      value={proposalName}
-                      onChange={e => { setProposalName(e.target.value); setNameManuallySet(true) }}
-                      placeholder="Auto-extracted from first line"
-                      style={{ marginTop: 6, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
-                    />
-                  </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="upload-zone" style={{ padding: '24px', background: 'rgba(180,83,9,0.03)', borderColor: 'rgba(180,83,9,0.2)', borderStyle: 'solid', cursor: 'default' }}>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 8 }}>
+                        <Check size={16} style={{ color: '#059669', marginTop: 2 }} />
+                        <span style={{ fontSize: '0.875rem', color: '#059669', fontWeight: 600 }}>File ready</span>
+                      </div>
+                      <div className="upload-secondary">Proposal loaded and ready for rehearsal.</div>
+                    </div>
+                    <div className="uploaded-file-card">
+                      <div className="file-icon"><FileText size={18} /></div>
+                      <div>
+                        <div className="file-name">{proposalName || 'Sample proposal'}</div>
+                        <div className="file-size">{proposalText.length} characters</div>
+                      </div>
+                      <button
+                        onClick={() => { setUploaded(false); setProposalText(''); setProposalName('') }}
+                        style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </>
                 )}
               </>
             )}
