@@ -312,7 +312,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     setInputValue('')
     setRoomState('thinking')
 
-    if (hasRealSession) {
+    if (hasRealSession && !session.demoMode) {
       const nextPersona = visiblePersonas[0]
       if (!nextPersona) return
       setTypingPersonaId(nextPersona.id)
@@ -547,6 +547,30 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const handleEndSession = async () => {
     if (!hasRealSession) { navigate('report'); return }
+
+    const condMet         = Object.values(localConditions).filter(Boolean).length
+    const condTotal       = Object.keys(localConditions).length
+    const sessionDuration = `${Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000))} min`
+
+    if (session.demoMode) {
+      const reportData = { demo: true, weak_points: [], moments: [] }
+      saveSession({
+        id: Date.now(),
+        proposal: session.proposalName || 'Untitled proposal',
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        condMet,
+        condTotal,
+        duration: sessionDuration,
+        personaIds: session.personaIds || [],
+        conditions: localConditions,
+        reportData,
+        linkedMeeting: session.linkedMeeting || '',
+      })
+      updateSession({ reportData, conditions: localConditions, duration: sessionDuration })
+      navigate('report')
+      return
+    }
+
     setGeneratingReport(true)
     try {
       const res = await fetch('/api/session/end', {
@@ -563,10 +587,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       if (!res.ok) throw new Error(`API error ${res.status}`)
       const reportData = await res.json()
 
-      const condMet         = Object.values(localConditions).filter(Boolean).length
-      const condTotal       = Object.keys(localConditions).length
-      const sessionDuration = `${Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000))} min`
-
       saveSession({
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
@@ -577,6 +597,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         personaIds: session.personaIds || [],
         conditions: localConditions,
         reportData,
+        linkedMeeting: session.linkedMeeting || '',
       })
 
       updateSession({ reportData, conditions: localConditions, duration: sessionDuration })

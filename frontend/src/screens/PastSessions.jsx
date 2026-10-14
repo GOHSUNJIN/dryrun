@@ -172,9 +172,27 @@ export default function PastSessions({ navigate }) {
                 return (
                   <div key={s.id || si} className="session-row" onClick={() => navigate('report', { savedSession: s })}>
                     <div>
-                      <div className="session-row-name">{s.date}</div>
+                      {s.linkedMeeting ? (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontSize: '0.6875rem', fontWeight: 600, color: 'var(--app-accent)',
+                          background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.18)',
+                          borderRadius: 4, padding: '1px 6px', marginBottom: 4,
+                        }}>
+                          {s.linkedMeeting}
+                        </div>
+                      ) : (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          fontSize: '0.6875rem', color: 'var(--text-muted)',
+                          marginBottom: 4,
+                        }}>
+                          No meeting
+                        </div>
+                      )}
+                      <div className="session-row-name">{s.proposal || group.proposal}</div>
                       <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                        <Clock size={11} /> {s.duration || `Attempt ${group.sessions.length - si}`}
+                        <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
                       </div>
                     </div>
 

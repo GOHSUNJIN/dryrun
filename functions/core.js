@@ -258,7 +258,7 @@ Return ONLY valid JSON with no markdown fences:
       responseMimeType: 'application/json',
       maxOutputTokens: 250,
     },
-  }));
+  }), 0);
 
   let data;
   try {
@@ -334,7 +334,7 @@ Rules:
       responseMimeType: 'application/json',
       maxOutputTokens: 2000,
     },
-  }));
+  }), 0);
 
   try {
     return JSON.parse(response.text);

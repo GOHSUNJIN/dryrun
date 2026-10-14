@@ -2,7 +2,7 @@ import { useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas, loadRehearsalDefaults, loadSessions } from '../utils/storage.js'
+import { loadCustomPersonas, loadRehearsalDefaults, loadSessions, loadLocalMeetings } from '../utils/storage.js'
 import { listDriveItems, fetchDocText } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
@@ -32,6 +32,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [industry, setIndustry]   = useState('')
   const [companySize, setCompanySize] = useState('')
   const [focus, setFocus]         = useState('')
+  const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
   const [launching, setLaunching] = useState(false)
   const [driveOpen, setDriveOpen]       = useState(false)
   const [driveLoading, setDriveLoading] = useState(false)
@@ -153,6 +154,7 @@ const canContinue = () => {
         customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         startTime: Date.now(),
         demoMode: !!data.demo,
+        linkedMeeting,
       })
       navigate('room')
     } catch (err) {
@@ -169,6 +171,7 @@ const canContinue = () => {
         customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
         startTime: Date.now(),
         demoMode: true,
+        linkedMeeting,
       })
       navigate('room')
     }
@@ -216,15 +219,48 @@ const canContinue = () => {
                 <div className="step-desc">Drag in a PDF or text file, or import directly from Google Drive.</div>
 
                 <div style={{ marginBottom: 24 }}>
-                  <div className="question-label">Session name</div>
+                  <div className="question-label">Rehearsal name</div>
                   <input
                     className="settings-input"
                     value={proposalName}
                     onChange={e => setProposalName(e.target.value)}
-                    placeholder="Name this session..."
+                    placeholder="Name this rehearsal..."
                     style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
                   />
                 </div>
+
+                {(() => {
+                  const meetings = loadLocalMeetings()
+                  return (
+                    <div style={{ marginBottom: 24 }}>
+                      <div className="question-label">
+                        Link to meeting&nbsp;
+                        <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                      </div>
+                      {meetings.length === 0 ? (
+                        <div style={{
+                          marginTop: 8, padding: '10px 14px',
+                          border: '1px dashed var(--border)', borderRadius: 8,
+                          fontSize: '0.8125rem', color: 'var(--text-muted)',
+                        }}>
+                          No upcoming meetings. Add them from the Home screen.
+                        </div>
+                      ) : (
+                        <select
+                          className="question-select"
+                          value={linkedMeeting}
+                          onChange={e => setLinkedMeeting(e.target.value)}
+                          style={{ width: '100%', marginTop: 8 }}
+                        >
+                          <option value="">No meeting linked</option>
+                          {meetings.map(m => (
+                            <option key={m.id} value={m.name}>{m.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {!uploaded ? (
                   <>

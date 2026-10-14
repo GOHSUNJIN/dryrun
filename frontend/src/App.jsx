@@ -23,6 +23,7 @@ const DEFAULT_SESSION = {
   reportData: null,
   startTime: null,
   duration: '',
+  linkedMeeting: '',
 }
 
 export default function App() {
@@ -37,11 +38,12 @@ export default function App() {
       const sv = payload.savedSession
       setSession({
         ...DEFAULT_SESSION,
-        proposalName: sv.proposal || '',
-        personaIds:   sv.personaIds || [],
-        conditions:   sv.conditions || {},
-        reportData:   sv.reportData || null,
-        duration:     sv.duration || '',
+        proposalName:  sv.proposal || '',
+        personaIds:    sv.personaIds || [],
+        conditions:    sv.conditions || {},
+        reportData:    sv.reportData || null,
+        duration:      sv.duration || '',
+        linkedMeeting: sv.linkedMeeting || '',
       })
     }
   }
