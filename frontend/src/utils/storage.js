@@ -18,7 +18,7 @@ export function saveSessions(sessions) {
     try {
       const trimmed = sessions.slice(0, sessions.length - 1)
       localStorage.setItem(SESSIONS_KEY, JSON.stringify(trimmed))
-    } catch (e2) { console.warn('[storage] saveSessions failed after trim — storage may be full:', e2) }
+    } catch (e2) { console.warn('[storage] saveSessions failed after trim; storage may be full:', e2) }
   }
 }
 

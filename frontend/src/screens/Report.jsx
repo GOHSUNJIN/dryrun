@@ -90,7 +90,7 @@ export default function Report({ navigate, session }) {
       setTimeout(() => setCopied(false), 2000)
       showToast('Report copied to clipboard')
     }).catch(() => {
-      showToast('Could not copy — check browser clipboard permissions', 'error')
+      showToast('Could not copy. Check browser clipboard permissions.', 'error')
     })
   }
 

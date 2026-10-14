@@ -213,21 +213,23 @@ export default function PastSessions({ navigate }) {
 
               {!collapsed.has(group.proposal) && group.sessions.length === 0 && (
                 <div style={{
-                  padding: '18px 20px', marginBottom: 8,
-                  borderRadius: 8, border: '1px dashed var(--border)',
-                  color: 'var(--text-muted)', fontSize: '0.875rem',
-                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '14px 18px', marginBottom: 8,
+                  borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                  background: 'var(--bg-surface)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
-                  No rehearsals yet.{' '}
+                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No rehearsals yet</span>
                   <button
                     onClick={() => navigate('new', { meetingName: group.proposal, linkedMeeting: group.linkedMeeting })}
                     style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--app-accent)', fontWeight: 600,
-                      fontFamily: 'var(--font-ui)', fontSize: '0.875rem', padding: 0,
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      fontSize: '0.8125rem', fontWeight: 500, color: 'var(--app-accent)',
+                      background: 'var(--app-accent-bg)', border: '1px solid rgba(180,83,9,0.15)',
+                      borderRadius: 6, padding: '5px 12px', cursor: 'pointer',
+                      fontFamily: 'var(--font-ui)',
                     }}
                   >
-                    Start one now →
+                    Start one now
                   </button>
                 </div>
               )}
@@ -292,7 +294,7 @@ export default function PastSessions({ navigate }) {
                           <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Report
                         </button>
-                        <button className="session-action-btn" title="Debrief — moment by moment replay" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
+                        <button className="session-action-btn" title="Debrief: moment by moment replay" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
                           <LayoutList size={12} style={{ opacity: 0.6 }} />
                         </button>
                         {s.proposalText && (

@@ -1215,7 +1215,7 @@ class TestFullRehearsalSession:
 
     @patch('agents.core.get_client')
     def test_already_met_condition_not_re_marked(self, mock_get_client):
-        # Model tries to mark f1 again in turn 2 — it should be silently dropped
+        # Model tries to mark f1 again in turn 2; it should be silently dropped
         side_effects = [
             MagicMock(text=json.dumps({
                 'speaker_id': 'finance', 'response': 'Noted.',
@@ -1236,7 +1236,7 @@ class TestFullRehearsalSession:
             conds[cid] = True
 
         r2 = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
-        # f1 already True — generate_reply must not return it again
+        # f1 already True; generate_reply must not return it again
         assert 'f1' not in r2['conditions_met']
 
     @patch('agents.core.get_client')
@@ -1299,7 +1299,7 @@ class TestFullRehearsalSession:
             'source': None,
             'follow_up': {
                 'speaker_id': 'legal',
-                'response': 'Hold on — who is responsible if the vendor breaches the contract?',
+                'response': 'Hold on. Who is responsible if the vendor breaches the contract?',
                 'conditions_met': [],
                 'source': None,
             },

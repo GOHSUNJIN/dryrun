@@ -169,7 +169,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         const wordsPerPage = rawText.trim().split(/\s+/).filter(Boolean).length / pageCount
 
         if (wordsPerPage < 30) {
-          // Image-based PDF or scanned document — use Gemini vision
+          // Image-based PDF or scanned document: use Gemini vision
           setExtractionStage('Scanned document detected. Using AI to read...')
           const MAX_PAGES = Math.min(pageCount, 10)
           const base64Pages = []

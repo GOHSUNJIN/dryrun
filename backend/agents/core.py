@@ -317,7 +317,7 @@ def generate_reply(
 
 Panel toughness: {toughness}
 Turn counts so far: {turn_summary}
-Last questioner (give them first right of reply — prefer them again unless all their conditions are already met): {last_speaker or 'none'}
+Last questioner (give them first right of reply; prefer them again unless all their conditions are already met): {last_speaker or 'none'}
 
 Panel members and their conditions:
 {panel_summary}

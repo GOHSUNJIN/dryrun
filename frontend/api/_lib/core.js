@@ -252,7 +252,7 @@ Return ONLY valid JSON with no markdown fences. Use these exact persona_id value
 
   const rawText = (response.text || '').replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim()
   if (!rawText) {
-    throw new Error(`Gemini returned empty text in generateOpenings — possible safety filter or quota issue`)
+    throw new Error(`Gemini returned empty text in generateOpenings; possible safety filter or quota issue`)
   }
 
   let data;
@@ -343,7 +343,7 @@ export async function generateReply(proposalText, personaIds, transcript, condit
 
 Panel toughness: ${toughness}
 Speaker turn counts (prefer the voice with fewer turns): ${turnSummary}
-Last questioner: ${lastSpeaker || 'none'} (give them first right of reply — prefer them again unless all their conditions are already met)
+Last questioner: ${lastSpeaker || 'none'} (give them first right of reply; prefer them again unless all their conditions are already met)
 
 Panel members and their conditions:
 ${panelLines.join('\n\n')}

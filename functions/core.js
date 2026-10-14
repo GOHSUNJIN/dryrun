@@ -592,7 +592,7 @@ export async function generateReply(proposalText, personaIds, transcript, condit
 
 Panel toughness: ${toughness}
 Speaker turn counts (prefer the voice with fewer turns): ${turnSummary}
-Last questioner: ${lastSpeaker || 'none'} (give them first right of reply — prefer them again unless all their conditions are already met)
+Last questioner: ${lastSpeaker || 'none'} (give them first right of reply; prefer them again unless all their conditions are already met)
 
 Panel members and their conditions:
 ${panelLines.join('\n\n')}
