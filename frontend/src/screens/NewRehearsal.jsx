@@ -48,7 +48,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     const reader = new FileReader()
     reader.onload = (e) => {
       setProposalText(e.target.result)
-      setProposalName(prev => prev === autoName.current ? file.name.replace(/\.[^.]+$/, '') : prev)
       setUploaded(true)
     }
     reader.readAsText(file)
@@ -102,7 +101,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     try {
       const text = await fetchDocText(file.id)
       setProposalText(text)
-      setProposalName(prev => prev === autoName.current ? file.name : prev)
       setUploaded(true)
     } catch (err) {
       console.error('[Drive] failed to fetch doc:', err)
