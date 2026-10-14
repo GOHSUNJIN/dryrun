@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Clock, ChevronRight, Loader, Plus, X, Trash2 } from 'lucide-react'
-import { WEAK_SPOTS, PERSONAS } from '../data.js'
+import { PERSONAS } from '../data.js'
 import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
 
@@ -100,7 +100,6 @@ export default function Home({ navigate }) {
   const stored = loadSessions()
   const recent = stored.slice(0, 4).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
   const computedSpots = computeWeakSpots()
-  const weakSpots = computedSpots.length > 0 ? computedSpots : WEAK_SPOTS
 
   const [calEvents, setCalEvents]           = useState(null)
   const [calLoading, setCalLoading]         = useState(false)
@@ -381,24 +380,34 @@ export default function Home({ navigate }) {
           {/* Weak spots */}
           <motion.div variants={item} style={{ gridColumn: '1 / -1' }}>
             <div className="section-label">Recurring weak spots</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              {weakSpots.map((w, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 14,
-                  padding: '16px 18px', borderRadius: 10,
-                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                }}>
-                  <div style={{
-                    fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',
-                    fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28,
-                  }}>{w.count}</div>
-                  <div>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{w.sub}</div>
+            {computedSpots.length === 0 ? (
+              <div style={{
+                padding: '24px 28px', borderRadius: 10,
+                border: '1.5px dashed var(--border)', background: 'var(--bg-surface)',
+                color: 'var(--text-muted)', fontSize: '0.875rem',
+              }}>
+                Patterns will appear here once you have completed rehearsals with AI coaching reports.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                {computedSpots.map((w, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 14,
+                    padding: '16px 18px', borderRadius: 10,
+                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                  }}>
+                    <div style={{
+                      fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',
+                      fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28,
+                    }}>{w.count}</div>
+                    <div>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{w.sub}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
         </div>
