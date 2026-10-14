@@ -142,12 +142,34 @@ export function computeWeakSpots() {
 
   return Object.entries(byLabel)
     .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 3)
     .map(([, data]) => ({
       count: data.count,
       text: data.latestIssue,
       sub: `Across ${data.sessionCount} session${data.sessionCount !== 1 ? 's' : ''}`,
     }))
+}
+
+const CAL_EVENTS_KEY      = 'dryrun_cal_events'
+const DISMISSED_SPOTS_KEY = 'dryrun_dismissed_spots'
+
+export function loadCalEvents() {
+  try { return JSON.parse(localStorage.getItem(CAL_EVENTS_KEY) || 'null') }
+  catch { return null }
+}
+
+export function saveCalEvents(events) {
+  localStorage.setItem(CAL_EVENTS_KEY, JSON.stringify(events))
+}
+
+export function loadDismissedSpots() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_SPOTS_KEY) || '[]')) }
+  catch { return new Set() }
+}
+
+export function dismissWeakSpot(text) {
+  const prev = loadDismissedSpots()
+  prev.add(text)
+  localStorage.setItem(DISMISSED_SPOTS_KEY, JSON.stringify([...prev]))
 }
 
 export function groupSessionsByProposal(sessions) {

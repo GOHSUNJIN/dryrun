@@ -2,7 +2,7 @@ import { useState, useRef, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas, loadRehearsalDefaults, loadSessions, loadLocalMeetings } from '../utils/storage.js'
+import { loadCustomPersonas, loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents } from '../utils/storage.js'
 import { listDriveItems, fetchDocText } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
@@ -29,9 +29,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
   const [turnLimit, setTurnLimit] = useState(15)
-  const [industry, setIndustry]   = useState('')
-  const [companySize, setCompanySize] = useState('')
-  const [focus, setFocus]         = useState('')
   const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
   const [launching, setLaunching] = useState(false)
   const [driveOpen, setDriveOpen]       = useState(false)
@@ -119,7 +116,7 @@ const canContinue = () => {
     setLaunching(true)
 
     const text = proposalText
-    const config = { toughness, turnLimit, industry, companySize, focus }
+    const config = { toughness, turnLimit }
 
     try {
       const res = await fetch('/api/session/start', {
@@ -228,14 +225,16 @@ const canContinue = () => {
                 </div>
 
                 {(() => {
-                  const meetings = loadLocalMeetings()
+                  const local = loadLocalMeetings()
+                  const cal   = (loadCalEvents() || []).map(m => ({ id: m.id || m.name, name: m.name || m.summary }))
+                  const all   = [...local, ...cal]
                   return (
                     <div style={{ marginBottom: 24 }}>
                       <div className="question-label">
                         Link to meeting&nbsp;
                         <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
                       </div>
-                      {meetings.length === 0 ? (
+                      {all.length === 0 ? (
                         <div style={{
                           marginTop: 8, padding: '10px 14px',
                           border: '1px dashed var(--border)', borderRadius: 8,
@@ -251,7 +250,7 @@ const canContinue = () => {
                           style={{ width: '100%', marginTop: 8 }}
                         >
                           <option value="">No meeting linked</option>
-                          {meetings.map(m => (
+                          {all.map(m => (
                             <option key={m.id} value={m.name}>{m.name}</option>
                           ))}
                         </select>
@@ -439,73 +438,45 @@ const canContinue = () => {
             {step === 2 && (
               <>
                 <div className="step-title">Configure your session</div>
-                <div className="step-desc">Three quick questions then you are in the room.</div>
+                <div className="step-desc">Set how hard the panel pushes and how long your session runs.</div>
 
-                <div className="quick-questions">
-                  <div>
-                    <div className="question-label">Company size</div>
-                    <select className="question-select" value={companySize} onChange={e => setCompanySize(e.target.value)}>
-                      <option value="">Select...</option>
-                      <option>1 to 50 employees</option>
-                      <option>51 to 200 employees</option>
-                      <option>201 to 1,000 employees</option>
-                      <option>1,000+ employees</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div className="question-label">Industry</div>
-                    <select className="question-select" value={industry} onChange={e => setIndustry(e.target.value)}>
-                      <option value="">Select...</option>
-                      <option>Technology</option>
-                      <option>Finance and Fintech</option>
-                      <option>Healthcare</option>
-                      <option>Retail and E-commerce</option>
-                      <option>Professional services</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div className="question-label">What does this panel care most about?</div>
-                    <select className="question-select" value={focus} onChange={e => setFocus(e.target.value)}>
-                      <option value="">Select...</option>
-                      <option>Budget approval</option>
-                      <option>Risk and compliance</option>
-                      <option>Operational feasibility</option>
-                      <option>Strategic alignment</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 8 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 28, marginTop: 8 }}>
                   <div>
                     <div className="question-label">Panel toughness</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      {['Supportive', 'Balanced', 'Tough'].map(t => (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                      {[
+                        { value: 'Supportive', desc: 'Constructive and encouraging' },
+                        { value: 'Balanced',   desc: 'Firm but fair' },
+                        { value: 'Tough',      desc: 'Hard challenges, minimal concessions' },
+                      ].map(({ value, desc }) => (
                         <button
-                          key={t}
-                          onClick={() => setToughness(t)}
+                          key={value}
+                          onClick={() => setToughness(value)}
                           style={{
-                            padding: '7px 12px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 500,
+                            flex: 1, padding: '12px 14px', borderRadius: 8, textAlign: 'left',
                             cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
-                            borderColor: toughness === t ? 'var(--text-primary)' : 'var(--border)',
-                            background: toughness === t ? 'var(--text-primary)' : 'transparent',
-                            color: toughness === t ? 'white' : 'var(--text-secondary)',
+                            borderColor: toughness === value ? 'var(--text-primary)' : 'var(--border)',
+                            background: toughness === value ? 'var(--text-primary)' : 'transparent',
+                            color: toughness === value ? 'white' : 'var(--text-secondary)',
                             transition: 'all 0.15s ease',
                           }}
-                        >{t}</button>
+                        >
+                          <div style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: 3 }}>{value}</div>
+                          <div style={{ fontSize: '0.6875rem', opacity: 0.7, lineHeight: 1.3 }}>{desc}</div>
+                        </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
                     <div className="question-label">Turn limit</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                       {[5, 10, 15, 20, 25].map(n => (
                         <button
                           key={n}
                           onClick={() => setTurnLimit(n)}
                           style={{
-                            padding: '7px 11px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 500,
+                            padding: '9px 14px', borderRadius: 8, fontSize: '0.875rem', fontWeight: 600,
                             cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
                             borderColor: turnLimit === n ? 'var(--text-primary)' : 'var(--border)',
                             background: turnLimit === n ? 'var(--text-primary)' : 'transparent',
@@ -517,8 +488,6 @@ const canContinue = () => {
                     </div>
                   </div>
                 </div>
-
-
               </>
             )}
           </div>

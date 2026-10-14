@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Calendar, Clock, ChevronRight, Loader, Plus, X, Trash2 } from 'lucide-react'
+import { ArrowRight, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X, Trash2 } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots } from '../utils/storage.js'
+import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots, loadDismissedSpots, dismissWeakSpot, loadCalEvents, saveCalEvents } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
+
+const SESSION_PAGE_SIZE = 3
 
 const container = {
   hidden: {},
@@ -97,21 +99,33 @@ function AddMeetingForm({ onSave, onCancel }) {
 }
 
 export default function Home({ navigate }) {
-  const stored = loadSessions()
-  const recent = stored.slice(0, 4).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
-  const computedSpots = computeWeakSpots()
+  const stored      = loadSessions()
+  const allSessions = stored.map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
 
-  const [calEvents, setCalEvents]           = useState(null)
+  const [calEvents, setCalEvents]           = useState(() => loadCalEvents())
   const [calLoading, setCalLoading]         = useState(false)
   const [localMeetings, setLocalMeetings]   = useState(loadLocalMeetings)
   const [showAddMeeting, setShowAddMeeting] = useState(false)
   const [hoveredMeeting, setHoveredMeeting] = useState(null)
   const [hoveredSession, setHoveredSession] = useState(null)
+  const [sessionPage, setSessionPage]       = useState(0)
+  const [dismissedSpots, setDismissedSpots] = useState(() => loadDismissedSpots())
+  const [spotsExpanded, setSpotsExpanded]   = useState(false)
+
+  const totalPages   = Math.ceil(allSessions.length / SESSION_PAGE_SIZE)
+  const pageItems    = allSessions.slice(sessionPage * SESSION_PAGE_SIZE, (sessionPage + 1) * SESSION_PAGE_SIZE)
+  const hasPrev      = sessionPage > 0
+  const hasNext      = sessionPage < totalPages - 1
+
+  const allSpots     = computeWeakSpots().filter(w => !dismissedSpots.has(w.text))
+  const visibleSpots = spotsExpanded ? allSpots : allSpots.slice(0, 3)
+  const hasMoreSpots = allSpots.length > 3
 
   const connectCalendar = async () => {
     setCalLoading(true)
     try {
       const events = await fetchCalendarEvents()
+      saveCalEvents(events)
       setCalEvents(events)
     } catch (err) {
       console.error('[Calendar] failed:', err)
@@ -132,6 +146,11 @@ export default function Home({ navigate }) {
     e.stopPropagation()
     deleteLocalMeeting(id)
     setLocalMeetings(loadLocalMeetings())
+  }
+
+  const handleDismissSpot = (text) => {
+    dismissWeakSpot(text)
+    setDismissedSpots(loadDismissedSpots())
   }
 
   const localMeetingsMapped = localMeetings
@@ -170,10 +189,10 @@ export default function Home({ navigate }) {
         </motion.div>
 
         {/* Two-column grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
 
-          {/* Upcoming meetings */}
-          <motion.div variants={item}>
+          {/* Upcoming meetings — fills column height */}
+          <motion.div variants={item} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Upcoming meetings</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -209,8 +228,10 @@ export default function Home({ navigate }) {
 
             {!hasAnyMeetings ? (
               <div style={{
-                padding: '28px 20px', borderRadius: 10, textAlign: 'center',
+                flex: 1, borderRadius: 10, textAlign: 'center',
                 border: '1.5px dashed var(--border)', background: 'var(--bg-surface)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '28px 20px',
               }}>
                 <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 12 }}>
                   No upcoming meetings yet.
@@ -227,89 +248,127 @@ export default function Home({ navigate }) {
                   <Plus size={12} /> Add a meeting
                 </button>
               </div>
-            ) : allMeetings.map((m, i) => {
-              const accentColor = m.daysLeft <= 3 ? '#DC2626' : m.daysLeft <= 7 ? '#B45309' : 'var(--border)'
-              const countColor  = m.daysLeft <= 3 ? '#DC2626' : m.daysLeft <= 7 ? '#B45309' : 'var(--text-muted)'
-              return (
-                <div
-                  key={m.id || i}
-                  onClick={() => navigate('new', { meetingName: m.name })}
-                  onMouseEnter={() => setHoveredMeeting(i)}
-                  onMouseLeave={() => setHoveredMeeting(null)}
-                  style={{
-                    display: 'flex', alignItems: 'stretch',
-                    marginBottom: 8, borderRadius: 8, overflow: 'hidden',
-                    border: '1px solid var(--border)',
-                    borderLeft: `3px solid ${accentColor}`,
-                    background: hoveredMeeting === i ? 'var(--bg-hover)' : 'var(--bg-surface)',
-                    cursor: 'pointer', transition: 'background 0.15s ease',
-                  }}
-                >
-                  {/* Days countdown */}
-                  <div style={{
-                    width: 54, flexShrink: 0,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '10px 0',
-                    borderRight: '1px solid var(--border)',
-                  }}>
-                    <div style={{
-                      fontSize: '1.25rem', fontWeight: 700, lineHeight: 1,
-                      color: countColor, fontFamily: 'var(--font-display)',
-                    }}>{m.daysLeft}</div>
-                    <div style={{
-                      fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.1em',
-                      textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2,
-                    }}>days</div>
-                  </div>
+            ) : (
+              <div style={{ flex: 1 }}>
+                {allMeetings.map((m, i) => {
+                  const accentColor = m.daysLeft <= 3 ? '#DC2626' : m.daysLeft <= 7 ? '#B45309' : 'var(--border)'
+                  const countColor  = m.daysLeft <= 3 ? '#DC2626' : m.daysLeft <= 7 ? '#B45309' : 'var(--text-muted)'
+                  return (
+                    <div
+                      key={m.id || i}
+                      onClick={() => navigate('new', { meetingName: m.name })}
+                      onMouseEnter={() => setHoveredMeeting(i)}
+                      onMouseLeave={() => setHoveredMeeting(null)}
+                      style={{
+                        display: 'flex', alignItems: 'stretch',
+                        marginBottom: 8, borderRadius: 8, overflow: 'hidden',
+                        border: '1px solid var(--border)',
+                        borderLeft: `3px solid ${accentColor}`,
+                        background: hoveredMeeting === i ? 'var(--bg-hover)' : 'var(--bg-surface)',
+                        cursor: 'pointer', transition: 'background 0.15s ease',
+                      }}
+                    >
+                      <div style={{
+                        width: 54, flexShrink: 0,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        padding: '10px 0',
+                        borderRight: '1px solid var(--border)',
+                      }}>
+                        <div style={{
+                          fontSize: '1.25rem', fontWeight: 700, lineHeight: 1,
+                          color: countColor, fontFamily: 'var(--font-display)',
+                        }}>{m.daysLeft}</div>
+                        <div style={{
+                          fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.1em',
+                          textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2,
+                        }}>days</div>
+                      </div>
 
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0, padding: '11px 12px' }}>
-                    <div style={{
-                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{m.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Calendar size={10} style={{ flexShrink: 0 }} />
-                      {m.date}
-                      {m.local && (
-                        <span style={{ fontSize: '0.625rem', background: 'var(--bg-hover)', borderRadius: 4, padding: '1px 5px', marginLeft: 2 }}>Manual</span>
-                      )}
+                      <div style={{ flex: 1, minWidth: 0, padding: '11px 12px' }}>
+                        <div style={{
+                          fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>{m.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Calendar size={10} style={{ flexShrink: 0 }} />
+                          {m.date}
+                          {m.local && (
+                            <span style={{ fontSize: '0.625rem', background: 'var(--bg-hover)', borderRadius: 4, padding: '1px 5px', marginLeft: 2 }}>Manual</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', paddingRight: 12, flexShrink: 0 }}>
+                        {m.local ? (
+                          <button
+                            onClick={e => handleDeleteMeeting(e, m.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', opacity: 0.5 }}
+                            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
+                            onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        ) : (
+                          <ChevronRight size={13} style={{ color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)', transition: 'color 0.15s ease' }} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Action */}
-                  <div style={{ display: 'flex', alignItems: 'center', paddingRight: 12, flexShrink: 0 }}>
-                    {m.local ? (
-                      <button
-                        onClick={e => handleDeleteMeeting(e, m.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', opacity: 0.5 }}
-                        onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
-                        onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    ) : (
-                      <ChevronRight size={13} style={{ color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)', transition: 'color 0.15s ease' }} />
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+                  )
+                })}
+              </div>
+            )}
           </motion.div>
 
-          {/* Recent sessions */}
+          {/* Recent sessions with pagination */}
           <motion.div variants={item}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Recent sessions</div>
-              <button
-                onClick={() => navigate(recent.length > 0 ? 'past' : 'new')}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-ui)' }}
-              >
-                {recent.length > 0 ? <>View all <ChevronRight size={12} /></> : <><Plus size={11} /> New</>}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {totalPages > 1 && (
+                  <>
+                    <button
+                      onClick={() => setSessionPage(p => p - 1)}
+                      disabled={!hasPrev}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 22, height: 22, borderRadius: 5,
+                        background: hasPrev ? 'var(--bg-hover)' : 'transparent',
+                        border: '1px solid var(--border)', cursor: hasPrev ? 'pointer' : 'default',
+                        color: hasPrev ? 'var(--text-secondary)' : 'var(--text-muted)',
+                        opacity: hasPrev ? 1 : 0.35,
+                      }}
+                    >
+                      <ChevronLeft size={12} />
+                    </button>
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                      {sessionPage + 1}/{totalPages}
+                    </span>
+                    <button
+                      onClick={() => setSessionPage(p => p + 1)}
+                      disabled={!hasNext}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 22, height: 22, borderRadius: 5,
+                        background: hasNext ? 'var(--bg-hover)' : 'transparent',
+                        border: '1px solid var(--border)', cursor: hasNext ? 'pointer' : 'default',
+                        color: hasNext ? 'var(--text-secondary)' : 'var(--text-muted)',
+                        opacity: hasNext ? 1 : 0.35,
+                      }}
+                    >
+                      <ChevronRight size={12} />
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => navigate(allSessions.length > 0 ? 'past' : 'new')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-ui)' }}
+                >
+                  {allSessions.length > 0 ? <>View all <ChevronRight size={12} /></> : <><Plus size={11} /> New</>}
+                </button>
+              </div>
             </div>
 
-            {recent.length === 0 ? (
+            {allSessions.length === 0 ? (
               <div style={{ ...rowCard(false), cursor: 'default', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
                 <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No sessions yet.</div>
                 <button
@@ -325,7 +384,7 @@ export default function Home({ navigate }) {
                   <Plus size={13} /> Start your first rehearsal
                 </button>
               </div>
-            ) : recent.map((s, idx) => {
+            ) : pageItems.map((s, idx) => {
               const pct     = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
               const isGood  = pct >= 60
               const personas = s.personaIds?.length
@@ -379,31 +438,58 @@ export default function Home({ navigate }) {
 
           {/* Weak spots */}
           <motion.div variants={item} style={{ gridColumn: '1 / -1' }}>
-            <div className="section-label">Recurring weak spots</div>
-            {computedSpots.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div className="section-label" style={{ marginBottom: 0 }}>Recurring weak spots</div>
+              {hasMoreSpots && (
+                <button
+                  onClick={() => setSpotsExpanded(e => !e)}
+                  style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
+                >
+                  {spotsExpanded ? 'Show less' : `Show all ${allSpots.length}`}
+                </button>
+              )}
+            </div>
+            {allSpots.length === 0 ? (
               <div style={{
                 padding: '24px 28px', borderRadius: 10,
                 border: '1.5px dashed var(--border)', background: 'var(--bg-surface)',
                 color: 'var(--text-muted)', fontSize: '0.875rem',
               }}>
-                Patterns will appear here once you have completed rehearsals with AI coaching reports.
+                {computeWeakSpots().length === 0
+                  ? 'Patterns will appear here once you have completed rehearsals with AI coaching reports.'
+                  : 'All weak spots dismissed.'}
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                {computedSpots.map((w, i) => (
+                {visibleSpots.map((w, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'flex-start', gap: 14,
                     padding: '16px 18px', borderRadius: 10,
                     background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                    position: 'relative',
                   }}>
                     <div style={{
                       fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',
                       fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28,
                     }}>{w.count}</div>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{w.sub}</div>
                     </div>
+                    <button
+                      onClick={() => handleDismissSpot(w.text)}
+                      title="Dismiss"
+                      style={{
+                        position: 'absolute', top: 10, right: 10,
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--text-muted)', padding: 2, display: 'flex',
+                        opacity: 0.4, transition: 'opacity 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                      onMouseLeave={e => e.currentTarget.style.opacity = 0.4}
+                    >
+                      <X size={12} />
+                    </button>
                   </div>
                 ))}
               </div>
