@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp, ArrowRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting } from '../utils/storage.js'
+import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting, loadLocalMeetings } from '../utils/storage.js'
 
 function loadGroups() {
   return groupSessionsByProposal(loadSessions())
@@ -301,6 +301,12 @@ export default function PastSessions({ navigate }) {
                             {groups.filter(g => !g.noMeeting && g.proposal !== group.proposal).map(g => (
                               <option key={g.proposal} value={g.linkedMeeting}>{g.proposal}</option>
                             ))}
+                            {loadLocalMeetings()
+                              .filter(m => !groups.some(g => g.linkedMeeting === m.name))
+                              .map(m => (
+                                <option key={m.id} value={m.name}>{m.name}</option>
+                              ))
+                            }
                             {!group.noMeeting && <option value="">No meeting</option>}
                           </select>
                         ) : (

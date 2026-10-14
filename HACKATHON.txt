@@ -1,0 +1,86 @@
+HACKATHON: Google Cloud AI Builder Cup 2026
+==========================================
+
+Theme chosen: Future of Work & Enterprise Productivity
+Deadline: 2026-10-18
+
+"Build an AI-powered solution that transforms how individuals and organizations
+access knowledge, collaborate, make decisions, and complete everyday work."
+
+
+MANDATORY SUBMISSION REQUIREMENTS
+----------------------------------
+1. Clear Proposal (PDF deck)
+   - Compelling vision + positive impact
+   - Problem articulation + community benefit
+   - Feasibility and scalability argument
+
+2. Functional Prototype
+   - Must use Google Cloud AI tools (Gemini, Gemma, Agent Platform, Antigravity, AI Studio)
+   - Must be deployed on Cloud Run, GCP, or Firebase
+
+3. Demo Video
+   - Public YouTube / Vimeo / Google Drive link
+   - Max 3 minutes, shows the solution in action
+
+4. Category Specification
+   - Clearly state: Future of Work & Enterprise Productivity
+
+
+AI / PLATFORM CONSTRAINTS
+--------------------------
+- Must integrate Gemini or Gemma models
+  OR use agentic platforms: Agent Platform, Antigravity, AI Studio
+- Must be deployed on Google Cloud Platform via Cloud Run or Firebase
+- DryRun: Firebase Hosting + Cloud Functions (project: dry-run-1608) + Gemini API  [SATISFIED]
+
+
+JUDGING CRITERIA
+----------------
+Technical Merit & Gen AI Implementation   40%
+  - Meaningful use of Gen AI (contributes directly to the solution)
+  - Technical implementation (functional, sound, appropriate)
+  - Scalability & sustainability (potential for wider adoption)
+
+Problem Alignment & Impact                25%
+  - How well the solution addresses the chosen problem statement
+  - Clear and meaningful value for intended users / organisations
+
+Innovation & Creativity                   25%
+  - Originality & differentiation from existing solutions
+  - Creative or innovative Gen AI use (beyond basic/superficial)
+
+User Experience & Solution Design         10%
+  - Usability & accessibility for intended users
+  - Cohesive experience — all components including AI work together smoothly
+
+
+DRYRUN SUBMISSION CHECKLIST
+----------------------------
+[ ] PDF deck (problem, solution, impact, scalability)
+[ ] 3-minute demo video (YouTube / Vimeo / Drive)
+[x] Deployed on Firebase (project: dry-run-1608) + Cloud Functions
+[x] Gemini API integration
+[x] Category declared: Future of Work & Enterprise Productivity
+
+
+KEY DIFFERENTIATORS TO HIGHLIGHT IN DECK
+-----------------------------------------
+- Multi-persona AI panel (not a single chatbot) — each persona has distinct goals
+- Fact-Checker uses Google Search grounding (live web search during session)
+- Condition tracking as a structured progress metric across the session
+- Gemini vision API for scanned PDF extraction
+- Coaching report quotes specific turns and suggests better answers
+- Multiple industry verticals: Business, Event, Academic, Startup, Policy
+- Google Calendar sync + "link to meeting" — rehearsal tied to a real upcoming meeting
+
+
+NOTES FROM ANALYSIS (2026-10-15)
+----------------------------------
+- Deployment is the only hard disqualification risk — resolve before anything else
+- In the deck: name every Gemini capability explicitly (Search grounding, vision,
+  structured output, multi-turn agentic conversation)
+- Add one concrete stat to establish problem size (e.g. hours wasted in unprepared meetings)
+- Add a "vs existing tools" slide — most AI prep tools are single-turn, post-hoc feedback
+- The video should show the fact-checker citing a real source, the coaching report with
+  a specific excerpt, and the document upload with a real PDF

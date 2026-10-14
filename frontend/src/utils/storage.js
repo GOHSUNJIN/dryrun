@@ -138,7 +138,15 @@ export function addLocalMeeting(meeting) {
 }
 
 export function deleteLocalMeeting(id) {
-  localStorage.setItem(MEETINGS_KEY, JSON.stringify(loadLocalMeetings().filter(m => m.id !== id)))
+  const meetings = loadLocalMeetings()
+  const target = meetings.find(m => m.id === id)
+  localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetings.filter(m => m.id !== id)))
+  // Clear linkedMeeting on every session that was attached to this meeting
+  if (target?.name) {
+    saveSessions(loadSessions().map(s =>
+      s.linkedMeeting === target.name ? { ...s, linkedMeeting: '' } : s
+    ))
+  }
 }
 
 export function renameProposal(oldName, newName) {
@@ -161,10 +169,11 @@ export function computeWeakSpots() {
     const seenLabels = new Set()
     for (const wp of wps) {
       if (!wp.label) continue
-      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, sessionCount: 0, latestIssue: '', latestProposal: '' }
+      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, sessionCount: 0, latestIssue: '', latestProposal: '', latestMeeting: '' }
       byLabel[wp.label].count++
       byLabel[wp.label].latestIssue = wp.issue || wp.label
       byLabel[wp.label].latestProposal = s.proposal || ''
+      byLabel[wp.label].latestMeeting = s.linkedMeeting || ''
       if (!seenLabels.has(wp.label)) {
         byLabel[wp.label].sessionCount++
         seenLabels.add(wp.label)
@@ -174,13 +183,16 @@ export function computeWeakSpots() {
 
   return Object.entries(byLabel)
     .sort((a, b) => b[1].count - a[1].count)
-    .map(([, data]) => ({
-      count: data.count,
-      text: data.latestIssue,
-      sub: data.sessionCount === 1
-        ? `In: ${data.latestProposal || 'a session'}`
-        : `Across ${data.sessionCount} sessions · last: ${data.latestProposal || 'unknown'}`,
-    }))
+    .map(([, data]) => {
+      const meetingPart = data.latestMeeting ? ` · ${data.latestMeeting}` : ''
+      return {
+        count: data.count,
+        text: data.latestIssue,
+        sub: data.sessionCount === 1
+          ? `In: ${data.latestProposal || 'a session'}${meetingPart}`
+          : `Across ${data.sessionCount} sessions · last: ${data.latestProposal || 'unknown'}${meetingPart}`,
+      }
+    })
 }
 
 const CAL_EVENTS_KEY      = 'dryrun_cal_events'
