@@ -4,7 +4,7 @@ const GEMINI_MODEL = 'gemini-3.8-flash';
 
 const PERSONA_DEFS = {
   finance: {
-    name: 'Ritish',
+    name: 'Alan',
     role: 'Head of Finance',
     speaking_style: 'Direct, numbers-focused and sceptical of vague claims. Always asks for specific figures.',
     cares: 'Total cost of ownership, payback period with supporting maths and budget contingency planning',
@@ -26,7 +26,7 @@ const PERSONA_DEFS = {
     ],
   },
   ops: {
-    name: 'Ajwad',
+    name: 'Renes',
     role: 'Operations Lead',
     speaking_style: 'Blunt and practical. Pushes back on vague plans and always asks who owns what.',
     cares: 'Credible timelines with named milestones, who currently owns the work being replaced and disruption risk',
@@ -37,7 +37,7 @@ const PERSONA_DEFS = {
     ],
   },
   factcheck: {
-    name: 'Jun',
+    name: 'Ritish',
     role: 'Fact-Checker',
     speaking_style: 'Neutral and methodical. Cites sources and flags unsupported quantitative claims.',
     cares: 'Accuracy of quantitative claims, whether key figures are supported by cited sources and whether efficiency or cost projections have been independently verified',
@@ -48,7 +48,7 @@ const PERSONA_DEFS = {
   },
 
   hr: {
-    name: 'Maya',
+    name: 'Ryme',
     role: 'HR Director',
     speaking_style: 'People-focused and direct. Asks who is affected, how they will be supported and what the change management plan actually looks like in practice.',
     cares: 'Headcount implications and hiring timeline, change management plan for teams affected by the proposal and retention and morale risk',
@@ -70,7 +70,7 @@ const PERSONA_DEFS = {
     ],
   },
   marketing: {
-    name: 'Priya',
+    name: 'Ajwad',
     role: 'Marketing Lead',
     speaking_style: 'Audience-focused and brand-conscious. Questions assumptions about customer or user behaviour and asks for evidence before accepting any go-to-market claims.',
     cares: 'Brand alignment and messaging, target audience assumptions backed by data and a credible go-to-market plan with confirmed launch timing',
@@ -81,7 +81,7 @@ const PERSONA_DEFS = {
     ],
   },
   board: {
-    name: 'Charles',
+    name: 'Rek',
     role: 'Board Advisor',
     speaking_style: 'Strategic and high-level. Cuts through operational detail to ask why this, why now and what is being traded off against other priorities.',
     cares: 'Strategic alignment with company priorities, ROI and payback timeline at board level and which competing initiative is being deprioritised to fund this',
@@ -607,7 +607,7 @@ Rules:
 - Do not use em dashes.
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
 - If you mark any conditions_met, open with a brief one-sentence acknowledgment of what was satisfied, then pivot to the next unmet concern.
-- If Jun (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
+- If Ritish (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
 - Include a follow_up when: (a) the presenter's answer directly contradicts or conflicts with a concern owned by a different panelist, prompting them to call it out, (b) the presenter's answer raises a new concern that a second panelist would immediately react to, or (c) the presenter directly addresses another panelist's unmet condition and that panelist should briefly acknowledge it. Keep follow_up null when the answer is straightforward and relevant to only one panelist. The follow_up speaker must differ from speaker_id. Max 2 sentences, under 60 words.
 
 Return ONLY valid JSON with no markdown fences:

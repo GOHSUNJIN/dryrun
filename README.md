@@ -145,7 +145,7 @@ All three AI calls use a single-call batch approach: one Gemini call returns the
 
 ### `factCheckProposal` (Google Search grounding)
 
-Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding to verify the proposal's key quantitative claims against live web data. The findings are injected into Jun's context so every challenge Jun makes references real market data.
+Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding to verify the proposal's key quantitative claims against live web data. The findings are injected into Ritish's context so every challenge Ritish makes references real market data.
 
 ### `generateOpenings`
 
@@ -174,12 +174,12 @@ Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested 
 
 | Category | Panelists |
 |----------|-----------|
-| Business | Ritish (Finance), Alex (Legal), Ajwad (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Mei (Marketing), Jun (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
+| Business | Alan (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Ritish (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
 | Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
 | Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
 | Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
 | Policy | Zul (Policy Analyst), Boon (Regulatory Advisor), Nurul (Community Representative) |
-| General | Wei (General Reviewer) — fallback selected only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
+| General | Quinn (General Reviewer), used only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
 
 Custom personas follow the same structure and are passed to every API call in `custom_personas`.
 

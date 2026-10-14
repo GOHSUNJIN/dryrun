@@ -163,14 +163,14 @@ class TestBuildTranscriptStr:
     def test_persona_label_uses_name_and_role(self):
         msgs = [{'speaker': 'finance', 'text': 'Show me the numbers.'}]
         result = core.build_transcript_str(msgs)
-        assert 'Ritish' in result
+        assert 'Alan' in result
         assert 'Head of Finance' in result
 
     def test_multi_turn_transcript(self):
         result = core.build_transcript_str(SAMPLE_TRANSCRIPT)
         lines = result.strip().split('\n')
         assert len(lines) == 4
-        assert lines[0].startswith('Ritish')
+        assert lines[0].startswith('Alan')
         assert lines[1].startswith('Presenter')
 
     def test_unknown_speaker_falls_back_to_id(self):
@@ -200,7 +200,7 @@ class TestBuildTranscriptStr:
         ]
         result = core.build_transcript_str(msgs)
         lines = result.split('\n')
-        assert 'Ritish' in lines[0]
+        assert 'Alan' in lines[0]
         assert 'Presenter' in lines[1]
         assert 'Alex' in lines[2]
 
@@ -523,7 +523,7 @@ class TestGenerateReport:
                     'id': 1, 'type': 'weak', 'turn': 'Turn 1',
                     'excerpt': 'Pays for itself.',
                     'tag': 'Weak Answer',
-                    'asked': 'Ritish asked for cost breakdown.',
+                    'asked': 'Alan asked for cost breakdown.',
                     'your_answer': '"Pays for itself."',
                     'why': 'No numbers given.',
                     'better': 'Add a TCO table.',
@@ -952,9 +952,9 @@ class TestGenerateReplyPromptEnrichments:
         core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'ops'], transcript, conds, {})
         config = mock_client.models.generate_content.call_args.kwargs['config']
         si = config.system_instruction
-        # Ritish (finance) spoke twice, Ajwad (ops) spoke once
-        assert 'Ritish: 2' in si
-        assert 'Ajwad: 1' in si
+        # Alan (finance) spoke twice, Renes (ops) spoke once
+        assert 'Alan: 2' in si
+        assert 'Renes: 1' in si
 
     @patch('agents.core.get_client')
     def test_turn_counts_zero_for_persona_that_has_not_spoken(self, mock_get_client):
@@ -1020,7 +1020,7 @@ class TestGenerateReplyPromptEnrichments:
         core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'ops'], transcript, conds, {})
         config = mock_client.models.generate_content.call_args.kwargs['config']
         si = config.system_instruction
-        # ops (Ajwad) has never spoken so no Last asked line for ops
+        # ops (Renes) has never spoken so no Last asked line for ops
         # The Last asked line for finance should be present
         assert 'Cost breakdown please' in si
 

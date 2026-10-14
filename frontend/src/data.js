@@ -2,9 +2,9 @@ export const PERSONAS = [
   // --- Business ---
   {
     id: 'finance',
-    name: 'Ritish',
+    name: 'Alan',
     role: 'Head of Finance',
-    initial: 'R',
+    initial: 'A',
     color: '#F2B35B',
     glow: 'rgba(242,179,91,0.22)',
     dimColor: 'rgba(242,179,91,0.35)',
@@ -36,9 +36,9 @@ export const PERSONAS = [
   },
   {
     id: 'ops',
-    name: 'Ajwad',
+    name: 'Renes',
     role: 'Operations Lead',
-    initial: 'A',
+    initial: 'R',
     color: '#B9A3FF',
     glow: 'rgba(185,163,255,0.22)',
     dimColor: 'rgba(185,163,255,0.35)',
@@ -104,9 +104,9 @@ export const PERSONAS = [
   },
   {
     id: 'marketing',
-    name: 'Mei',
+    name: 'Ajwad',
     role: 'Marketing Lead',
-    initial: 'M',
+    initial: 'A',
     color: '#F472B6',
     glow: 'rgba(244,114,182,0.22)',
     dimColor: 'rgba(244,114,182,0.35)',
@@ -121,9 +121,9 @@ export const PERSONAS = [
   },
   {
     id: 'factcheck',
-    name: 'Jun',
+    name: 'Ritish',
     role: 'Fact-Checker',
-    initial: 'J',
+    initial: 'R',
     color: '#9AB0DE',
     glow: 'rgba(154,176,222,0.22)',
     dimColor: 'rgba(154,176,222,0.35)',
@@ -470,9 +470,9 @@ export const PERSONAS = [
   // --- General ---
   {
     id: 'general',
-    name: 'Wei',
+    name: 'Quinn',
     role: 'General Reviewer',
-    initial: 'W',
+    initial: 'Q',
     color: '#D97706',
     glow: 'rgba(217,119,6,0.22)',
     dimColor: 'rgba(217,119,6,0.35)',
@@ -651,7 +651,7 @@ export const SCRIPTED_RESPONSES = [
     follow_up: {
       speaker: 'factcheck',
       source: { label: 'Gartner Data Pipeline Benchmarks 2024' },
-      text: "Supporting Ajwad: projects of this scope average 10 to 14 months to full production. A six-month timeline is an outlier without exceptional resourcing. Source: Gartner Data Pipeline Benchmarks 2024.",
+      text: "Supporting Renes: projects of this scope average 10 to 14 months to full production. A six-month timeline is an outlier without exceptional resourcing. Source: Gartner Data Pipeline Benchmarks 2024.",
     },
   },
   {

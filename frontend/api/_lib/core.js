@@ -4,7 +4,7 @@ const GEMINI_MODEL = 'gemini-3.8-flash';
 
 const PERSONA_DEFS = {
   finance: {
-    name: 'Ritish',
+    name: 'Alan',
     role: 'Head of Finance',
     speaking_style: 'Direct, numbers-focused and sceptical of vague claims. Always asks for specific figures.',
     cares: 'Total cost of ownership, payback period with supporting maths and budget contingency planning',
@@ -26,7 +26,7 @@ const PERSONA_DEFS = {
     ],
   },
   ops: {
-    name: 'Ajwad',
+    name: 'Renes',
     role: 'Operations Lead',
     speaking_style: 'Blunt and practical. Pushes back on vague plans and always asks who owns what.',
     cares: 'Credible timelines with named milestones, who currently owns the work being replaced and disruption risk',
@@ -37,7 +37,7 @@ const PERSONA_DEFS = {
     ],
   },
   factcheck: {
-    name: 'Jun',
+    name: 'Ritish',
     role: 'Fact-Checker',
     speaking_style: 'Neutral and methodical. Cites sources and flags unsupported quantitative claims.',
     cares: 'Accuracy of salary benchmarks, verifiability of time estimates and whether efficiency claims have cited sources',
@@ -204,7 +204,7 @@ export async function generateOpenings(proposalText, personaIds, config, factChe
       const p = defs[pid];
       let line = `- ${pid}: ${p.name}, ${p.role}. Cares about: ${p.cares}.`;
       if (pid === 'factcheck' && factCheckNotes) {
-        line += `\n  Sam's verified research briefing (cite these facts specifically): ${factCheckNotes}`;
+        line += `\n  Ritish's verified research briefing (cite these facts specifically): ${factCheckNotes}`;
       }
       return line;
     });
@@ -358,7 +358,7 @@ Rules:
 - Do not use em dashes.
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
 - If you mark any conditions_met, open with a brief one-sentence acknowledgment of what was satisfied, then pivot to the next unmet concern.
-- If Jun (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
+- If Ritish (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
 - Include a follow_up when: (a) the presenter's answer directly contradicts or conflicts with a concern owned by a different panelist, prompting them to call it out, (b) the presenter's answer raises a new concern that a second panelist would immediately react to, or (c) the presenter directly addresses another panelist's unmet condition and that panelist should briefly acknowledge it. Keep follow_up null when the answer is straightforward and relevant to only one panelist. The follow_up speaker must differ from speaker_id. Max 2 sentences, under 60 words.
 
 Return ONLY valid JSON with no markdown fences:

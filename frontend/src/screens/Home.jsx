@@ -576,7 +576,7 @@ export default function Home({ navigate }) {
                     key={i}
                     onClick={() => setSelectedSpot(w)}
                     style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 14,
+                      display: 'flex', alignItems: 'stretch', gap: 14,
                       padding: '16px 18px', borderRadius: 10,
                       background: 'var(--bg-surface)', border: '1px solid var(--border)',
                       cursor: 'pointer', transition: 'background 0.15s ease',
@@ -586,11 +586,11 @@ export default function Home({ navigate }) {
                   >
                     <div style={{
                       fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',
-                      fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28,
+                      fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28, paddingTop: 2,
                     }}>{w.count}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{w.sub}</div>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ flex: 1, fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>{w.sub}</div>
                     </div>
                   </div>
                 ))}

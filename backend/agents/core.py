@@ -8,7 +8,7 @@ GEMINI_MODEL = 'gemini-3.8-flash'
 
 PERSONA_DEFS = {
     'finance': {
-        'name': 'Ritish',
+        'name': 'Alan',
         'role': 'Head of Finance',
         'speaking_style': 'Direct, numbers-focused and sceptical of vague claims. Always asks for specific figures.',
         'cares': 'Total cost of ownership, payback period with supporting maths and budget contingency planning',
@@ -30,7 +30,7 @@ PERSONA_DEFS = {
         ],
     },
     'ops': {
-        'name': 'Ajwad',
+        'name': 'Renes',
         'role': 'Operations Lead',
         'speaking_style': 'Blunt and practical. Pushes back on vague plans and always asks who owns what.',
         'cares': 'Credible timelines with named milestones, who currently owns the work being replaced and disruption risk',
@@ -41,7 +41,7 @@ PERSONA_DEFS = {
         ],
     },
     'factcheck': {
-        'name': 'Jun',
+        'name': 'Ritish',
         'role': 'Fact-Checker',
         'speaking_style': 'Neutral and methodical. Cites sources and flags unsupported quantitative claims.',
         'cares': 'Accuracy of salary benchmarks, verifiability of time estimates and whether efficiency claims have cited sources',
@@ -138,7 +138,7 @@ def generate_openings(
             continue
         line = f"- {pid}: {p['name']}, {p['role']}. Cares about: {p['cares']}."
         if pid == 'factcheck' and fact_check_notes:
-            line += f"\n  Sam's verified research briefing (cite these facts specifically): {fact_check_notes}"
+            line += f"\n  Ritish's verified research briefing (cite these facts specifically): {fact_check_notes}"
         panel_desc_lines.append(line)
     panel_desc = '\n'.join(panel_desc_lines)
 
@@ -334,7 +334,7 @@ Rules:
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information. Never mark a condition met for vague or short answers.
 - If ALL of a panelist's conditions are already MET, that panelist shifts tone: they briefly affirm what was addressed and either ask a cooperative clarifying question or defer to a panelist with more unmet conditions.
 - Review the full conversation history. If the presenter's current answer contradicts something they said in an earlier turn, reference the contradiction directly: "Earlier you said X. Now you're saying Y. Which is accurate?"
-- If Sam (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
+- If Ritish (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
 - Set follow_up to a second panelist ONLY when: (a) the presenter's answer directly contradicts or creates a new issue for a different panelist, triggering them to jump in, OR (b) a second panelist would naturally pile on with a related challenge. The follow_up speaker must differ from speaker_id and must have at least one unmet condition. The follow_up response must be under 60 words. Set follow_up to null when one voice is sufficient.
 
 Return ONLY valid JSON with no markdown fences:
