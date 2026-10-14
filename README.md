@@ -24,7 +24,7 @@ The primary users are professionals who present proposals to approval committees
 ## How it works
 
 1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. Recent Drive docs appear automatically if you are already signed in. The panel reads the proposal and generates challenges specific to your content.
-2. **Choose your panel.** Select which stakeholder roles will challenge you across five categories: Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests up to 4 panelists relevant to your document, mixing categories freely, and shows a recommendation banner. If no targeted panelists are detected, Quinn (General Reviewer) is selected as a fallback. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
+2. **Choose your panel.** Select which stakeholder roles will challenge you across five categories: Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests up to 4 panelists relevant to your document, mixing categories freely, and shows a recommendation banner. If no targeted panelists are detected, Usagi (General Reviewer) is selected as a fallback. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
 3. **Configure the session.** Set panel toughness (Supportive, Balanced, Tough) and turn limit.
 4. **Enter the room.** A random panelist fires the first question immediately. You type or speak your responses. After each reply the AI picks the next speaker, gives the last questioner first right of reply if they still have unmet conditions and sometimes triggers a second panelist to pile on immediately when your answer contradicts their domain. An elapsed timer and turn counter are shown in the top bar.
 5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually at any time. The AI analyses the full transcript and generates a coaching report.
@@ -179,7 +179,7 @@ Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested 
 | Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
 | Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
 | Policy | Zul (Policy Analyst), Boon (Regulatory Advisor), Nurul (Community Representative) |
-| General | Quinn (General Reviewer), used only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
+| General | Usagi (General Reviewer), used only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
 
 Custom personas follow the same structure and are passed to every API call in `custom_personas`.
 
@@ -428,7 +428,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Meeting link: connect a rehearsal to an upcoming calendar event
 - Panel selection with six tabs: All, Business, Startup, Event Planning, Academic and Policy
 - AI auto-detects up to 4 relevant panelists, mixing categories freely; recommendation banner shows pre-selected count
-- If AI finds no targeted panelists, Quinn (General Reviewer) is auto-selected
+- If AI finds no targeted panelists, Usagi (General Reviewer) is auto-selected
 - 6 per page (2x3) with pagination controls in panel selection
 - Panel selection remembers the last configuration across sessions
 - Custom turn limit (5/10/15/20/25) and toughness level (Supportive/Balanced/Tough)
@@ -494,7 +494,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 ### Done
 - Full React SPA with sidebar navigation, 7 screens and a shared design system
 - All features listed in the Feature summary section above
-- 28 built-in panelists across five categories plus Quinn (General Reviewer) fallback; AI-driven panel detection mixes categories freely, caps at 4
+- 28 built-in panelists across five categories plus Usagi (General Reviewer) fallback; AI-driven panel detection mixes categories freely, caps at 4
 - AI-driven panel with per-persona conditions, speaker rotation and fact-checking
 - Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped with no retry
 - Firebase Cloud Functions v2 deployment with Secret Manager

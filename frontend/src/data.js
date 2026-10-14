@@ -470,9 +470,9 @@ export const PERSONAS = [
   // --- General ---
   {
     id: 'general',
-    name: 'Quinn',
+    name: 'Usagi',
     role: 'General Reviewer',
-    initial: 'Q',
+    initial: 'U',
     color: '#D97706',
     glow: 'rgba(217,119,6,0.22)',
     dimColor: 'rgba(217,119,6,0.35)',

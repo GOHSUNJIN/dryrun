@@ -50,7 +50,7 @@
 ## General
 | ID | Name | Role |
 |---|---|---|
-| general | Quinn | General Reviewer |
+| general | Usagi | General Reviewer |
 
 ## Backend mapping (built-in personas only)
 Backend files use these 4 built-in personas:

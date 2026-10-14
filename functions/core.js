@@ -268,7 +268,7 @@ const PERSONA_DEFS = {
 
   // General
   general: {
-    name: 'Quinn',
+    name: 'Usagi',
     role: 'General Reviewer',
     speaking_style: 'Curious and adaptable. Engages with any type of proposal and asks the questions any informed stakeholder would ask  -  covering purpose, evidence, feasibility and risk without specialising in one domain. Does not accept vague goals or unsupported claims.',
     cares: 'Clear proposal purpose with stated outcomes, evidence or data behind key claims, and whether main risks have been identified and addressed with credible mitigations',
