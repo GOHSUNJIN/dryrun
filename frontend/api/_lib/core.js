@@ -359,13 +359,15 @@ Rules:
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
 - If you mark any conditions_met, open with a brief one-sentence acknowledgment of what was satisfied, then pivot to the next unmet concern.
 - If Sam (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
+- Include a follow_up only when: (a) the presenter contradicts something they said earlier, OR (b) the presenter's answer also satisfies another panelist's unmet condition and that panelist should briefly acknowledge it. Keep follow_up null in all other cases. The follow_up speaker must differ from speaker_id. Max 2 sentences.
 
 Return ONLY valid JSON with no markdown fences:
 {
   "speaker_id": "<persona_id>",
   "response": "...",
   "conditions_met": ["id1"],
-  "source": null
+  "source": null,
+  "follow_up": null
 }`;
 
   const response = await ai.models.generateContent({
@@ -399,6 +401,16 @@ Return ONLY valid JSON with no markdown fences:
 
   const result = { speaker: speakerId, text: (data.response || '').trim(), conditions_met: conditionsMet };
   if (data.source) result.source = { label: data.source };
+
+  if (data.follow_up?.speaker_id && data.follow_up?.text) {
+    let fuSpeaker = data.follow_up.speaker_id
+    if (!personaIds.includes(fuSpeaker)) fuSpeaker = null
+    if (fuSpeaker && fuSpeaker !== speakerId) {
+      const fuCondsMet = (data.follow_up.conditions_met || []).filter(c => allCondIds.has(c) && !conditions[c])
+      result.follow_up = { speaker: fuSpeaker, text: data.follow_up.text.trim(), conditions_met: fuCondsMet }
+    }
+  }
+
   return result;
 }
 

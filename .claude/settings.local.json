@@ -59,7 +59,13 @@
       "Bash(firebase functions:log --only sessionStart)",
       "Bash(node -e ' *)",
       "WebSearch",
-      "PowerShell(head *)"
+      "PowerShell(head *)",
+      "Bash(git reset *)",
+      "Bash(curl *)",
+      "Bash(firebase functions:log --only sessionDetectPanel)",
+      "Bash(gcloud functions logs read *)",
+      "Bash(npm ls *)",
+      "Bash(grep \"^ *{$\" /c/Users/Lenovo/Desktop/DryRun/frontend/src/data.js -A 5)"
     ]
   }
 }

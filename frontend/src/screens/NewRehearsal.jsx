@@ -87,10 +87,10 @@ function categoryOfPersona(id) {
 
 export default function NewRehearsal({ navigate, session, updateSession, resetSession, navPayload = {} }) {
   const defaults       = loadRehearsalDefaults()
-  const [step, setStep]           = useState(0)
+  const [step, setStep]           = useState(navPayload.proposalText ? 1 : 0)
   const [proposalText, setProposalText] = useState(navPayload.proposalText || '')
   const [uploaded, setUploaded]   = useState(Boolean(navPayload.proposalText))
-  const [proposalName, setProposalName] = useState('')
+  const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
   const [documentName, setDocumentName] = useState('')
   const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(() => loadLastPanel() || ['general'])
