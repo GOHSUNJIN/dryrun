@@ -120,9 +120,31 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   }
 
   const [fileError, setFileError] = useState('')
+  const [extractionStage, setExtractionStage] = useState('')
+
+  function cleanText(raw) {
+    const lines = raw.split('\n')
+    const freq = {}
+    for (const line of lines) {
+      const t = line.trim()
+      if (t.length > 0 && t.length < 80) freq[t] = (freq[t] || 0) + 1
+    }
+    return lines
+      .filter(line => {
+        const t = line.trim()
+        if (!t) return true
+        if (/^\d{1,4}$/.test(t)) return false        // bare page numbers
+        if (freq[t] >= 3) return false               // repeated header/footer
+        return true
+      })
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  }
 
   const readFile = useCallback(async (file) => {
     setFileError('')
+    setExtractionStage('Reading file...')
     const ext = file.name.split('.').pop().toLowerCase()
     setDocumentName(file.name.replace(/\.[^/.]+$/, ''))
 
@@ -134,25 +156,84 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
         const arrayBuffer = await file.arrayBuffer()
         const pdf = await getDocument({ data: arrayBuffer }).promise
-        const pages = []
-        for (let i = 1; i <= pdf.numPages; i++) {
+        const pageCount = pdf.numPages
+
+        // Try text-layer extraction first
+        const pageTexts = []
+        for (let i = 1; i <= pageCount; i++) {
           const page = await pdf.getPage(i)
           const content = await page.getTextContent()
-          pages.push(content.items.map(item => item.str).join(' '))
+          pageTexts.push(content.items.map(item => item.str).join(' '))
         }
-        text = pages.join('\n\n')
+        const rawText = pageTexts.join('\n\n')
+        const wordsPerPage = rawText.trim().split(/\s+/).filter(Boolean).length / pageCount
+
+        if (wordsPerPage < 30) {
+          // Image-based PDF or scanned document — use Gemini vision
+          setExtractionStage('Scanned document detected. Using AI to read...')
+          const MAX_PAGES = Math.min(pageCount, 10)
+          const base64Pages = []
+          for (let i = 1; i <= MAX_PAGES; i++) {
+            const page = await pdf.getPage(i)
+            const viewport = page.getViewport({ scale: 1.5 })
+            const canvas = document.createElement('canvas')
+            canvas.width = viewport.width
+            canvas.height = viewport.height
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+            base64Pages.push(canvas.toDataURL('image/jpeg', 0.8).split(',')[1])
+          }
+          const res = await fetch('/api/extract-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pages: base64Pages, filename: file.name }),
+          })
+          if (!res.ok) throw new Error(`Vision extraction failed (${res.status})`)
+          const data = await res.json()
+          if (data.error && !data.text) throw new Error(data.error)
+          text = data.text || ''
+        } else {
+          text = cleanText(rawText)
+        }
+
       } else if (ext === 'docx') {
         const mammoth = await import('mammoth')
         const arrayBuffer = await file.arrayBuffer()
         const result = await mammoth.extractRawText({ arrayBuffer })
-        text = result.value
+        text = cleanText(result.value)
+
+      } else if (ext === 'pptx') {
+        setExtractionStage('Extracting slides...')
+        const JSZip = (await import('jszip')).default
+        const arrayBuffer = await file.arrayBuffer()
+        const zip = await JSZip.loadAsync(arrayBuffer)
+        const slideFiles = Object.keys(zip.files)
+          .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+          .sort((a, b) => {
+            const na = parseInt(a.match(/\d+/)?.[0] || 0)
+            const nb = parseInt(b.match(/\d+/)?.[0] || 0)
+            return na - nb
+          })
+        const slides = []
+        for (const name of slideFiles) {
+          const xml = await zip.files[name].async('text')
+          const matches = [...xml.matchAll(/<a:t(?:\s[^>]*)?>([^<]*)<\/a:t>/g)]
+          const slideText = matches.map(m => m[1]).filter(Boolean).join(' ')
+          if (slideText.trim()) slides.push(slideText.trim())
+        }
+        text = slides.join('\n\n')
+
+      } else if (ext === 'doc') {
+        setExtractionStage('')
+        setFileError('Old .doc format is not supported. Open the file in Word and save as .docx, then upload again.')
+        return
+
       } else {
-        // txt, md, and anything else treated as plain text
         text = await file.text()
       }
 
       if (!text.trim()) {
-        setFileError('Could not extract text from this file. Try copying the content into a .txt file.')
+        setFileError('Could not extract any text from this file. Try saving it as a .txt or .docx and uploading again.')
+        setExtractionStage('')
         return
       }
 
@@ -160,7 +241,9 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setUploaded(true)
     } catch (err) {
       console.error('[readFile] extraction failed:', err)
-      setFileError('Failed to read the file. Make sure it is not password-protected or corrupted.')
+      setFileError('Failed to read the file. ' + (err.message || 'Make sure it is not password-protected or corrupted.'))
+    } finally {
+      setExtractionStage('')
     }
   }, [])
 
@@ -484,22 +567,33 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                 {!uploaded ? (
                   <>
                     <div
-                      className={`upload-zone ${drag ? 'drag-over' : ''}`}
+                      className={`upload-zone ${drag ? 'drag-over' : ''} ${extractionStage ? 'drag-over' : ''}`}
                       onDragOver={e => { e.preventDefault(); setDrag(true) }}
                       onDragLeave={() => setDrag(false)}
                       onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) readFile(f) }}
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => !extractionStage && fileInputRef.current?.click()}
+                      style={{ cursor: extractionStage ? 'default' : 'pointer' }}
                     >
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".txt,.md,.pdf,.doc,.docx"
+                        accept=".txt,.md,.pdf,.doc,.docx,.pptx"
                         style={{ display: 'none' }}
                         onChange={e => { const f = e.target.files[0]; if (f) readFile(f) }}
                       />
-                      <div className="upload-icon"><Upload size={22} /></div>
-                      <div className="upload-primary">Drop your file here, or click to browse</div>
-                      <div className="upload-secondary">TXT, Markdown, DOCX or PDF</div>
+                      {extractionStage ? (
+                        <>
+                          <div className="upload-icon"><Loader size={22} style={{ animation: 'spin 1s linear infinite' }} /></div>
+                          <div className="upload-primary">{extractionStage}</div>
+                          <div className="upload-secondary">This may take a moment for large documents</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="upload-icon"><Upload size={22} /></div>
+                          <div className="upload-primary">Drop your file here, or click to browse</div>
+                          <div className="upload-secondary">PDF, DOCX, PPTX, TXT or Markdown</div>
+                        </>
+                      )}
                     </div>
                     {fileError && (
                       <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, fontSize: '0.8125rem', color: '#DC2626' }}>

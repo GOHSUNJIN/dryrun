@@ -3,7 +3,7 @@ import { defineSecret } from 'firebase-functions/params'
 import { GoogleGenAI } from '@google/genai'
 import {
   detectPanel, factCheckProposal, generateOpenings, getInitialConditions,
-  generateReply, generateReport,
+  generateReply, generateReport, extractFromImages,
 } from './core.js'
 import {
   getDemoOpenings, getDemoConditions, getDemoReply, getDemoReport,
@@ -122,6 +122,19 @@ export const sessionEnd = onRequest(opts, async (req, res) => {
   } catch (err) {
     console.error('[sessionEnd] generateReport failed, falling back to demo:', err.message)
     res.status(200).json({ ...getDemoReport(), demo: true })
+  }
+})
+
+export const extractDocument = onRequest({ ...opts, timeoutSeconds: 180 }, async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  const { pages = [], filename = '' } = req.body
+  if (!process.env.GEMINI_API_KEY) return res.status(200).json({ text: '', error: 'GEMINI_API_KEY not set' })
+  if (!pages.length) return res.status(400).json({ error: 'No pages provided' })
+  try {
+    res.status(200).json({ text: await extractFromImages(pages, filename) })
+  } catch (err) {
+    console.error('[extract-document] failed:', err.message)
+    res.status(200).json({ text: '', error: err.message })
   }
 })
 

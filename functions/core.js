@@ -636,6 +636,24 @@ Return ONLY valid JSON with no markdown fences:
   return result;
 }
 
+export async function extractFromImages(pages, filename = '') {
+  const ai = getClient()
+  const label = filename ? ` ("${filename}")` : ''
+  const parts = [
+    { text: `Extract all readable text from this ${pages.length}-page document${label}. For each page preserve paragraph and heading structure. Convert tables to plain text rows. For charts or diagrams describe the key data they convey in plain text. Separate pages with a blank line. Return only the extracted content with no commentary.` },
+  ]
+  for (let i = 0; i < pages.length; i++) {
+    if (i > 0) parts.push({ text: `\nPage ${i + 1}:\n` })
+    parts.push({ inlineData: { mimeType: 'image/jpeg', data: pages[i] } })
+  }
+  const response = await withRetry(() => ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: [{ parts }],
+    config: noThink({ maxOutputTokens: 8000 }),
+  }))
+  return (response.text || '').trim()
+}
+
 export async function generateReport(proposalText, personaIds, transcript, conditions, customDefs = {}) {
   const ai = getClient();
   const defs = allDefs(customDefs);
