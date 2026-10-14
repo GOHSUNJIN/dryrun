@@ -25,7 +25,7 @@ The primary users are professionals who present proposals to approval committees
 
 1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. The panel reads it and generates challenges specific to your content.
 2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library.
-3. **Configure the session.** Set industry context, company size, panel toughness and turn limit.
+3. **Configure the session.** Set panel toughness and turn limit.
 4. **Enter the room.** A random panelist fires the first question immediately. The rest stagger in. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer was specific enough to satisfy any conditions and sometimes triggers a second panelist to pile on.
 5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually. The AI analyses the full transcript and generates a coaching report.
 6. **Read the debrief.** Every key moment is annotated with what was asked, what you said, why it worked or fell short and a stronger version to try.
@@ -110,7 +110,7 @@ frontend/
       PanelLibrary.jsx   browse built-in roles and create custom ones
       Settings.jsx       preferences: voice rate and rehearsal defaults
     utils/
-      storage.js         localStorage helpers
+      storage.js         localStorage helpers (sessions, meetings, cal events, dismissed spots, voice settings)
     data.js              static personas and demo openings
     index.css            design system: tokens, components, room theme
   vercel.json            function timeout config (maxDuration 60s for session/start)
@@ -182,14 +182,11 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
 ```js
 {
   proposalText: '',           // full proposal text
-  proposalName: '',           // display name from filename or title
+  proposalName: '',           // rehearsal name (user-entered, not auto-filled from filename)
   personaIds: [...],          // active persona IDs
   config: {
     toughness: 'Balanced',    // Supportive | Balanced | Tough
     turnLimit: 15,            // 5 | 10 | 15 | 20 | 25
-    industry: '',
-    companySize: '',
-    focus: '',
   },
   transcript: [],             // full message history
   conditions: {},             // { f1: false, f2: true, ... }
@@ -197,6 +194,8 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   customPersonaDefs: {},      // serialised custom personas for API calls
   reportData: null,           // weak_points + moments from generateReport
   startTime: null,            // Date.now() at session start
+  duration: '',               // formatted duration string, set on session end
+  linkedMeeting: '',          // name of the upcoming meeting this rehearsal is tied to
   demoMode: false,            // true when AI is unavailable (see browser console for reason)
 }
 ```
@@ -212,7 +211,7 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
 {
   "proposal_text": "...",
   "persona_ids": ["finance", "legal", "ops", "factcheck"],
-  "config": { "toughness": "Balanced", "industry": "Technology" },
+  "config": { "toughness": "Balanced", "turnLimit": 15 },
   "custom_personas": {}
 }
 ```
@@ -404,11 +403,11 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 
 ### Done
 - Full React SPA with sidebar navigation, 7 screens and a shared design system
-- 3-step rehearsal setup: file upload, panel selection and session configuration
+- 3-step rehearsal setup: file upload + meeting link, panel selection, toughness + turn limit
 - Live rehearsal room: panel seats, transcript, speaking animations and input bar
 - AI-driven panel with per-persona conditions, speaker rotation logic and fact-checking
 - Post-session coaching report with weak points and annotated moments
-- Demo mode fallback: scripted responses when AI is unavailable
+- Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped entirely with no retry. `generateReply` and `generateReport` use `withRetry(fn, 0)` to fail immediately to fallback
 - Custom persona creation in the Panel Library
 - Past sessions persisted to `localStorage` with replay navigation
 - Firebase Cloud Functions v2 deployment with Secret Manager
@@ -416,12 +415,16 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Google Search grounding for the Fact-Checker persona
 - Google Drive proposal import with folder navigation and breadcrumb trail
 - Google Docs report export
-- Google Calendar sync for upcoming meetings on the Home screen
-- Manual meeting creation from the Home screen (stored in localStorage)
-- Session naming: custom name pre-filled from meeting title or auto-numbered
+- Google Calendar sync: events persisted to `localStorage` so they survive navigation and appear in the meeting picker
+- Manual meeting creation from the Home screen
+- Meeting linkage: rehearsals can be linked to an upcoming meeting; shown as a badge in Past Sessions rows
+- Past Sessions rows show meeting badge, rehearsal name, date and duration
+- Rehearsal name field (step 1): user-entered, not auto-filled from uploaded filename
+- Home: recurring weak spots section with "Show all" toggle and per-card dismiss (X)
+- Home: recent sessions paginated 3 per page with prev/next controls
+- Home: upcoming meetings column stretches to fill the grid row height
+- Step 3 simplified: removed company size, industry and focus dropdowns
 - Proposal rename inline from Past Sessions (pencil icon on group header)
-- Pagination on Past Sessions: shows first 5 groups with "Show N more" expand
-- Home screen redesigned to card rows matching Past Sessions style
 
 ### Still to do
 - Google Cloud Run backend (Dockerfile ready)
