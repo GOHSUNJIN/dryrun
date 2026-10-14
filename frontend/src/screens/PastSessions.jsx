@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp } from 'lucide-react'
+import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp, ArrowRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal } from '../utils/storage.js'
+import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting } from '../utils/storage.js'
 
 function loadGroups() {
   return groupSessionsByProposal(loadSessions())
@@ -17,6 +17,7 @@ export default function PastSessions({ navigate }) {
   const [editingProposal, setEditingProposal] = useState(null)
   const [editingName, setEditingName]   = useState('')
   const [expandedSession, setExpandedSession] = useState(null)
+  const [assigningSession, setAssigningSession] = useState(null)
 
   const filtered = groups.filter(g =>
     g.proposal.toLowerCase().includes(query.toLowerCase())
@@ -277,6 +278,41 @@ export default function PastSessions({ navigate }) {
                           <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Again
                         </button>
+                        {assigningSession === sessionKey ? (
+                          <select
+                            autoFocus
+                            defaultValue=""
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => {
+                              e.stopPropagation()
+                              updateSessionMeeting(s.id, e.target.value)
+                              setGroups(loadGroups())
+                              setAssigningSession(null)
+                            }}
+                            onBlur={() => setAssigningSession(null)}
+                            style={{
+                              fontSize: '0.75rem', fontFamily: 'var(--font-ui)',
+                              border: '1px solid var(--app-accent)', borderRadius: 6,
+                              padding: '3px 6px', background: 'var(--bg-surface)',
+                              color: 'var(--text-primary)', cursor: 'pointer', outline: 'none',
+                            }}
+                          >
+                            <option value="" disabled>Move to...</option>
+                            {groups.filter(g => !g.noMeeting && g.proposal !== group.proposal).map(g => (
+                              <option key={g.proposal} value={g.linkedMeeting}>{g.proposal}</option>
+                            ))}
+                            {!group.noMeeting && <option value="">No meeting</option>}
+                          </select>
+                        ) : (
+                          <button
+                            className="session-action-btn"
+                            title="Assign to meeting"
+                            onClick={e => { e.stopPropagation(); setAssigningSession(sessionKey) }}
+                          >
+                            <ArrowRight size={12} style={{ display: 'inline', marginRight: 4 }} />
+                            Assign
+                          </button>
+                        )}
                         <button
                           className="session-action-btn"
                           style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.2)' }}

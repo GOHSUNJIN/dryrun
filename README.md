@@ -24,7 +24,7 @@ The primary users are professionals who present proposals to approval committees
 ## How it works
 
 1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. Recent Drive docs appear automatically if you are already signed in. The panel reads the proposal and generates challenges specific to your content.
-2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
+2. **Choose your panel.** Select which stakeholder roles will challenge you across five categories: Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests up to 4 panelists relevant to your document, mixing categories freely, and shows a recommendation banner. If no targeted panelists are detected, Quinn (General Reviewer) is selected as a fallback. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
 3. **Configure the session.** Set panel toughness (Supportive, Balanced, Tough) and turn limit.
 4. **Enter the room.** A random panelist fires the first question immediately. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer satisfied any conditions and sometimes triggers a second panelist to pile on. An elapsed timer and turn counter are shown in the top bar.
 5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually at any time. The AI analyses the full transcript and generates a coaching report.
@@ -111,13 +111,13 @@ frontend/
       Report.jsx         post-session summary with tabbed Conditions / Coaching / Proposal view
       Debrief.jsx        moment-by-moment coaching with timeline and persona filter
       PastSessions.jsx   history grouped by meeting with inline proposal preview
-      PanelLibrary.jsx   browse built-in roles and create custom personas
+      PanelLibrary.jsx   browse built-in roles by category and create custom personas
       Settings.jsx       voice settings, rehearsal defaults, Google account management
     utils/
       google.js          OAuth2 token client, Drive, Calendar and Docs helpers
       storage.js         localStorage helpers: sessions, meetings, cal events, personas, settings
       time.js            shared time helpers: getCurrentTime, formatDate, daysFromNow, formatSessionDate
-    data.js              static persona definitions and demo openings
+    data.js              28 persona definitions across 5 categories plus General Reviewer; demo openings
     index.css            design system: tokens, components, room theme
   vercel.json            function timeout config (maxDuration 60s for session/start)
 functions/
@@ -162,22 +162,24 @@ Called after every presenter turn. The system prompt applies several layers of i
 
 ### `generateReport`
 
-Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested fixes) and `moments` (4 to 7 annotated turning points). Framed as preparation coaching only: no approval predictions or probability scores.
+Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested fixes) and `moments` (up to 7 annotated turning points, capped to the actual number of presenter turns). Framed as preparation coaching only: no approval predictions or probability scores. The prompt explicitly tells the model how many turns occurred so it cannot hallucinate turns beyond the transcript.
 
 ---
 
-## The conditions system
+## The panelist roster
 
-Each persona has 2 to 3 conditions. A condition is a specific claim the presenter must make to satisfy that stakeholder. Conditions are tracked as a flat dictionary and passed with every `/api/session/message` request.
+28 built-in panelists across five categories plus one general-purpose fallback. Each has a speaking style, a set of concerns and 2 to 3 conditions that must be met before they are satisfied.
 
-| Persona | Name | Role | Conditions |
-|---------|------|------|-----------|
-| `finance` | Morgan | Head of Finance | Total cost breakdown, payback period calculated, plan if budget is halved |
-| `legal` | Alex | Legal Counsel | Data privacy plan confirmed, vendor contract terms addressed, accountability structure defined |
-| `ops` | Jordan | Operations Lead | Timeline with milestones given, current process owner identified, disruption assessment complete |
-| `factcheck` | Sam | Fact-Checker | Key figures verified against sources, supporting evidence cited for main claims |
+| Category | Panelists |
+|----------|-----------|
+| Business | Alan (Finance), Alex (Legal), Renes (Operations), Charles (Board), Maya (HR), Kevin (Engineering), Priya (Marketing), Sam (Fact-Checker), Elena (Sustainability), Nadia (Customer Success), Marcus (DPO) |
+| Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
+| Event Planning | Riya (Event Director), Darren (Finance Approver), Kai (Safety Officer), Cleo (Programme Lead) |
+| Academic | Prof. Lin (Supervisor), Johann (External Examiner), Dr. Patel (Internal Examiner), Dr. Chen (Ethics Reviewer), Raj (Industry Mentor), Dr. Kim (Research Funder) |
+| Policy | Omar (Policy Analyst), Victor (Regulatory Advisor), Zara (Community Representative) |
+| General | Quinn (General Reviewer) - fallback selected only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
 
-Custom personas created in the Panel Library follow the same structure and are passed to every API call in `custom_personas`.
+Custom personas follow the same structure and are passed to every API call in `custom_personas`.
 
 ---
 
@@ -409,11 +411,16 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 
 ### Rehearsal setup
 - 3-step wizard: upload, panel selection, configure
-- File upload (drag-and-drop or browse) or Google Drive import
+- File upload (drag and drop or browse) or Google Drive import
 - Auto-fills rehearsal name from filename or Drive doc title if not already set
 - Recent Drive docs shown automatically when signed in (no picker required); dismissible with Clear
+- Uploaded filename shown in the Choose Panel step so you always know which file is loaded
 - Word count shown on uploaded file card
 - Meeting link: connect a rehearsal to an upcoming calendar event
+- Panel selection with six tabs: All, Business, Startup, Event Planning, Academic and Policy
+- AI auto-detects up to 4 relevant panelists, mixing categories freely; recommendation banner shows pre-selected count
+- If AI finds no targeted panelists, Quinn (General Reviewer) is auto-selected
+- 6 per page (2x3) with pagination controls in panel selection
 - Panel selection remembers the last configuration across sessions
 - Custom turn limit (5/10/15/20/25) and toughness level (Supportive/Balanced/Tough)
 
@@ -423,7 +430,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Elapsed timer and turn counter in the top bar
 - Smart auto-scroll: pauses when the user scrolls up, resumes on new message
 - Voice input via Web Speech API
-- Text-to-speech panel voices with per-persona pitch and rate
+- Text-to-speech panel voices with playback rate control
 - Copy-on-hover for every transcript message
 - Condition met flash banner
 - Turn limit warning with actionable "End and get report" button
@@ -442,7 +449,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 
 ### Home dashboard
 - Time-of-day greeting with profile name (configurable in Settings)
-- Upcoming meetings column: Google Calendar sync + manual entries
+- Upcoming meetings column: Google Calendar sync and manual entries
 - Individual calendar event deletion
 - Recent sessions with meeting badge, paginated 3 per page
 - Recurring weak spots section: per-card dismiss with recovery ("Show dismissed")
@@ -453,14 +460,18 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Per-session: conditions met, turns, duration, demo badge
 - Inline proposal text expand/collapse per session row
 - "Rehearse again" restores linked meeting context
+- Assign to meeting: reassign any session to a different meeting inline without leaving the page
 
 ### Panel Library
-- Built-in personas: name, role, conditions and agenda shown per card
+- 28 built-in personas across five category tabs: Business, Startup, Event Planning, Academic and Policy
+- 9 per page with pagination controls per tab
+- Cards are uniform height per row with Read-only label anchored to the bottom-right
+- Built-in cards show name, role, conditions and areas of focus
 - Custom persona creation with name, role, speaking style and conditions
 - Edit and delete custom personas
 
 ### Settings
-- Voice output: enable/disable, playback rate slider
+- Voice output: enable/disable and playback rate
 - Default toughness and turn limit (applied to new rehearsals)
 - Google account: connect for Drive, Docs and Calendar; connection state persists across reloads; disconnect with one click
 - Profile name and role
@@ -472,6 +483,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 ### Done
 - Full React SPA with sidebar navigation, 7 screens and a shared design system
 - All features listed in the Feature summary section above
+- 28 built-in panelists across five categories plus Quinn (General Reviewer) fallback; AI-driven panel detection mixes categories freely, caps at 4
 - AI-driven panel with per-persona conditions, speaker rotation and fact-checking
 - Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped with no retry
 - Firebase Cloud Functions v2 deployment with Secret Manager

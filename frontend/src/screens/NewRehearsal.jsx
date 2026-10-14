@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight } from 'lucide-react'
+import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight, ChevronLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas, loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel } from '../utils/storage.js'
+import { loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel } from '../utils/storage.js'
 import { listDriveItems, listDriveDocs, fetchDocText, isSignedIn } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
@@ -33,18 +33,59 @@ function saveFactCheckCache(text, value) {
   } catch {}
 }
 
+function keywordDetectPanel(text) {
+  const t = text.toLowerCase()
+  const hits = new Set()
 
-function buildCustomDefs(customPersonas) {
-  const defs = {}
-  for (const p of customPersonas) {
-    defs[p.id] = { name: p.name, role: p.role, speaking_style: p.speaking_style || '', cares: (p.cares || []).join(', '), conditions: p.conditions || [] }
-  }
-  return defs
+  // Business
+  if (/budget|cost\b|roi\b|payback|salary|spend|opex|capex|financial forecast|revenue/.test(t)) hits.add('finance')
+  if (/legal\b|contract|liability|indemnity|intellectual property|\bip\b|jurisdiction/.test(t)) hits.add('legal')
+  if (/timeline|milestone|rollout|go-live|delivery date|handover|disruption risk|process owner/.test(t)) hits.add('ops')
+  if (/headcount|hiring|staff\b|talent|workforce|change management|redundan|people plan/.test(t)) hits.add('hr')
+  if (/technical|software|api\b|engineer|architecture|integration|infrastructure|security|system/.test(t)) hits.add('tech')
+  if (/marketing|brand|launch|go-to-market|campaign|positioning|audience/.test(t)) hits.add('marketing')
+  if (/board|strategy\b|strategic|shareholder|executive|portfolio|competing initiative/.test(t)) hits.add('board')
+  if (/verified claim|cited source|evidence.based|fact.check|statistic|quantitative claim/.test(t)) hits.add('factcheck')
+  if (/sustainability|carbon|esg|environmental|climate|net.zero|scope [123]/.test(t)) hits.add('sustainability')
+  if (/customer success|churn|onboarding|adoption|customer experience|\bcx\b/.test(t)) hits.add('cx')
+  if (/\bdpo\b|personal data|data subject|gdpr|data minimis|lawful basis|data processing/.test(t)) hits.add('dpo')
+
+  // Event
+  if (/\bevent\b|venue|conference|ceremony|attendee|gala|exhibition/.test(t)) hits.add('event_director')
+  if (/event budget|per.pax|per head|event cost|catering cost|event spend/.test(t)) hits.add('event_finance')
+  if (/safety|emergency|first aid|evacuation|health and safety|capacity limit/.test(t)) hits.add('event_safety')
+  if (/programme|run.of.show|speaker|performer|session plan|dry run|agenda/.test(t)) hits.add('event_programme')
+
+  // Academic
+  if (/\bresearch\b|thesis|dissertation|methodology|literature review|hypothesis|\bstudy\b/.test(t)) hits.add('supervisor')
+  if (/conclusion|originality|knowledge gap|contribution to.*field|novel finding/.test(t)) hits.add('examiner')
+  if (/departmental standard|institutional guideline|internal examiner|abstract.*conclusion/.test(t)) hits.add('internal_examiner')
+  if (/ethics|informed consent|bias|harm to participants|vulnerable|ethical approval/.test(t)) hits.add('ethicist')
+  if (/real.world application|industry adoption|practitioner|implementation beyond/.test(t)) hits.add('industry_mentor')
+  if (/grant|research funder|funding body|impact pathway|dissemination plan|research council/.test(t)) hits.add('research_funder')
+
+  // Startup
+  if (/\bstartup\b|pitch deck|seed round|series [abc]|unit economics|\brunway\b|\bvaluation\b|addressable market|\btam\b|venture capital/.test(t)) hits.add('vc')
+  if (/\bmvp\b|product roadmap|feature priorit|backlog|user stor|product.market fit/.test(t)) hits.add('product_manager')
+  if (/acquisition cost|\bcac\b|\bltv\b|retention rate|growth model|conversion funnel|viral/.test(t)) hits.add('growth')
+
+  // Policy
+  if (/public policy|legislation|\bgovernment\b|public sector|policy brief|regulatory framework|policy consultation/.test(t)) hits.add('policy_analyst')
+  if (/regulatory approval|licensing requirement|certification|enforcement|regulator\b|compliance timeline/.test(t)) hits.add('regulator')
+  if (/community impact|stakeholder consultation|vulnerable group|equitable access|affected community/.test(t)) hits.add('community_rep')
+
+  return [...hits].slice(0, 4)
+}
+
+function categoryOfPersona(id) {
+  if (['supervisor', 'examiner', 'internal_examiner', 'ethicist', 'industry_mentor', 'research_funder'].includes(id)) return 'academic'
+  if (id.startsWith('event_')) return 'event'
+  if (['vc', 'product_manager', 'growth'].includes(id)) return 'startup'
+  if (['policy_analyst', 'community_rep', 'regulator'].includes(id)) return 'policy'
+  return 'business'
 }
 
 export default function NewRehearsal({ navigate, session, updateSession, resetSession, navPayload = {} }) {
-  const customPersonas = loadCustomPersonas()
-  const allPersonas    = [...PERSONAS, ...customPersonas]
   const defaults       = loadRehearsalDefaults()
   const [step, setStep]           = useState(0)
   const [proposalText, setProposalText] = useState(navPayload.proposalText || '')
@@ -52,7 +93,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
   const [documentName, setDocumentName] = useState('')
   const [drag, setDrag]           = useState(false)
-  const [selected, setSelected]   = useState(() => loadLastPanel() || ['finance', 'legal', 'ops', 'factcheck'])
+  const [selected, setSelected]   = useState(() => loadLastPanel() || ['general'])
+  const [panelCategory, setPanelCategory] = useState('all')
+  const [panelPage, setPanelPage] = useState(0)
+  const [recommended, setRecommended] = useState([])
   const [toughness, setToughness] = useState(defaults.toughness)
   const [turnLimit, setTurnLimit] = useState(parseInt(defaults.turnLimit) || 15)
   const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
@@ -159,7 +203,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     if (step === 0 && proposalText) {
       setDetectingPanel(true)
       try {
-        const allIds = [...PERSONAS.map(p => p.id), ...customPersonas.map(p => p.id)]
+        const allIds = PERSONAS.map(p => p.id)
         console.log('[detect-panel] sending request with available_ids:', allIds)
         const res = await fetch('/api/session/detect-panel', {
           method: 'POST',
@@ -168,13 +212,50 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         })
         if (res.ok) {
           const data = await res.json()
-          console.log('[detect-panel] suggested personas:', data.persona_ids)
-          if (data.persona_ids?.length) setSelected(data.persona_ids)
+          console.log('[detect-panel] AI suggested:', data.persona_ids)
+          if (data.persona_ids?.length) {
+            setSelected(data.persona_ids)
+            setRecommended(data.persona_ids)
+            setPanelCategory('all')
+            setPanelPage(0)
+          } else {
+            const fallback = keywordDetectPanel(proposalText)
+            console.log('[detect-panel] AI returned empty  -  keyword fallback:', fallback)
+            if (fallback.length) {
+              setSelected(fallback)
+              setRecommended(fallback)
+              setPanelCategory('all')
+              setPanelPage(0)
+            } else {
+              setSelected(['general'])
+              setRecommended([])
+            }
+          }
         } else {
-          console.warn('[detect-panel] API returned', res.status, '— keeping current selection')
+          const fallback = keywordDetectPanel(proposalText)
+          console.warn('[detect-panel] API returned', res.status, ' -  keyword fallback:', fallback)
+          if (fallback.length) {
+            setSelected(fallback)
+            setRecommended(fallback)
+            setPanelCategory('all')
+            setPanelPage(0)
+          } else {
+            setSelected([])
+            setRecommended([])
+          }
         }
       } catch (err) {
-        console.warn('[detect-panel] failed, keeping current selection:', err.message)
+        const fallback = keywordDetectPanel(proposalText)
+        console.warn('[detect-panel] failed:', err.message, ' -  keyword fallback:', fallback)
+        if (fallback.length) {
+          setSelected(fallback)
+          setRecommended(fallback)
+          setPanelCategory('all')
+          setPanelPage(0)
+        } else {
+          setSelected([])
+          setRecommended([])
+        }
       } finally {
         setDetectingPanel(false)
       }
@@ -185,15 +266,13 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const enterRoom = async () => {
     setLaunching(true)
 
-    const config     = { toughness, turnLimit }
-    const customDefs = buildCustomDefs(customPersonas.filter(p => selected.includes(p.id)))
+    const config      = { toughness, turnLimit }
     const sessionBase = {
-      proposalText:      proposalText,
-      proposalName:      proposalName || 'Untitled proposal',
-      personaIds:        selected,
+      proposalText:  proposalText,
+      proposalName:  proposalName || 'Untitled proposal',
+      personaIds:    selected,
       config,
-      customPersonaDefs: customDefs,
-      startTime:         Date.now(),
+      startTime:     Date.now(),
       linkedMeeting,
     }
 
@@ -205,11 +284,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          proposal_text:   proposalText,
-          persona_ids:     selected,
+          proposal_text: proposalText,
+          persona_ids:   selected,
           config,
-          custom_personas: customDefs,
-          fact_check:      cachedFactCheck,
+          fact_check:    cachedFactCheck,
         }),
       })
 
@@ -230,12 +308,12 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         openings:         (data.messages || []).map(m => ({ speaker: m.speaker, text: m.text?.slice(0, 60) + '...' })),
       })
       if (data.demo) console.warn('[session/start] AI unavailable, running in demo mode. Reason:', data.demo_reason || 'unknown')
-      if (!data.messages?.length) console.warn('[session/start] No opening messages returned — room will fall back to demo transcript for matching persona IDs')
+      if (!data.messages?.length) console.warn('[session/start] No opening messages returned  -  room will fall back to demo transcript for matching persona IDs')
       resetSession()
       updateSession({ ...sessionBase, transcript: data.messages || [], conditions: data.conditions || {}, factCheckNotes: data.fact_check || '', demoMode: !!data.demo })
       navigate('room')
     } catch (err) {
-      console.error('[session/start] Request failed — entering demo mode:', err.message)
+      console.error('[session/start] Request failed  -  entering demo mode:', err.message)
       resetSession()
       updateSession({ ...sessionBase, transcript: [], conditions: {}, factCheckNotes: '', demoMode: true })
       navigate('room')
@@ -517,33 +595,141 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             {step === 1 && (
               <>
                 <div className="step-title">Choose your panel</div>
-                <div className="step-desc">Select the roles who will challenge you. Minimum 2.</div>
-                <div className="role-cards-grid">
-                  {allPersonas.map(p => {
-                    const isSelected = selected.includes(p.id)
-                    return (
-                      <div
-                        key={p.id}
-                        className={`role-card ${isSelected ? 'selected' : ''}`}
-                        style={{ color: p.color }}
-                        onClick={() => togglePersona(p.id)}
-                      >
-                        <div className="role-card-header">
-                          <div className="role-card-pip" style={{ background: p.color }} />
-                          <div className="role-card-title">{p.role}</div>
-                        </div>
-                        <div className="role-card-cares">
-                          Challenges {(Array.isArray(p.cares) ? p.cares[0] : p.cares || '').toLowerCase()}.
-                        </div>
-                        {isSelected && (
-                          <div className="role-card-check">
-                            <Check size={11} color="white" />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                <div className="step-desc">Select the roles who will challenge you. Minimum 1.</div>
+
+                {documentName && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, marginTop: 2 }}>
+                    <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {documentName}
+                    </span>
+                  </div>
+                )}
+
+                {/* Category tabs */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, marginTop: 4, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'all',      label: 'All' },
+                    { key: 'business', label: 'Business' },
+                    { key: 'startup',  label: 'Startup' },
+                    { key: 'event',    label: 'Event Planning' },
+                    { key: 'academic', label: 'Academic' },
+                    { key: 'policy',   label: 'Policy' },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => { setPanelCategory(key); setPanelPage(0) }}
+                      style={{
+                        padding: '6px 14px', borderRadius: 20, fontSize: '0.8125rem', fontWeight: 600,
+                        cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
+                        borderColor: panelCategory === key ? 'var(--text-primary)' : 'var(--border)',
+                        background: panelCategory === key ? 'var(--text-primary)' : 'transparent',
+                        color: panelCategory === key ? 'white' : 'var(--text-secondary)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
+
+                {recommended.length > 0 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', marginBottom: 14,
+                    background: 'rgba(180,83,9,0.05)', border: '1px solid rgba(180,83,9,0.18)',
+                    borderRadius: 9,
+                  }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: 'var(--app-accent)', flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: '0.8125rem', color: 'var(--app-accent)', fontWeight: 600 }}>
+                      We recommend these panelists for your proposal
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                      {recommended.length} selected
+                    </span>
+                  </div>
+                )}
+
+                {(() => {
+                  const PANEL_PAGE_SIZE = 6
+                  const filtered = PERSONAS
+                    .filter(p => panelCategory === 'all' || p.category === panelCategory || p.id === 'general')
+                    .sort((a, b) => {
+                      const as = selected.includes(a.id), bs = selected.includes(b.id)
+                      return as === bs ? 0 : as ? -1 : 1
+                    })
+                  const totalPages = Math.ceil(filtered.length / PANEL_PAGE_SIZE)
+                  const pageItems = filtered.slice(panelPage * PANEL_PAGE_SIZE, (panelPage + 1) * PANEL_PAGE_SIZE)
+                  return (
+                    <>
+                      <div className="role-cards-grid">
+                        {pageItems.map(p => {
+                          const isSelected = selected.includes(p.id)
+                          const caresText = Array.isArray(p.cares) ? p.cares[0] : (p.cares || '')
+                          const isRecommended = recommended.includes(p.id)
+                          return (
+                            <div
+                              key={p.id}
+                              className={`role-card ${isSelected ? 'selected' : ''}`}
+                              style={{
+                                color: p.color,
+                                background: isSelected ? `${p.color}0d` : undefined,
+                              }}
+                              onClick={() => togglePersona(p.id)}
+                            >
+                              <div
+                                className="role-card-avatar"
+                                style={{
+                                  background: isSelected ? p.color : `${p.color}1a`,
+                                  color: isSelected ? 'white' : p.color,
+                                }}
+                              >
+                                {p.initial}
+                              </div>
+                              <div className="role-card-body">
+                                <div className="role-card-title">{p.role}</div>
+                                <div className="role-card-cares">{caresText}</div>
+                              </div>
+                              {isSelected ? (
+                                <div className="role-card-check">
+                                  <Check size={10} color="white" />
+                                </div>
+                              ) : isRecommended ? (
+                                <div className="role-card-rec-dot" style={{ background: p.color }} />
+                              ) : null}
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {totalPages > 1 && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setPanelPage(p => Math.max(0, p - 1))}
+                            disabled={panelPage === 0}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <ChevronLeft size={13} /> Prev
+                          </button>
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                            {panelPage + 1} / {totalPages}
+                          </span>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setPanelPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={panelPage >= totalPages - 1}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                          >
+                            Next <ChevronRight size={13} />
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </>
             )}
 

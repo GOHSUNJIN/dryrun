@@ -85,7 +85,14 @@ async function tok() {
 
 async function gfetch(url, opts = {}) {
   const t = await tok()
-  return fetch(url, { ...opts, headers: { Authorization: `Bearer ${t}`, ...(opts.headers || {}) } })
+  const r = await fetch(url, { ...opts, headers: { Authorization: `Bearer ${t}`, ...(opts.headers || {}) } })
+  if (r.status === 401) {
+    _token = null
+    clearStoredToken()
+    const fresh = await signIn()
+    return fetch(url, { ...opts, headers: { Authorization: `Bearer ${fresh}`, ...(opts.headers || {}) } })
+  }
+  return r
 }
 
 // Drive

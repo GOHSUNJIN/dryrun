@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
-import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
+import { saveSession, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
 import { getCurrentTime, formatSessionDate } from '../utils/time.js'
 import { useTTS } from '../hooks/useTTS.js'
 import { useElapsedTimer } from '../hooks/useElapsedTimer.js'
@@ -228,7 +228,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       ? 'DEMO_TRANSCRIPT (no proposal uploaded)'
       : realOpenings.length > 0
         ? `API (${realOpenings.length} opening${realOpenings.length !== 1 ? 's' : ''} from session/start)`
-        : 'DEMO_TRANSCRIPT fallback (session/start returned 0 openings — check the [session/start] log above)'
+        : 'DEMO_TRANSCRIPT fallback (session/start returned 0 openings  -  check the [session/start] log above)'
     console.log('[RehearsalRoom] opening source:', source)
     if (!hasRealSession || realOpenings.length === 0) {
       console.log('[RehearsalRoom] demo transcript entries for selected personas:', openingMsgs.map(m => ({ speaker: m.speaker, text: m.text?.slice(0, 60) + '...' })))
@@ -237,8 +237,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
-  const allPersonaBase = [...PERSONAS, ...loadCustomPersonas()]
-  const allPersonas = allPersonaBase.map(p => ({
+  const allPersonas = PERSONAS.map(p => ({
     ...p,
     conditions: (p.conditions || []).map(c => ({
       ...c,
@@ -355,7 +354,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             conditions: localConditions,
             config: { ...session.config, turns_remaining: turnsLeft - 1 },
             fact_check: session.factCheckNotes || '',
-            custom_personas: session.customPersonaDefs || {},
           }),
         })
 
@@ -369,7 +367,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         })
 
         if (!data.text?.trim()) {
-          console.warn('[session/message] empty response — using fallback to keep conversation moving')
+          console.warn('[session/message] empty response  -  using fallback to keep conversation moving')
           setTypingPersonaId(null)
           setRoomState('idle')
           fallbackResponse()
@@ -519,7 +517,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           persona_ids: session.personaIds,
           transcript: localTranscript,
           conditions: localConditions,
-          custom_personas: session.customPersonaDefs || {},
         }),
       })
       if (!res.ok) throw new Error(`API error ${res.status}`)
@@ -533,7 +530,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       updateSession({ reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
       navigate('report')
     } catch (err) {
-      console.error('[session/end] failed — report will be unavailable:', err.message)
+      console.error('[session/end] failed  -  report will be unavailable:', err.message)
       updateSession({ conditions: localConditions, transcript: localTranscript })
       navigate('report')
     } finally {

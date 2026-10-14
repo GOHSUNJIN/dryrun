@@ -1,7 +1,17 @@
 import { useState } from 'react'
-import { Plus, Edit2, Trash2, X, Check } from 'lucide-react'
+import { Edit2, Trash2, X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadCustomPersonas, addCustomPersona, updateCustomPersona, deleteCustomPersona } from '../utils/storage.js'
+
+const LIBRARY_CATS = [
+  { key: 'business', label: 'Business' },
+  { key: 'startup',  label: 'Startup' },
+  { key: 'event',    label: 'Event Planning' },
+  { key: 'academic', label: 'Academic' },
+  { key: 'policy',   label: 'Policy' },
+]
+
+const PAGE_SIZE = 9
 
 const CUSTOM_PALETTE = [
   { color: '#10B981', glow: 'rgba(16,185,129,0.22)', dimColor: 'rgba(16,185,129,0.35)' },
@@ -127,6 +137,8 @@ export default function PanelLibrary() {
   const [customPersonas, setCustomPersonas] = useState(loadCustomPersonas)
   const [showForm, setShowForm]             = useState(false)
   const [editingId, setEditingId]           = useState(null)
+  const [libCategory, setLibCategory]       = useState('business')
+  const [libPage, setLibPage]               = useState(0)
 
   const reload = () => setCustomPersonas(loadCustomPersonas())
 
@@ -196,14 +208,9 @@ export default function PanelLibrary() {
         />
       )}
 
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <div className="page-title">Panel Library</div>
-          <div className="page-subtitle">The roles available to add to your rehearsals.</div>
-        </div>
-        <button className="btn btn-secondary" onClick={() => setShowForm(true)}>
-          <Plus size={14} /> Create role
-        </button>
+      <div className="page-header">
+        <div className="page-title">Panel Library</div>
+        <div className="page-subtitle">The roles available to add to your rehearsals.</div>
       </div>
 
       {customPersonas.length > 0 && (
@@ -271,55 +278,107 @@ export default function PanelLibrary() {
       )}
 
       <div className="section-label" style={{ marginBottom: 16 }}>Built-in roles</div>
-      <div className="panel-cards-grid">
-        {PERSONAS.map(p => (
-          <div key={p.id} className="panel-card">
-            <div className="panel-card-top" style={{ background: p.color }} />
-            <div className="panel-card-body">
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    border: `2px solid ${p.color}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1rem', color: p.color,
-                    flexShrink: 0,
-                  }}>{p.initial}</div>
-                  <div>
-                    <div className="panel-card-role">{p.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{p.role}</div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {LIBRARY_CATS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => { setLibCategory(key); setLibPage(0) }}
+            style={{
+              padding: '6px 14px', borderRadius: 20, fontSize: '0.8125rem', fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
+              borderColor: libCategory === key ? 'var(--text-primary)' : 'var(--border)',
+              background: libCategory === key ? 'var(--text-primary)' : 'transparent',
+              color: libCategory === key ? 'white' : 'var(--text-secondary)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {(() => {
+        const filtered = PERSONAS.filter(p => p.category === libCategory)
+        const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+        const pageItems = filtered.slice(libPage * PAGE_SIZE, (libPage + 1) * PAGE_SIZE)
+        return (
+          <>
+            <div className="panel-cards-grid">
+              {pageItems.map(p => (
+                <div key={p.id} className="panel-card">
+                  <div className="panel-card-top" style={{ background: p.color }} />
+                  <div className="panel-card-body">
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%',
+                          border: `2px solid ${p.color}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1rem', color: p.color,
+                          flexShrink: 0,
+                        }}>{p.initial}</div>
+                        <div>
+                          <div className="panel-card-role">{p.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{p.role}</div>
+                        </div>
+                      </div>
+                      <div style={{
+                        padding: '3px 8px', borderRadius: 99, fontSize: '0.625rem',
+                        fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
+                        background: `${p.color}14`, color: p.color, whiteSpace: 'nowrap',
+                      }}>Built-in</div>
+                    </div>
+                    <div className="panel-card-cares-label">Focuses on</div>
+                    <ul className="panel-card-cares-list">
+                      {p.cares.map((c, i) => <li key={i}>{c}</li>)}
+                    </ul>
+                    <div className="panel-card-conditions-label">Conditions met</div>
+                    {(p.conditions || []).map(c => (
+                      <div key={c.id} className="panel-card-condition">
+                        <div style={{
+                          width: 14, height: 14, borderRadius: '50%',
+                          border: `1.5px solid ${p.color}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                          <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color, opacity: 0.5 }} />
+                        </div>
+                        {c.text}
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div style={{
-                  padding: '3px 8px', borderRadius: 99, fontSize: '0.625rem',
-                  fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
-                  background: `${p.color}14`, color: p.color, whiteSpace: 'nowrap',
-                }}>Built-in</div>
-              </div>
-              <div className="panel-card-cares-label">Focuses on</div>
-              <ul className="panel-card-cares-list">
-                {p.cares.map((c, i) => <li key={i}>{c}</li>)}
-              </ul>
-              <div className="panel-card-conditions-label">Conditions met</div>
-              {(p.conditions || []).map(c => (
-                <div key={c.id} className="panel-card-condition">
-                  <div style={{
-                    width: 14, height: 14, borderRadius: '50%',
-                    border: `1.5px solid ${p.color}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color, opacity: 0.5 }} />
+                  <div className="panel-card-footer">
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Read-only</span>
                   </div>
-                  {c.text}
                 </div>
               ))}
             </div>
-            <div className="panel-card-footer">
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Read-only</span>
-            </div>
-          </div>
-        ))}
-      </div>
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setLibPage(p => Math.max(0, p - 1))}
+                  disabled={libPage === 0}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                  <ChevronLeft size={13} /> Prev
+                </button>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                  {libPage + 1} / {totalPages}
+                </span>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setLibPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={libPage >= totalPages - 1}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+                >
+                  Next <ChevronRight size={13} />
+                </button>
+              </div>
+            )}
+          </>
+        )
+      })()}
     </div>
   )
 }

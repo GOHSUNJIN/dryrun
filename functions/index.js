@@ -1,5 +1,6 @@
 import { onRequest } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
+import { GoogleGenAI } from '@google/genai'
 import {
   detectPanel, factCheckProposal, generateOpenings, getInitialConditions,
   generateReply, generateReport,
@@ -15,11 +16,12 @@ const opts = { secrets: [GEMINI_API_KEY], cors: true, timeoutSeconds: 120 }
 export const sessionDetectPanel = onRequest(opts, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const { proposal_text = '', available_ids = [] } = req.body
-  if (!process.env.GEMINI_API_KEY || !available_ids.length) {
+  const targeted_ids = available_ids.filter(id => id !== 'general')
+  if (!process.env.GEMINI_API_KEY || !targeted_ids.length) {
     return res.status(200).json({ persona_ids: [] })
   }
   try {
-    res.status(200).json({ persona_ids: await detectPanel(proposal_text, available_ids) })
+    res.status(200).json({ persona_ids: await detectPanel(proposal_text, targeted_ids) })
   } catch (err) {
     console.error('[detect-panel] failed:', err.message)
     res.status(200).json({ persona_ids: [] })
@@ -120,5 +122,24 @@ export const sessionEnd = onRequest(opts, async (req, res) => {
   } catch (err) {
     console.error('[sessionEnd] generateReport failed, falling back to demo:', err.message)
     res.status(200).json({ ...getDemoReport(), demo: true })
+  }
+})
+
+export const sessionTestAI = onRequest(opts, async (req, res) => {
+  const key = process.env.GEMINI_API_KEY
+  if (!key) return res.status(200).json({ ok: false, error: 'GEMINI_API_KEY not set' })
+  try {
+    const ai = new GoogleGenAI({ apiKey: key })
+
+    // Test 1: basic response
+    const r1 = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: 'Reply with only this text, no markdown: hello',
+      config: { maxOutputTokens: 100 },
+    })
+
+    res.status(200).json({ ok: true, key_length: key.length, raw: r1.text })
+  } catch (err) {
+    res.status(200).json({ ok: false, error: err.message, key_length: key.length })
   }
 })

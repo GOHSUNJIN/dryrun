@@ -145,6 +145,12 @@ export function renameProposal(oldName, newName) {
   saveSessions(loadSessions().map(s => s.proposal === oldName ? { ...s, proposal: newName } : s))
 }
 
+export function updateSessionMeeting(sessionId, newLinkedMeeting) {
+  saveSessions(loadSessions().map(s =>
+    s.id === sessionId ? { ...s, linkedMeeting: newLinkedMeeting || '' } : s
+  ))
+}
+
 export function computeWeakSpots() {
   const sessions = loadSessions()
   const byLabel = {}

@@ -2,7 +2,22 @@
   "hosting": {
     "public": "frontend/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "/assets/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      },
+      {
+        "source": "**/*.@(js|css|woff2|woff|ttf|eot|ico|png|jpg|jpeg|svg|webp|gif)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      },
+      {
+        "source": "/index.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ],
     "rewrites": [
+      { "source": "/api/session/test-ai",      "function": "sessionTestAI",      "region": "us-central1" },
       { "source": "/api/session/detect-panel", "function": "sessionDetectPanel", "region": "us-central1" },
       { "source": "/api/session/start",   "function": "sessionStart",   "region": "us-central1" },
       { "source": "/api/session/message", "function": "sessionMessage", "region": "us-central1" },

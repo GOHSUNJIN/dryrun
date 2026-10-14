@@ -1,5 +1,5 @@
 // Fallback responses used when GEMINI_API_KEY is not set or AI calls fail.
-// No fabricated coaching data — placeholders only.
+// No fabricated coaching data  -  placeholders only.
 
 const CANNED_OPENINGS = {
   finance:         'You have listed the headcount cost, but what does the full three-year TCO look like once you add tooling, onboarding, cloud infrastructure and the cost of backfilling if someone leaves?',

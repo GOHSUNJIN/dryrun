@@ -1,14 +1,15 @@
 export const PERSONAS = [
-  // --- Business proposal panel ---
+  // --- Business ---
   {
     id: 'finance',
-    name: 'Morgan',
+    name: 'Alan',
     role: 'Head of Finance',
-    initial: 'M',
+    initial: 'A',
     color: '#F2B35B',
     glow: 'rgba(242,179,91,0.22)',
     dimColor: 'rgba(242,179,91,0.35)',
     panelPct: 12.5,
+    category: 'business',
     cares: ['ROI and full cost breakdown', 'Budget risk and contingency', 'Payback period evidence'],
     conditions: [
       { id: 'f1', text: 'Total cost breakdown provided', met: false },
@@ -25,6 +26,7 @@ export const PERSONAS = [
     glow: 'rgba(82,207,195,0.22)',
     dimColor: 'rgba(82,207,195,0.35)',
     panelPct: 37.5,
+    category: 'business',
     cares: ['Data privacy and GDPR compliance', 'Vendor contract terms', 'Accountability if it fails'],
     conditions: [
       { id: 'l1', text: 'Data privacy plan confirmed',      met: false },
@@ -34,18 +36,87 @@ export const PERSONAS = [
   },
   {
     id: 'ops',
-    name: 'Jordan',
+    name: 'Renes',
     role: 'Operations Lead',
-    initial: 'J',
+    initial: 'R',
     color: '#B9A3FF',
     glow: 'rgba(185,163,255,0.22)',
     dimColor: 'rgba(185,163,255,0.35)',
     panelPct: 62.5,
+    category: 'business',
     cares: ['Realistic timelines', 'Who does the work today', 'Integration disruption risk'],
     conditions: [
       { id: 'o1', text: 'Timeline with milestones given',      met: false },
       { id: 'o2', text: 'Current process owner identified',    met: false },
       { id: 'o3', text: 'Disruption assessment complete',      met: false },
+    ],
+  },
+  {
+    id: 'board',
+    name: 'Charles',
+    role: 'Board Advisor',
+    initial: 'C',
+    color: '#A78BFA',
+    glow: 'rgba(167,139,250,0.22)',
+    dimColor: 'rgba(167,139,250,0.35)',
+    panelPct: 87.5,
+    category: 'business',
+    cares: ['Strategic alignment with company priorities', 'ROI and payback at board level', 'What competing initiative is being deprioritised'],
+    conditions: [
+      { id: 'b1', text: 'Strategic alignment with company priorities confirmed', met: false },
+      { id: 'b2', text: 'ROI and payback timeline presented at board level',    met: false },
+      { id: 'b3', text: 'Trade-offs with competing initiatives addressed',       met: false },
+    ],
+  },
+  {
+    id: 'hr',
+    name: 'Maya',
+    role: 'HR Director',
+    initial: 'M',
+    color: '#34D399',
+    glow: 'rgba(52,211,153,0.22)',
+    dimColor: 'rgba(52,211,153,0.35)',
+    panelPct: 12.5,
+    category: 'business',
+    cares: ['Headcount and hiring timeline', 'Change management plan for affected teams', 'Retention and morale risk'],
+    conditions: [
+      { id: 'hr1', text: 'Headcount impact and hiring timeline provided',          met: false },
+      { id: 'hr2', text: 'Change management plan for affected teams defined',      met: false },
+      { id: 'hr3', text: 'Retention and morale risk assessed',                     met: false },
+    ],
+  },
+  {
+    id: 'tech',
+    name: 'Kevin',
+    role: 'Engineering Lead',
+    initial: 'K',
+    color: '#60A5FA',
+    glow: 'rgba(96,165,250,0.22)',
+    dimColor: 'rgba(96,165,250,0.35)',
+    panelPct: 37.5,
+    category: 'business',
+    cares: ['Technical feasibility and architecture dependencies', 'Integration effort and security risks', 'Maintenance responsibility post-launch'],
+    conditions: [
+      { id: 't1', text: 'Technical feasibility confirmed with supporting detail', met: false },
+      { id: 't2', text: 'Integration dependencies and risks mapped',              met: false },
+      { id: 't3', text: 'Security and data handling addressed',                   met: false },
+    ],
+  },
+  {
+    id: 'marketing',
+    name: 'Priya',
+    role: 'Marketing Lead',
+    initial: 'P',
+    color: '#F472B6',
+    glow: 'rgba(244,114,182,0.22)',
+    dimColor: 'rgba(244,114,182,0.35)',
+    panelPct: 62.5,
+    category: 'business',
+    cares: ['Brand alignment and messaging', 'Target audience assumptions backed by data', 'Go-to-market plan and launch timing'],
+    conditions: [
+      { id: 'm1', text: 'Brand alignment and messaging confirmed',       met: false },
+      { id: 'm2', text: 'Target audience defined with supporting data',  met: false },
+      { id: 'm3', text: 'Go-to-market plan and launch timing provided',  met: false },
     ],
   },
   {
@@ -57,14 +128,66 @@ export const PERSONAS = [
     glow: 'rgba(154,176,222,0.22)',
     dimColor: 'rgba(154,176,222,0.35)',
     panelPct: 87.5,
+    category: 'business',
     cares: ['Verifies quantitative claims', 'Cites market sources', 'Flags unsupported assertions'],
     conditions: [
-      { id: 'fc1', text: 'Key figures verified against sources', met: false },
-      { id: 'fc2', text: 'Supporting evidence cited for main claims', met: false },
+      { id: 'fc1', text: 'Key figures verified against sources',           met: false },
+      { id: 'fc2', text: 'Supporting evidence cited for main claims',      met: false },
+    ],
+  },
+  {
+    id: 'sustainability',
+    name: 'Elena',
+    role: 'Sustainability Lead',
+    initial: 'E',
+    color: '#10B981',
+    glow: 'rgba(16,185,129,0.22)',
+    dimColor: 'rgba(16,185,129,0.35)',
+    panelPct: 12.5,
+    category: 'business',
+    cares: ['Environmental impact and carbon footprint', 'ESG commitments and reporting obligations', 'Supply chain and lifecycle sustainability'],
+    conditions: [
+      { id: 'sus1', text: 'Environmental and carbon impact assessed',               met: false },
+      { id: 'sus2', text: 'ESG alignment with reporting obligations confirmed',     met: false },
+      { id: 'sus3', text: 'Supply chain sustainability considered',                 met: false },
+    ],
+  },
+  {
+    id: 'cx',
+    name: 'Nadia',
+    role: 'Customer Success Lead',
+    initial: 'N',
+    color: '#FBBF24',
+    glow: 'rgba(251,191,36,0.22)',
+    dimColor: 'rgba(251,191,36,0.35)',
+    panelPct: 37.5,
+    category: 'business',
+    cares: ['Customer experience disruption during transition', 'Onboarding and adoption plan', 'Churn risk and retention impact'],
+    conditions: [
+      { id: 'cx1', text: 'Customer experience impact assessed',        met: false },
+      { id: 'cx2', text: 'Onboarding and adoption plan defined',       met: false },
+      { id: 'cx3', text: 'Churn and retention risk addressed',         met: false },
+    ],
+  },
+  {
+    id: 'dpo',
+    name: 'Marcus',
+    role: 'Data Protection Officer',
+    initial: 'M',
+    color: '#7DD3FC',
+    glow: 'rgba(125,211,252,0.22)',
+    dimColor: 'rgba(125,211,252,0.35)',
+    panelPct: 62.5,
+    category: 'business',
+    cares: ['Legal basis for processing personal data', 'Data minimisation and retention policy', 'Third-party sharing and DPA obligations'],
+    conditions: [
+      { id: 'dpo1', text: 'Legal basis for data processing confirmed',       met: false },
+      { id: 'dpo2', text: 'Retention and deletion policy defined',           met: false },
+      { id: 'dpo3', text: 'Third-party data sharing agreements addressed',   met: false },
     ],
   },
 
-  // --- Event planning panel ---
+  // --- Event planning ---
   {
     id: 'event_director',
     name: 'Riya',
@@ -74,6 +197,7 @@ export const PERSONAS = [
     glow: 'rgba(248,113,113,0.22)',
     dimColor: 'rgba(248,113,113,0.35)',
     panelPct: 12.5,
+    category: 'event',
     cares: ['Event purpose and organisational value', 'Success criteria and outcomes', 'Approval chain and accountability'],
     conditions: [
       { id: 'ed1', text: 'Event purpose and expected outcomes clearly stated', met: false },
@@ -90,6 +214,7 @@ export const PERSONAS = [
     glow: 'rgba(251,146,60,0.22)',
     dimColor: 'rgba(251,146,60,0.35)',
     panelPct: 37.5,
+    category: 'event',
     cares: ['Itemised budget and per-pax cost', 'Contingency for overruns', 'Vendor payment terms and procurement process'],
     conditions: [
       { id: 'ef1', text: 'Itemised budget with per-pax breakdown provided',          met: false },
@@ -106,6 +231,7 @@ export const PERSONAS = [
     glow: 'rgba(74,222,128,0.22)',
     dimColor: 'rgba(74,222,128,0.35)',
     panelPct: 62.5,
+    category: 'event',
     cares: ['Venue safety and capacity compliance', 'Emergency and first aid procedures', 'Dietary and allergy management'],
     conditions: [
       { id: 'es1', text: 'Venue capacity and safety compliance confirmed',        met: false },
@@ -122,6 +248,7 @@ export const PERSONAS = [
     glow: 'rgba(192,132,252,0.22)',
     dimColor: 'rgba(192,132,252,0.35)',
     panelPct: 87.5,
+    category: 'event',
     cares: ['Detailed run-of-show with timings', 'Dry run schedule and rehearsal plan', 'Backup plans for no-shows'],
     conditions: [
       { id: 'ep1', text: 'Full programme rundown with timings provided',            met: false },
@@ -129,12 +256,239 @@ export const PERSONAS = [
       { id: 'ep3', text: 'Backup plan for performer or speaker no-shows addressed', met: false },
     ],
   },
+
+  // --- Academic ---
+  {
+    id: 'supervisor',
+    name: 'Prof. Lin',
+    role: 'Academic Supervisor',
+    initial: 'L',
+    color: '#818CF8',
+    glow: 'rgba(129,140,248,0.22)',
+    dimColor: 'rgba(129,140,248,0.35)',
+    panelPct: 12.5,
+    category: 'academic',
+    cares: ['Research methodology and justification', 'Literature review coverage', 'Feasibility of scope and timeline'],
+    conditions: [
+      { id: 'sup1', text: 'Research methodology justified with supporting rationale', met: false },
+      { id: 'sup2', text: 'Literature review covers key sources',                     met: false },
+      { id: 'sup3', text: 'Scope and timeline are realistic',                         met: false },
+    ],
+  },
+  {
+    id: 'examiner',
+    name: 'Johann',
+    role: 'External Examiner',
+    initial: 'J',
+    color: '#F87171',
+    glow: 'rgba(248,113,113,0.22)',
+    dimColor: 'rgba(248,113,113,0.35)',
+    panelPct: 37.5,
+    category: 'academic',
+    cares: ['Originality and contribution to knowledge', 'Validity of conclusions drawn from the data', 'Limitations the author has not acknowledged'],
+    conditions: [
+      { id: 'ex1', text: 'Original contribution to the field stated',    met: false },
+      { id: 'ex2', text: 'Conclusions supported by the data presented',  met: false },
+      { id: 'ex3', text: 'Limitations acknowledged honestly',            met: false },
+    ],
+  },
+  {
+    id: 'internal_examiner',
+    name: 'Dr. Patel',
+    role: 'Internal Examiner',
+    initial: 'P',
+    color: '#FCD34D',
+    glow: 'rgba(252,211,77,0.22)',
+    dimColor: 'rgba(252,211,77,0.35)',
+    panelPct: 62.5,
+    category: 'academic',
+    cares: ['Consistency with departmental research standards', 'Alignment between methodology and institutional guidelines', 'Coherence of abstract and conclusion'],
+    conditions: [
+      { id: 'ie1', text: 'Research aligns with departmental standards',           met: false },
+      { id: 'ie2', text: 'Methodology consistent with institutional guidelines',  met: false },
+      { id: 'ie3', text: 'Abstract and conclusion are coherent and aligned',      met: false },
+    ],
+  },
+  {
+    id: 'ethicist',
+    name: 'Dr. Chen',
+    role: 'Ethics Reviewer',
+    initial: 'C',
+    color: '#E879F9',
+    glow: 'rgba(232,121,249,0.22)',
+    dimColor: 'rgba(232,121,249,0.35)',
+    panelPct: 87.5,
+    category: 'academic',
+    cares: ['Ethical implications of the research or design', 'Data privacy and informed consent procedures', 'Potential for bias or unintended harm'],
+    conditions: [
+      { id: 'eth1', text: 'Ethical implications considered and addressed',    met: false },
+      { id: 'eth2', text: 'Data privacy and consent procedures described',    met: false },
+      { id: 'eth3', text: 'Potential for bias or harm assessed',              met: false },
+    ],
+  },
+  {
+    id: 'industry_mentor',
+    name: 'Raj',
+    role: 'Industry Mentor',
+    initial: 'R',
+    color: '#22D3EE',
+    glow: 'rgba(34,211,238,0.22)',
+    dimColor: 'rgba(34,211,238,0.35)',
+    panelPct: 12.5,
+    category: 'academic',
+    cares: ['Real-world applicability beyond the lab', 'Whether target users would actually adopt it', 'Practical constraints academic projects often miss'],
+    conditions: [
+      { id: 'im1', text: 'Real-world applicability addressed',                          met: false },
+      { id: 'im2', text: 'Target user adoption considered',                             met: false },
+      { id: 'im3', text: 'Practical constraints outside the lab acknowledged',          met: false },
+    ],
+  },
+  {
+    id: 'research_funder',
+    name: 'Dr. Kim',
+    role: 'Research Funder',
+    initial: 'K',
+    color: '#A3E635',
+    glow: 'rgba(163,230,53,0.22)',
+    dimColor: 'rgba(163,230,53,0.35)',
+    panelPct: 37.5,
+    category: 'academic',
+    cares: ['Alignment with funding objectives and call criteria', 'Value for money and resource justification', 'Impact pathway and dissemination plan'],
+    conditions: [
+      { id: 'rf1', text: 'Alignment with funding criteria confirmed',          met: false },
+      { id: 'rf2', text: 'Resource allocation justified for the scope',        met: false },
+      { id: 'rf3', text: 'Impact pathway and dissemination plan provided',     met: false },
+    ],
+  },
+
+  // --- Startup ---
+  {
+    id: 'vc',
+    name: 'Janice',
+    role: 'VC Investor',
+    initial: 'J',
+    color: '#F9A8D4',
+    glow: 'rgba(249,168,212,0.22)',
+    dimColor: 'rgba(249,168,212,0.35)',
+    panelPct: 12.5,
+    category: 'startup',
+    cares: ['Market size and growth trajectory', 'Unit economics and path to profitability', 'Competitive moat and defensibility'],
+    conditions: [
+      { id: 'vc1', text: 'Total addressable market sized with supporting evidence', met: false },
+      { id: 'vc2', text: 'Unit economics and profitability path modelled',          met: false },
+      { id: 'vc3', text: 'Competitive differentiation and moat articulated',        met: false },
+    ],
+  },
+  {
+    id: 'product_manager',
+    name: 'Jac',
+    role: 'Product Manager',
+    initial: 'J',
+    color: '#86EFAC',
+    glow: 'rgba(134,239,172,0.22)',
+    dimColor: 'rgba(134,239,172,0.35)',
+    panelPct: 37.5,
+    category: 'startup',
+    cares: ['Validated user problem and evidence', 'MVP scope with clear deferrals', 'Success metrics and how they are measured'],
+    conditions: [
+      { id: 'pm1', text: 'Core user problem validated with user research',      met: false },
+      { id: 'pm2', text: 'MVP scope defined with explicit deferrals listed',    met: false },
+      { id: 'pm3', text: 'Success metrics and measurement approach specified',  met: false },
+    ],
+  },
+  {
+    id: 'growth',
+    name: 'Jamie',
+    role: 'Growth Lead',
+    initial: 'J',
+    color: '#FCA5A5',
+    glow: 'rgba(252,165,165,0.22)',
+    dimColor: 'rgba(252,165,165,0.35)',
+    panelPct: 62.5,
+    category: 'startup',
+    cares: ['Acquisition channels and cost per customer', 'Retention and engagement baseline', 'Viral or referral loops in the product'],
+    conditions: [
+      { id: 'gr1', text: 'Acquisition strategy with cost projections provided',      met: false },
+      { id: 'gr2', text: 'Retention and engagement baseline defined',                met: false },
+      { id: 'gr3', text: 'Growth model validated against comparable products',       met: false },
+    ],
+  },
+
+  // --- Policy ---
+  {
+    id: 'policy_analyst',
+    name: 'Omar',
+    role: 'Policy Analyst',
+    initial: 'O',
+    color: '#BAE6FD',
+    glow: 'rgba(186,230,253,0.22)',
+    dimColor: 'rgba(186,230,253,0.35)',
+    panelPct: 12.5,
+    category: 'policy',
+    cares: ['Regulatory environment and compliance requirements', 'Policy precedents and government alignment', 'Impact assessment and stakeholder consultation'],
+    conditions: [
+      { id: 'pa1', text: 'Regulatory compliance requirements identified',        met: false },
+      { id: 'pa2', text: 'Policy alignment with existing frameworks confirmed',  met: false },
+      { id: 'pa3', text: 'Stakeholder consultation plan defined',                met: false },
+    ],
+  },
+  {
+    id: 'regulator',
+    name: 'Victor',
+    role: 'Regulatory Advisor',
+    initial: 'V',
+    color: '#C4B5FD',
+    glow: 'rgba(196,181,253,0.22)',
+    dimColor: 'rgba(196,181,253,0.35)',
+    panelPct: 37.5,
+    category: 'policy',
+    cares: ['Regulatory approval timelines and requirements', 'Compliance obligations and enforcement risk', 'Licensing and certification prerequisites'],
+    conditions: [
+      { id: 're1', text: 'Regulatory approval pathway identified',               met: false },
+      { id: 're2', text: 'Compliance obligations and timeline mapped',           met: false },
+      { id: 're3', text: 'Licensing and certification requirements addressed',   met: false },
+    ],
+  },
+  {
+    id: 'community_rep',
+    name: 'Zara',
+    role: 'Community Representative',
+    initial: 'Z',
+    color: '#67E8F9',
+    glow: 'rgba(103,232,249,0.22)',
+    dimColor: 'rgba(103,232,249,0.35)',
+    panelPct: 62.5,
+    category: 'policy',
+    cares: ['Community impact and equitable access', 'Whether affected groups were consulted', 'Unintended consequences for vulnerable populations'],
+    conditions: [
+      { id: 'cr1', text: 'Community impact assessment completed',                      met: false },
+      { id: 'cr2', text: 'Consultation with affected groups documented',               met: false },
+      { id: 'cr3', text: 'Mitigation plan for disproportionate impact provided',       met: false },
+    ],
+  },
+
+  // --- General ---
+  {
+    id: 'general',
+    name: 'Quinn',
+    role: 'General Reviewer',
+    initial: 'Q',
+    color: '#D97706',
+    glow: 'rgba(217,119,6,0.22)',
+    dimColor: 'rgba(217,119,6,0.35)',
+    panelPct: 50,
+    category: 'general',
+    cares: ['Clear purpose and expected outcomes', 'Evidence behind key claims', 'Main risks and how they are addressed'],
+    conditions: [
+      { id: 'gen1', text: 'Proposal purpose and expected outcomes clearly stated', met: false },
+      { id: 'gen2', text: 'Key claims supported with evidence or data',            met: false },
+      { id: 'gen3', text: 'Main risks acknowledged with mitigations outlined',     met: false },
+    ],
+  },
 ];
 
-// Shown when session/start returns no openings and the user has selected the matching persona IDs.
-// Each entry is filtered by session.personaIds, so only relevant ones fire.
 export const DEMO_TRANSCRIPT = [
-  // Business proposal panel
+  // Business panel
   {
     id: 1, speaker: 'finance', type: 'opening',
     text: 'Thirty hours a month at any plausible internal rate does not approach $240,000 annually. Where is the full cost breakdown: benefits, tooling, cloud infrastructure, management overhead?',
@@ -176,6 +530,105 @@ export const DEMO_TRANSCRIPT = [
     text: 'There is a programme committee listed but no consolidated run-of-show with timings. What is the full sequence from doors open to event close, and are dry run dates already locked in?',
     time: '0:50',
   },
+  {
+    id: 9, speaker: 'hr', type: 'opening',
+    text: 'This proposal does not mention the people who currently own this work. What happens to their roles and who is managing the transition? I need a change management plan, not just a project timeline.',
+    time: '0:12',
+  },
+  {
+    id: 10, speaker: 'tech', type: 'opening',
+    text: 'What are the integration dependencies? Before approving any scope or timeline I need to know which existing systems this touches, what the security model is for the data in transit, and who owns it post-launch.',
+    time: '0:24',
+  },
+  {
+    id: 11, speaker: 'marketing', type: 'opening',
+    text: 'The target audience is described in one line. What evidence supports those assumptions about user behaviour? Brand alignment and go-to-market timing are not addressed at all.',
+    time: '0:36',
+  },
+  {
+    id: 12, speaker: 'board', type: 'opening',
+    text: 'Why this, why now? I need to understand what we are trading off against this initiative and whether the ROI case holds at a board level, not just an operational one.',
+    time: '0:50',
+  },
+  // Academic panel
+  {
+    id: 13, speaker: 'supervisor', type: 'opening',
+    text: 'Your methodology section describes what you did but not why you chose this approach over alternatives. What is the justification for this design and what sources support that choice?',
+    time: '0:12',
+  },
+  {
+    id: 14, speaker: 'examiner', type: 'opening',
+    text: 'What is the original contribution here? I need you to articulate what this work adds to the existing body of knowledge and where the boundaries of that claim are.',
+    time: '0:24',
+  },
+  {
+    id: 15, speaker: 'industry_mentor', type: 'opening',
+    text: 'This works as a research prototype. Would a real organisation actually adopt it? What barriers exist outside the lab setting and have you tested with real users in context?',
+    time: '0:36',
+  },
+  {
+    id: 16, speaker: 'ethicist', type: 'opening',
+    text: 'The ethics section is one paragraph. Have participants given informed consent, do they understand how their data will be used after the study ends and has potential for algorithmic bias been assessed?',
+    time: '0:50',
+  },
+  {
+    id: 17, speaker: 'sustainability', type: 'opening',
+    text: 'There is no mention of carbon footprint or ESG impact. What is the environmental cost of this proposal and how does it align with the organisation\'s sustainability commitments?',
+    time: '0:12',
+  },
+  {
+    id: 18, speaker: 'cx', type: 'opening',
+    text: 'How does this affect existing customers? I need a customer impact assessment, an onboarding plan for those affected and a clear view of the churn risk during this transition.',
+    time: '0:24',
+  },
+  {
+    id: 19, speaker: 'dpo', type: 'opening',
+    text: 'What is the legal basis for processing the personal data this proposal involves? I need the data flows mapped, retention periods defined and third-party DPAs addressed before any approval.',
+    time: '0:36',
+  },
+  // Startup panel
+  {
+    id: 20, speaker: 'vc', type: 'opening',
+    text: 'The market size is stated without a source. What is the total addressable market, what are the unit economics and where does this become profitable? I need a model, not assumptions.',
+    time: '0:12',
+  },
+  {
+    id: 21, speaker: 'product_manager', type: 'opening',
+    text: 'What is the core user problem this solves and how have you validated it? The MVP scope is undefined and there are no success metrics. What does done actually look like?',
+    time: '0:24',
+  },
+  {
+    id: 22, speaker: 'growth', type: 'opening',
+    text: 'Acquisition strategy is missing entirely. What are the channels, what is the expected cost per acquisition and what is the retention baseline you are optimising from?',
+    time: '0:36',
+  },
+  // Policy panel
+  {
+    id: 23, speaker: 'policy_analyst', type: 'opening',
+    text: 'What regulatory framework governs this and which obligations apply? I need a compliance mapping and a view on whether the current policy environment supports or obstructs this proposal.',
+    time: '0:12',
+  },
+  {
+    id: 24, speaker: 'regulator', type: 'opening',
+    text: 'Has the regulatory approval pathway been identified? I need to understand the licensing requirements, the compliance timeline and the enforcement risk if this proceeds without clearance.',
+    time: '0:24',
+  },
+  {
+    id: 25, speaker: 'community_rep', type: 'opening',
+    text: 'Have the communities most affected by this been consulted? I need to see who was involved, what was heard and what the mitigation plan is for any disproportionate impact.',
+    time: '0:36',
+  },
+  // Additional academic panel
+  {
+    id: 26, speaker: 'internal_examiner', type: 'opening',
+    text: 'This does not clearly align with our departmental research guidelines. Is the methodology consistent with institutional standards and does the abstract accurately reflect the conclusions drawn?',
+    time: '0:12',
+  },
+  {
+    id: 27, speaker: 'research_funder', type: 'opening',
+    text: 'How does this align with the funding call criteria? I need a value for money justification, a clear impact pathway and a dissemination plan that extends beyond the academic community.',
+    time: '0:24',
+  },
 ];
 
 export const SCRIPTED_RESPONSES = [
@@ -198,7 +651,7 @@ export const SCRIPTED_RESPONSES = [
     follow_up: {
       speaker: 'factcheck',
       source: { label: 'Gartner Data Pipeline Benchmarks 2024' },
-      text: "Supporting Jordan: projects of this scope average 10 to 14 months to full production. A six-month timeline is an outlier without exceptional resourcing. Source: Gartner Data Pipeline Benchmarks 2024.",
+      text: "Supporting Renes: projects of this scope average 10 to 14 months to full production. A six-month timeline is an outlier without exceptional resourcing. Source: Gartner Data Pipeline Benchmarks 2024.",
     },
   },
   {
@@ -208,4 +661,3 @@ export const SCRIPTED_RESPONSES = [
     follow_up: null,
   },
 ];
-

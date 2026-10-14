@@ -197,7 +197,7 @@ export default function Home({ navigate }) {
         {/* Two-column grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'stretch' }}>
 
-          {/* Upcoming meetings — fills column height */}
+          {/* Upcoming meetings  -  fills column height */}
           <motion.div variants={item} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Upcoming meetings</div>

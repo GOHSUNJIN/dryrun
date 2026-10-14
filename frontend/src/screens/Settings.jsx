@@ -19,16 +19,6 @@ const INTEGRATIONS = [
   { icon: '📅', name: 'Google Calendar', desc: 'Sync upcoming meetings to your Home screen' },
 ]
 
-const PERSONA_VOICES = [
-  { label: 'Morgan', sub: 'Finance',         desc: 'Low pitch, measured pace'            },
-  { label: 'Alex',   sub: 'Legal',           desc: 'Neutral pitch, deliberate pace'      },
-  { label: 'Jordan', sub: 'Operations',      desc: 'Low pitch, direct pace'              },
-  { label: 'Sam',    sub: 'Fact-check',      desc: 'Slightly higher pitch, careful pace' },
-  { label: 'Riya',   sub: 'Event Director',  desc: 'Measured pitch, strategic pace'      },
-  { label: 'Darren', sub: 'Event Finance',   desc: 'Crisp pitch, deliberate pace'        },
-  { label: 'Kai',    sub: 'Event Safety',    desc: 'Neutral pitch, methodical pace'      },
-  { label: 'Cleo',   sub: 'Event Programme', desc: 'Detail-focused pitch, practical pace'},
-]
 
 function Row({ label, sublabel, children, last }) {
   return (
@@ -264,28 +254,6 @@ export default function Settings() {
                 </select>
               </Row>
 
-              <div style={{
-                marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)',
-                fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em',
-                textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4,
-              }}>
-                Persona voices
-              </div>
-              {PERSONA_VOICES.map(({ label, sub, desc }, i) => (
-                <div key={label} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 0', opacity: 0.55,
-                  borderBottom: i < PERSONA_VOICES.length - 1 ? '1px solid var(--border-light)' : 'none',
-                }}>
-                  <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>
-                      {label} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>· {sub}</span>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>System voice</span>
-                </div>
-              ))}
             </div>
           )}
 

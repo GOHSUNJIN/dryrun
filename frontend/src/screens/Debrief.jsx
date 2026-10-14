@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingDown, TrendingUp, Award, Zap, Minus, RotateCcw, ArrowLeft, ChevronRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas } from '../utils/storage.js'
 
 const MARKER_ICONS = {
   strong:  TrendingUp,
@@ -24,9 +23,8 @@ export default function Debrief({ navigate, session }) {
   const [selected, setSelected]       = useState(1)
   const [filterPersonaId, setFilterPersonaId] = useState(null)
 
-  const allPersonaBase   = [...PERSONAS, ...loadCustomPersonas()]
   const sessionPersonas  = session?.personaIds?.length
-    ? allPersonaBase.filter(p => session.personaIds.includes(p.id))
+    ? PERSONAS.filter(p => session.personaIds.includes(p.id))
     : PERSONAS
 
   const matchesPersona = (m, personaId) => {
