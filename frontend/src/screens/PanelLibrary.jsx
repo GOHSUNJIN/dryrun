@@ -221,8 +221,12 @@ export default function PanelLibrary() {
                         border: `2px solid ${p.color}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1rem', color: p.color,
+                        flexShrink: 0,
                       }}>{p.initial}</div>
-                      <div className="panel-card-role">{p.role}</div>
+                      <div>
+                        <div className="panel-card-role">{p.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{p.role}</div>
+                      </div>
                     </div>
                     <div style={{
                       padding: '3px 8px', borderRadius: 99, fontSize: '0.625rem',
@@ -279,8 +283,12 @@ export default function PanelLibrary() {
                     border: `2px solid ${p.color}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1rem', color: p.color,
+                    flexShrink: 0,
                   }}>{p.initial}</div>
-                  <div className="panel-card-role">{p.role}</div>
+                  <div>
+                    <div className="panel-card-role">{p.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{p.role}</div>
+                  </div>
                 </div>
                 <div style={{
                   padding: '3px 8px', borderRadius: 99, fontSize: '0.625rem',

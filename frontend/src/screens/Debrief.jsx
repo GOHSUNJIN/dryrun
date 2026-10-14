@@ -121,7 +121,9 @@ export default function Debrief({ navigate, session }) {
 
           {filteredMoments.length === 0 ? (
             <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              No moments for this persona yet.
+              {moments.length === 0
+                ? 'No moments available for this session.'
+                : 'No moments match this filter.'}
             </div>
           ) : filteredMoments.map(m => {
             const Icon  = MARKER_ICONS[m.type] || Minus
@@ -205,7 +207,7 @@ export default function Debrief({ navigate, session }) {
 
             <div className="coaching-actions">
               <button className="btn btn-primary" onClick={() => navigate('room')}>
-                <RotateCcw size={14} /> Practise this moment
+                <RotateCcw size={14} /> Rehearse again
               </button>
               <button
                 className="btn btn-secondary"

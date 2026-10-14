@@ -208,7 +208,16 @@ export default function PastSessions({ navigate }) {
                   <div key={sessionKey}>
                     <div className="session-row" onClick={() => navigate('report', { savedSession: s })}>
                       <div>
-                        <div className="session-row-name">{s.proposal || group.proposal}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <span className="session-row-name">{s.proposal || group.proposal}</span>
+                        {s.reportData?.demo && (
+                          <span style={{
+                            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.06em',
+                            textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
+                            background: 'rgba(245,158,11,0.1)', color: '#D97706', flexShrink: 0,
+                          }}>Demo</span>
+                        )}
+                      </div>
                         <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                           <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
                         </div>
@@ -264,7 +273,7 @@ export default function PastSessions({ navigate }) {
                             {isExpanded ? 'Hide' : 'Proposal'}
                           </button>
                         )}
-                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal }) }}>
+                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal, linkedMeeting: s.linkedMeeting || '' }) }}>
                           <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Again
                         </button>

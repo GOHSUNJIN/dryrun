@@ -428,7 +428,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       const replyMsg = {
         id: Date.now() + 1,
         speaker: speakerId,
-        text: '[AI unavailable: response not generated]',
+        text: '(AI is not connected. In a live session this would be a panel response.)',
         time: getCurrentTime(),
       }
       setTypingPersonaId(null)
@@ -674,6 +674,40 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
       </div>
 
+
+      {roomState === 'condition-met' && (
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 6px' }}>
+          <div style={{
+            padding: '8px 16px', borderRadius: 8,
+            background: 'rgba(5,150,105,0.12)', border: '1px solid rgba(5,150,105,0.2)',
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: '0.8125rem', color: '#34D399', fontWeight: 500,
+          }}>
+            <Check size={13} style={{ flexShrink: 0 }} /> Condition met
+          </div>
+        </div>
+      )}
+
+      {turnLimitReached && !showExitOffer && (
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 6px' }}>
+          <div style={{
+            padding: '10px 16px', borderRadius: 8,
+            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+            fontSize: '0.8125rem', color: '#D97706',
+          }}>
+            <span>Turn limit reached. End the session to get your coaching report.</span>
+            <button
+              className="btn btn-sm"
+              onClick={handleEndSession}
+              disabled={generatingReport}
+              style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#D97706', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+            >
+              {generatingReport ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'End and get report'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showExitOffer && (
         <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>

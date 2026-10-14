@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ExternalLink, Check, Zap, Loader, User, Sliders, Volume2, Link2, Shield, ChevronRight } from 'lucide-react'
-import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults } from '../utils/storage.js'
-import { signIn, isSignedIn } from '../utils/google.js'
+import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults, loadCalEvents, clearCalEvents } from '../utils/storage.js'
+import { signIn, isSignedIn, signOut } from '../utils/google.js'
 
 const NAV = [
   { id: 'Profile',            label: 'Profile',             icon: User    },
@@ -56,7 +56,7 @@ export default function Settings() {
   const [turnLimit, setTurnLimit]         = useState(initDefaults.turnLimit)
   const [voiceEnabled, setVoiceEnabled]   = useState(initVoice.enabled)
   const [voiceRate, setVoiceRate]         = useState(String(initVoice.rate))
-  const [googleConnected, setGoogleConnected] = useState(isSignedIn)
+  const [googleConnected, setGoogleConnected] = useState(() => isSignedIn() || loadCalEvents() !== null)
   const [googleConnecting, setGoogleConnecting] = useState(false)
 
   const handleSaveProfile = () => {
@@ -81,6 +81,12 @@ export default function Settings() {
     } finally {
       setGoogleConnecting(false)
     }
+  }
+
+  const handleGoogleDisconnect = () => {
+    signOut()
+    clearCalEvents()
+    setGoogleConnected(false)
   }
 
   const handleDeleteAll = () => {
@@ -287,9 +293,16 @@ export default function Settings() {
                   background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.18)',
                 }}>
                   <Check size={14} style={{ color: '#059669', flexShrink: 0 }} />
-                  <div style={{ fontSize: '0.8125rem', color: '#059669', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: '0.8125rem', color: '#059669', lineHeight: 1.5, flex: 1 }}>
                     Connected to Google. Drive import, Docs export and Calendar sync are active.
                   </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleGoogleDisconnect}
+                    style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    Disconnect
+                  </button>
                 </div>
               ) : (
                 <div style={{

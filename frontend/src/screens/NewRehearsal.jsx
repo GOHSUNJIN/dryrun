@@ -27,7 +27,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
-  const [turnLimit, setTurnLimit] = useState(15)
+  const [turnLimit, setTurnLimit] = useState(parseInt(defaults.turnLimit) || 15)
   const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
   const [launching, setLaunching] = useState(false)
   const [driveOpen, setDriveOpen]       = useState(false)
@@ -388,7 +388,7 @@ const canContinue = () => {
                         <div className="file-size">{proposalText.length} characters</div>
                       </div>
                       <button
-                        onClick={() => { setUploaded(false); setProposalText(''); setProposalName('') }}
+                        onClick={() => { setUploaded(false); setProposalText('') }}
                         style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                       >
                         <X size={16} />

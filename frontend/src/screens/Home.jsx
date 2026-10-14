@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X, Trash2 } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots, loadDismissedSpots, dismissWeakSpot, loadCalEvents, saveCalEvents } from '../utils/storage.js'
+import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots, loadDismissedSpots, dismissWeakSpot, loadCalEvents, saveCalEvents, deleteCalEvent, loadProfile } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
 
 const SESSION_PAGE_SIZE = 3
@@ -101,9 +101,11 @@ function AddMeetingForm({ onSave, onCancel }) {
 export default function Home({ navigate }) {
   const stored      = loadSessions()
   const allSessions = stored.map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
+  const profile     = loadProfile()
 
   const [calEvents, setCalEvents]           = useState(() => loadCalEvents())
   const [calLoading, setCalLoading]         = useState(false)
+  const [calError, setCalError]             = useState(false)
   const [localMeetings, setLocalMeetings]   = useState(loadLocalMeetings)
   const [showAddMeeting, setShowAddMeeting] = useState(false)
   const [hoveredMeeting, setHoveredMeeting] = useState(null)
@@ -111,25 +113,29 @@ export default function Home({ navigate }) {
   const [sessionPage, setSessionPage]       = useState(0)
   const [dismissedSpots, setDismissedSpots] = useState(() => loadDismissedSpots())
   const [spotsExpanded, setSpotsExpanded]   = useState(false)
+  const [showDismissed, setShowDismissed]   = useState(false)
 
   const totalPages   = Math.ceil(allSessions.length / SESSION_PAGE_SIZE)
   const pageItems    = allSessions.slice(sessionPage * SESSION_PAGE_SIZE, (sessionPage + 1) * SESSION_PAGE_SIZE)
   const hasPrev      = sessionPage > 0
   const hasNext      = sessionPage < totalPages - 1
 
-  const allSpots     = computeWeakSpots().filter(w => !dismissedSpots.has(w.text))
-  const visibleSpots = spotsExpanded ? allSpots : allSpots.slice(0, 3)
-  const hasMoreSpots = allSpots.length > 3
+  const allComputedSpots = computeWeakSpots()
+  const allSpots         = showDismissed ? allComputedSpots : allComputedSpots.filter(w => !dismissedSpots.has(w.text))
+  const dismissedCount   = allComputedSpots.filter(w => dismissedSpots.has(w.text)).length
+  const visibleSpots     = spotsExpanded ? allSpots : allSpots.slice(0, 3)
+  const hasMoreSpots     = allSpots.length > 3
 
   const connectCalendar = async () => {
     setCalLoading(true)
+    setCalError(false)
     try {
       const events = await fetchCalendarEvents()
       saveCalEvents(events)
       setCalEvents(events)
     } catch (err) {
       console.error('[Calendar] failed:', err)
-      setCalEvents([])
+      setCalError(true)
     } finally {
       setCalLoading(false)
     }
@@ -146,6 +152,12 @@ export default function Home({ navigate }) {
     e.stopPropagation()
     deleteLocalMeeting(id)
     setLocalMeetings(loadLocalMeetings())
+  }
+
+  const handleDeleteCalEvent = (e, name) => {
+    e.stopPropagation()
+    deleteCalEvent(name)
+    setCalEvents(loadCalEvents())
   }
 
   const handleDismissSpot = (text) => {
@@ -180,8 +192,11 @@ export default function Home({ navigate }) {
         <motion.div variants={item} style={{ marginBottom: 44 }}>
           <div style={{ width: 24, height: 3, background: 'var(--app-accent)', borderRadius: 2, marginBottom: 18 }} />
           <div className="home-greeting">
-            {getGreeting()} Sun Jin.<br />
+            {getGreeting()} {profile.name}.<br />
             <em>Ready to rehearse?</em>
+          </div>
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: 8, maxWidth: 420, lineHeight: 1.55 }}>
+            Upload a proposal, face a simulated panel and get a coaching report before the real meeting.
           </div>
           <button className="home-hero-btn" onClick={() => navigate('new')} style={{ marginTop: 20 }}>
             Start a new rehearsal <ArrowRight size={15} />
@@ -202,14 +217,17 @@ export default function Home({ navigate }) {
                     disabled={calLoading}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 5,
-                      fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer',
+                      fontSize: '0.75rem', cursor: 'pointer',
                       background: 'none', border: 'none', fontFamily: 'var(--font-ui)',
+                      color: calError ? '#DC2626' : 'var(--text-muted)',
                       opacity: calLoading ? 0.6 : 1,
                     }}
                   >
                     {calLoading
                       ? <><Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> Connecting...</>
-                      : <><Calendar size={11} /> Sync calendar</>
+                      : calError
+                        ? <><X size={11} /> Sync failed. Retry?</>
+                        : <><Calendar size={11} /> Sync calendar</>
                     }
                   </button>
                 )}
@@ -299,18 +317,14 @@ export default function Home({ navigate }) {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', paddingRight: 12, flexShrink: 0 }}>
-                        {m.local ? (
-                          <button
-                            onClick={e => handleDeleteMeeting(e, m.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', opacity: 0.5 }}
-                            onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
-                            onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        ) : (
-                          <ChevronRight size={13} style={{ color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)', transition: 'color 0.15s ease' }} />
-                        )}
+                        <button
+                          onClick={e => m.local ? handleDeleteMeeting(e, m.id) : handleDeleteCalEvent(e, m.name)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', opacity: 0.5 }}
+                          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
+                          onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     </div>
                   )
@@ -444,14 +458,24 @@ export default function Home({ navigate }) {
           <motion.div variants={item} style={{ gridColumn: '1 / -1' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Recurring weak spots</div>
-              {hasMoreSpots && (
-                <button
-                  onClick={() => setSpotsExpanded(e => !e)}
-                  style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
-                >
-                  {spotsExpanded ? 'Show less' : `Show all ${allSpots.length}`}
-                </button>
-              )}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                {dismissedCount > 0 && (
+                  <button
+                    onClick={() => setShowDismissed(s => !s)}
+                    style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
+                  >
+                    {showDismissed ? 'Hide dismissed' : `Show dismissed (${dismissedCount})`}
+                  </button>
+                )}
+                {hasMoreSpots && (
+                  <button
+                    onClick={() => setSpotsExpanded(e => !e)}
+                    style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
+                  >
+                    {spotsExpanded ? 'Show less' : `Show all ${allSpots.length}`}
+                  </button>
+                )}
+              </div>
             </div>
             {allSpots.length === 0 ? (
               <div style={{

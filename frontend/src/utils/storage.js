@@ -11,7 +11,15 @@ export function loadSessions() {
 }
 
 export function saveSessions(sessions) {
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+  try {
+    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions))
+  } catch (e) {
+    // QuotaExceededError: drop oldest session and retry once
+    try {
+      const trimmed = sessions.slice(0, sessions.length - 1)
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(trimmed))
+    } catch { /* storage unavailable, skip silently */ }
+  }
 }
 
 export function saveSession(sessionSummary) {
@@ -164,6 +172,16 @@ export function loadCalEvents() {
 
 export function saveCalEvents(events) {
   localStorage.setItem(CAL_EVENTS_KEY, JSON.stringify(events))
+}
+
+export function clearCalEvents() {
+  localStorage.removeItem(CAL_EVENTS_KEY)
+}
+
+export function deleteCalEvent(name) {
+  const events = loadCalEvents()
+  if (!Array.isArray(events)) return
+  saveCalEvents(events.filter(e => e.name !== name))
 }
 
 export function loadDismissedSpots() {

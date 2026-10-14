@@ -38,6 +38,12 @@ export async function signIn() {
 
 export function isSignedIn() { return Boolean(_token) }
 
+export function signOut() {
+  if (_token) window.google?.accounts?.oauth2?.revoke(_token, () => {})
+  _token = null
+  _client = null
+}
+
 async function tok() {
   if (_token) return _token
   return signIn()
