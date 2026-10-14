@@ -60,7 +60,8 @@ class TestAllDefs:
         assert CUSTOM_PERSONA_ID in defs
         assert defs[CUSTOM_PERSONA_ID]['name'] == 'Dana'
 
-    def test_custom_does_not_overwrite_builtins(self):
+    def test_custom_defs_override_builtins(self):
+        # custom_defs with a key matching a built-in takes precedence
         defs = core.all_defs({'finance': {'name': 'Override'}})
         assert defs['finance']['name'] == 'Override'
 
@@ -68,6 +69,15 @@ class TestAllDefs:
         defs = core.all_defs(None)
         assert 'finance' in defs
         assert len(defs) == len(core.PERSONA_DEFS)
+
+    def test_empty_dict_custom_defs_leaves_builtins_unchanged(self):
+        defs = core.all_defs({})
+        assert defs == core.PERSONA_DEFS
+
+    def test_custom_def_added_alongside_builtins(self):
+        defs = core.all_defs(CUSTOM_DEFS)
+        assert 'finance' in defs
+        assert CUSTOM_PERSONA_ID in defs
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +145,10 @@ class TestGetInitialConditions:
         assert 'f1' in conds
         assert 'ct1' in conds
 
+    def test_all_values_are_false_on_init(self):
+        conds = core.get_initial_conditions(ALL_IDS)
+        assert not any(conds.values())
+
 
 # ---------------------------------------------------------------------------
 # build_transcript_str
@@ -172,6 +186,23 @@ class TestBuildTranscriptStr:
         result = core.build_transcript_str(msgs, custom_defs=CUSTOM_DEFS)
         assert 'Dana' in result
         assert 'CTO' in result
+
+    def test_message_with_empty_text(self):
+        msgs = [{'speaker': 'presenter', 'text': ''}]
+        result = core.build_transcript_str(msgs)
+        assert 'Presenter:' in result
+
+    def test_alternating_speakers_preserved_in_order(self):
+        msgs = [
+            {'speaker': 'finance', 'text': 'Q1'},
+            {'speaker': 'presenter', 'text': 'A1'},
+            {'speaker': 'legal', 'text': 'Q2'},
+        ]
+        result = core.build_transcript_str(msgs)
+        lines = result.split('\n')
+        assert 'Morgan' in lines[0]
+        assert 'Presenter' in lines[1]
+        assert 'Alex' in lines[2]
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +331,19 @@ class TestGenerateOpenings:
         )
         assert len(result) == 1
         assert result[0]['speaker'] == CUSTOM_PERSONA_ID
+
+    @patch('agents.core.get_client')
+    def test_empty_proposal_text_does_not_raise(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._openings_payload(['finance']))
+        result = core.generate_openings('', ['finance'], {})
+        assert isinstance(result, list)
+
+    @patch('agents.core.get_client')
+    def test_id_field_is_sequential_starting_at_1(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._openings_payload())
+        result = core.generate_openings(SAMPLE_PROPOSAL, ['finance', 'legal', 'ops'], {})
+        ids = [entry['id'] for entry in result]
+        assert ids == [1, 2, 3]
 
 
 # ---------------------------------------------------------------------------
@@ -448,6 +492,21 @@ class TestGenerateReply:
         assert result['speaker'] == CUSTOM_PERSONA_ID
         assert 'ct1' in result['conditions_met']
 
+    @patch('agents.core.get_client')
+    def test_conditions_met_from_foreign_persona_ignored(self, mock_get_client):
+        # Model returns a condition ID that belongs to a persona not in the session
+        payload = json.dumps({
+            'speaker_id': 'finance',
+            'response': 'Cost concern.',
+            'conditions_met': ['l1', 'f1'],  # l1 is legal, not in persona_ids
+            'source': None,
+        })
+        mock_get_client.return_value = make_mock_client(payload)
+        conds = {'f1': False, 'f2': False}
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
+        assert 'l1' not in result['conditions_met']
+        assert 'f1' in result['conditions_met']
+
 
 # ---------------------------------------------------------------------------
 # generate_report
@@ -564,6 +623,39 @@ class TestGenerateReport:
         contents = mock_client.models.generate_content.call_args.kwargs['contents']
         assert 'ct1' in contents or 'Architecture reviewed' in contents
 
+    @patch('agents.core.get_client')
+    def test_turn_count_constrains_moments_in_system_prompt(self, mock_get_client):
+        # SAMPLE_TRANSCRIPT has exactly 2 presenter turns
+        mock_client = make_mock_client(self._report_payload())
+        mock_get_client.return_value = mock_client
+        core.generate_report(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        si = config.system_instruction
+        # Must mention the turn count so the model cannot hallucinate extra turns
+        assert '2' in si
+        # Must NOT allow referencing Turn 3 (which doesn't exist)
+        assert 'Turn 3' not in si or 'Do not' in si
+
+    @patch('agents.core.get_client')
+    def test_single_turn_transcript_caps_moments_at_1(self, mock_get_client):
+        mock_client = make_mock_client(self._report_payload())
+        mock_get_client.return_value = mock_client
+        single_turn = [
+            {'speaker': 'finance', 'text': 'Question.'},
+            {'speaker': 'presenter', 'text': 'Answer.'},
+        ]
+        core.generate_report(SAMPLE_PROPOSAL, ['finance'], single_turn, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        si = config.system_instruction
+        # With 1 presenter turn, min and max moments are both 1
+        assert '1 to 1' in si or ('Turn 1' in si and 'Turn 2' not in si)
+
+    @patch('agents.core.get_client')
+    def test_empty_transcript_does_not_raise(self, mock_get_client):
+        mock_get_client.return_value = make_mock_client(self._report_payload())
+        result = core.generate_report(SAMPLE_PROPOSAL, ['finance'], [], {})
+        assert 'weak_points' in result
+
 
 # ---------------------------------------------------------------------------
 # _answer_quality
@@ -579,8 +671,13 @@ class TestAnswerQuality:
     def test_short_answer_under_15_words_is_poor(self):
         assert core._answer_quality('We will handle it.') == 'poor'
 
+    def test_exactly_14_words_is_poor(self):
+        # Boundary: 14 words is still under the 15-word threshold
+        text = 'The analytics lead will own the transition and manage the parallel migration run today.'
+        assert len(text.split()) == 14
+        assert core._answer_quality(text) == 'poor'
+
     def test_exactly_15_words_no_vagueness_no_number_is_medium(self):
-        # 15 words: just clears the < 15 short-answer gate
         text = 'The analytics lead owns the transition and will run the parallel migration process until cutover.'
         assert core._answer_quality(text) == 'medium'
 
@@ -594,7 +691,6 @@ class TestAnswerQuality:
         assert core._answer_quality(text) == 'poor'
 
     def test_one_vague_phrase_over_30_words_no_number_is_medium(self):
-        # 31 words, 1 vague phrase ('i think') but >= 30 words so only 'poor' if vague_hits >= 2
         words = ('The analytics lead owns the transition and will manage the parallel run. '
                  'We have a detailed handover plan and the team is fully prepared. '
                  'I think the cutover will complete within the agreed window.')
@@ -616,6 +712,11 @@ class TestAnswerQuality:
     def test_vague_phrase_matching_is_case_insensitive(self):
         text = 'I THINK this will work and the team will PROBABLY deliver on time for the review.'
         assert core._answer_quality(text) == 'poor'
+
+    def test_answer_with_percentage_digit_is_good(self):
+        text = ('Our retention rate is 94% based on the last three quarters. '
+                'The model projects breakeven within eighteen months using conservative assumptions.')
+        assert core._answer_quality(text) == 'good'
 
 
 # ---------------------------------------------------------------------------
@@ -675,6 +776,17 @@ class TestGenerateReplyFollowUp:
         assert 'follow_up' not in result
 
     @patch('agents.core.get_client')
+    def test_follow_up_excluded_when_response_key_missing(self, mock_get_client):
+        payload = json.dumps({
+            'speaker_id': 'finance', 'response': 'Finance.', 'conditions_met': [], 'source': None,
+            'follow_up': {'speaker_id': 'legal', 'conditions_met': [], 'source': None},
+            # 'response' key intentionally omitted from follow_up
+        })
+        mock_get_client.return_value = make_mock_client(payload)
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        assert 'follow_up' not in result
+
+    @patch('agents.core.get_client')
     def test_follow_up_conditions_met_filters_already_met(self, mock_get_client):
         payload = json.dumps({
             'speaker_id': 'finance', 'response': 'Finance.', 'conditions_met': [], 'source': None,
@@ -721,6 +833,15 @@ class TestGenerateReplyFollowUp:
         mock_client = make_mock_client(payload)
         mock_get_client.return_value = mock_client
         core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {'turns_remaining': 1})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        assert 'URGENT' in config.system_instruction
+
+    @patch('agents.core.get_client')
+    def test_turns_remaining_0_triggers_urgency(self, mock_get_client):
+        payload = json.dumps({'speaker_id': 'finance', 'response': 'Cost.', 'conditions_met': [], 'source': None})
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {'turns_remaining': 0})
         config = mock_client.models.generate_content.call_args.kwargs['config']
         assert 'URGENT' in config.system_instruction
 
@@ -790,3 +911,13 @@ class TestFactCheckProposal:
         config = mock_client.models.generate_content.call_args.kwargs['config']
         assert config.tools is not None
         assert len(config.tools) > 0
+
+    @patch('agents.core.get_client')
+    def test_returns_empty_string_when_response_text_is_none(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = None
+        mock_client.models.generate_content.return_value = mock_response
+        mock_get_client.return_value = mock_client
+        result = core.fact_check_proposal(SAMPLE_PROPOSAL)
+        assert result == ''
