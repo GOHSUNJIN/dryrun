@@ -22,6 +22,7 @@ const DEFAULT_SESSION = {
   factCheckNotes: '',
   reportData: null,
   startTime: null,
+  duration: '',
 }
 
 export default function App() {
@@ -29,7 +30,21 @@ export default function App() {
   const [navPayload, setNavPayload] = useState({})
   const [session, setSession]     = useState(DEFAULT_SESSION)
 
-  const navigate = (s, payload = {}) => { setScreen(s); setNavPayload(payload) }
+  const navigate = (s, payload = {}) => {
+    setScreen(s)
+    setNavPayload(payload)
+    if (payload.savedSession) {
+      const sv = payload.savedSession
+      setSession({
+        ...DEFAULT_SESSION,
+        proposalName: sv.proposal || '',
+        personaIds:   sv.personaIds || [],
+        conditions:   sv.conditions || {},
+        reportData:   sv.reportData || null,
+        duration:     sv.duration || '',
+      })
+    }
+  }
   const showSidebar = SCREENS_WITH_SIDEBAR.includes(screen)
 
   const updateSession = (updates) =>

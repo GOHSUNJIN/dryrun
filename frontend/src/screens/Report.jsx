@@ -48,9 +48,10 @@ export default function Report({ navigate, session }) {
 
   // Snapshot both values once on mount so they don't drift if the page stays open
   const [duration] = useState(() =>
-    session?.startTime
+    session?.duration ||
+    (session?.startTime
       ? `${Math.floor((Date.now() - session.startTime) / 60000)} min`
-      : '18 min'
+      : '')
   )
   const [reportDate] = useState(() =>
     new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

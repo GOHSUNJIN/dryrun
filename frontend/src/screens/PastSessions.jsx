@@ -169,7 +169,7 @@ export default function PastSessions({ navigate }) {
                 const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
                 const isGood = pct >= 60
                 return (
-                  <div key={s.id || si} className="session-row" onClick={() => navigate('report')}>
+                  <div key={s.id || si} className="session-row" onClick={() => navigate('report', { savedSession: s })}>
                     <div>
                       <div className="session-row-name">Rehearsal {group.sessions.length - si}</div>
                       <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
@@ -210,14 +210,14 @@ export default function PastSessions({ navigate }) {
                     </div>
 
                     <div className="session-row-actions">
-                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('report') }}>
+                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('report', { savedSession: s }) }}>
                         <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
                         Report
                       </button>
-                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('debrief') }}>
+                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
                         Debrief
                       </button>
-                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('room') }}>
+                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal }) }}>
                         <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
                         Again
                       </button>

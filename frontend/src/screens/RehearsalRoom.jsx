@@ -193,6 +193,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const ttsQueueRef      = useRef([])
   const ttsBusyRef       = useRef(false)
   const openingsFiredRef = useRef(false)
+  const startTimeRef     = useRef(Date.now())
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
@@ -562,11 +563,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       if (!res.ok) throw new Error(`API error ${res.status}`)
       const reportData = await res.json()
 
-      const condMet   = Object.values(localConditions).filter(Boolean).length
-      const condTotal = Object.keys(localConditions).length
-      const duration  = session.startTime
-        ? `${Math.floor((Date.now() - session.startTime) / 60000)} min`
-        : ''
+      const condMet         = Object.values(localConditions).filter(Boolean).length
+      const condTotal       = Object.keys(localConditions).length
+      const sessionDuration = `${Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000))} min`
 
       saveSession({
         id: Date.now(),
@@ -575,11 +574,13 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         mode: 'Type',
         condMet,
         condTotal,
-        duration,
+        duration: sessionDuration,
         personaIds: session.personaIds || [],
+        conditions: localConditions,
+        reportData,
       })
 
-      updateSession({ reportData, conditions: localConditions })
+      updateSession({ reportData, conditions: localConditions, duration: sessionDuration })
       navigate('report')
     } catch (err) {
       console.error('[RehearsalRoom] session/end failed:', err)
@@ -720,7 +721,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           borderRadius: 8, color: '#FCA5A5', fontSize: '0.8125rem',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         }}>
-          <span>AI unavailable. Using scripted responses. Check your API key in Vercel settings.</span>
+          <span>AI unavailable. Using scripted responses. Check Firebase logs for details.</span>
           <button onClick={() => setApiError(false)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0, fontSize: '1rem', lineHeight: 1 }}>×</button>
         </div>
         </div>
