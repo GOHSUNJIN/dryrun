@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X, Trash2 } from 'lucide-react'
+import { ArrowRight, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X, Trash2, RefreshCw } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots, loadDismissedSpots, dismissWeakSpot, loadCalEvents, saveCalEvents, deleteCalEvent, loadProfile } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
@@ -148,14 +148,16 @@ export default function Home({ navigate }) {
     setShowAddMeeting(false)
   }
 
-  const handleDeleteMeeting = (e, id) => {
+  const handleDeleteMeeting = (e, id, name) => {
     e.stopPropagation()
+    if (!window.confirm(`Remove "${name}"?`)) return
     deleteLocalMeeting(id)
     setLocalMeetings(loadLocalMeetings())
   }
 
   const handleDeleteCalEvent = (e, name) => {
     e.stopPropagation()
+    if (!window.confirm(`Remove "${name}" from your calendar list?`)) return
     deleteCalEvent(name)
     setCalEvents(loadCalEvents())
   }
@@ -211,26 +213,27 @@ export default function Home({ navigate }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Upcoming meetings</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {calEvents === null && (
-                  <button
-                    onClick={connectCalendar}
-                    disabled={calLoading}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      fontSize: '0.75rem', cursor: 'pointer',
-                      background: 'none', border: 'none', fontFamily: 'var(--font-ui)',
-                      color: calError ? '#DC2626' : 'var(--text-muted)',
-                      opacity: calLoading ? 0.6 : 1,
-                    }}
-                  >
-                    {calLoading
-                      ? <><Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> Connecting...</>
-                      : calError
-                        ? <><X size={11} /> Sync failed. Retry?</>
+                <button
+                  onClick={connectCalendar}
+                  disabled={calLoading}
+                  title={calEvents !== null ? 'Resync from Google Calendar' : 'Sync Google Calendar'}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.75rem', cursor: calLoading ? 'default' : 'pointer',
+                    background: 'none', border: 'none', fontFamily: 'var(--font-ui)',
+                    color: calError ? '#DC2626' : 'var(--text-muted)',
+                    opacity: calLoading ? 0.6 : 1,
+                  }}
+                >
+                  {calLoading
+                    ? <><Loader size={11} style={{ animation: 'spin 1s linear infinite' }} /> Syncing...</>
+                    : calError
+                      ? <><X size={11} /> Sync failed. Retry?</>
+                      : calEvents !== null
+                        ? <RefreshCw size={11} />
                         : <><Calendar size={11} /> Sync calendar</>
-                    }
-                  </button>
-                )}
+                  }
+                </button>
                 <button
                   onClick={() => setShowAddMeeting(true)}
                   style={{
@@ -318,7 +321,7 @@ export default function Home({ navigate }) {
 
                       <div style={{ display: 'flex', alignItems: 'center', paddingRight: 12, flexShrink: 0 }}>
                         <button
-                          onClick={e => m.local ? handleDeleteMeeting(e, m.id) : handleDeleteCalEvent(e, m.name)}
+                          onClick={e => m.local ? handleDeleteMeeting(e, m.id, m.name) : handleDeleteCalEvent(e, m.name)}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', opacity: 0.5 }}
                           onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
                           onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
