@@ -889,16 +889,16 @@ class TestFactCheckProposal:
         assert result == ''
 
     @patch('agents.core.get_client')
-    def test_proposal_truncated_to_800_chars(self, mock_get_client):
+    def test_proposal_truncated_to_4000_chars(self, mock_get_client):
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.text = 'findings'
         mock_client.models.generate_content.return_value = mock_response
         mock_get_client.return_value = mock_client
-        long_proposal = 'x' * 2000
+        long_proposal = 'x' * 6000
         core.fact_check_proposal(long_proposal)
         contents = mock_client.models.generate_content.call_args.kwargs['contents']
-        assert len(contents) < 1400
+        assert len(contents) < 4600  # prompt prefix ~400 chars + 4000 char proposal cap
 
     @patch('agents.core.get_client')
     def test_google_search_tool_configured(self, mock_get_client):

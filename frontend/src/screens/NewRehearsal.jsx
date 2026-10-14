@@ -112,7 +112,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
   useEffect(() => {
     if (!isSignedIn()) return
-    listDriveDocs().then(docs => setRecentDocs(docs.slice(0, 5))).catch(() => {})
+    listDriveDocs().then(docs => setRecentDocs(docs.slice(0, 5))).catch(err => console.warn('[Drive] recent docs failed:', err.message))
   }, [])
 
   const togglePersona = (id) => {
@@ -306,6 +306,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setUploaded(true)
     } catch (err) {
       console.error('[Drive] failed to fetch doc:', err)
+      setDriveError('Failed to load document. Try again.')
+      setDriveOpen(true)
     } finally {
       setDriveLoading(false)
     }

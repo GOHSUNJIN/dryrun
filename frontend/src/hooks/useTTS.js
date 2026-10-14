@@ -28,7 +28,13 @@ export function useTTS(speechOnRef) {
     utter.onend   = () => { ttsBusyRef.current = false; flushTTS() }
     utter.onerror = () => { ttsBusyRef.current = false; flushTTS() }
     ttsBusyRef.current = true
-    window.speechSynthesis.speak(utter)
+    try {
+      window.speechSynthesis.speak(utter)
+    } catch (err) {
+      console.warn('[TTS] speak() threw:', err.message)
+      ttsBusyRef.current = false
+      flushTTS()
+    }
   }, [speechOnRef])
 
   const enqueueSpeak = useCallback((text, speakerId) => {

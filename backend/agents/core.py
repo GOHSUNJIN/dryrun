@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from google import genai
 from google.genai import types
@@ -87,7 +88,8 @@ def fact_check_proposal(proposal_text: str) -> str:
             ),
         )
         return response.text or ''
-    except Exception:
+    except Exception as exc:
+        logging.warning('[fact_check_proposal] failed: %s', exc)
         return ''
 
 
@@ -183,7 +185,8 @@ Return ONLY valid JSON with no markdown fences:
 
     try:
         data = json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError, TypeError):
+    except (json.JSONDecodeError, AttributeError, TypeError) as exc:
+        logging.warning('[generate_openings] JSON parse failed: %s | raw: %.120s', exc, response.text or '')
         return []
 
     openings = []
@@ -359,7 +362,8 @@ Set follow_up to null (not an object) when no second voice is needed."""
 
     try:
         data = json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError, TypeError):
+    except (json.JSONDecodeError, AttributeError, TypeError) as exc:
+        logging.warning('[generate_reply] JSON parse failed: %s | raw: %.120s', exc, response.text or '')
         return {'speaker': persona_ids[0], 'text': '', 'conditions_met': []}
 
     speaker_id = data.get('speaker_id', persona_ids[0])
@@ -483,5 +487,6 @@ Rules:
 
     try:
         return json.loads(response.text)
-    except (json.JSONDecodeError, AttributeError, TypeError):
+    except (json.JSONDecodeError, AttributeError, TypeError) as exc:
+        logging.warning('[generate_report] JSON parse failed: %s | raw: %.120s', exc, response.text or '')
         return {'weak_points': [], 'moments': []}

@@ -85,10 +85,13 @@ export default function Report({ navigate, session }) {
       'WEAK POINTS',
       ...weakPoints.map(w => `${w.label}: ${w.issue}\nFix: ${w.fix}`),
     ]
-    navigator.clipboard.writeText(lines.join('\n')).catch(() => {})
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-    showToast('Report copied to clipboard')
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      showToast('Report copied to clipboard')
+    }).catch(() => {
+      showToast('Could not copy — check browser clipboard permissions', 'error')
+    })
   }
 
   return (

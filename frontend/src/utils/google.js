@@ -102,6 +102,7 @@ export async function listDriveItems(folderId = 'root') {
   const r = await gfetch(
     `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=folder,name&pageSize=50`
   )
+  if (!r.ok) throw new Error(`Drive API error ${r.status}`)
   const data = await r.json()
   return (data.files || [])
     .map(f => ({
@@ -119,6 +120,7 @@ export async function listDriveDocs() {
   const r = await gfetch(
     `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime+desc&pageSize=10&fields=files(id,name,modifiedTime)`
   )
+  if (!r.ok) throw new Error(`Drive API error ${r.status}`)
   const data = await r.json()
   return data.files || []
 }
@@ -138,6 +140,7 @@ export async function fetchCalendarEvents() {
   const r = await gfetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&timeMax=${encodeURIComponent(end)}&orderBy=startTime&singleEvents=true&maxResults=5`
   )
+  if (!r.ok) throw new Error(`Calendar API error ${r.status}`)
   const data = await r.json()
   return (data.items || []).map(e => {
     const start = e.start?.dateTime || e.start?.date
@@ -184,13 +187,14 @@ export async function exportToGoogleDoc(proposalName, weakPoints, personas, cond
     ]),
   ]
 
-  await fetch(`https://docs.googleapis.com/v1/documents/${doc.documentId}:batchUpdate`, {
+  const batchRes = await fetch(`https://docs.googleapis.com/v1/documents/${doc.documentId}:batchUpdate`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       requests: [{ insertText: { location: { index: 1 }, text: lines.join('\n') } }],
     }),
   })
+  if (!batchRes.ok) throw new Error(`Failed to write report content: ${batchRes.status}`)
 
   return `https://docs.google.com/document/d/${doc.documentId}/edit`
 }

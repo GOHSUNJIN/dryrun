@@ -371,7 +371,8 @@ Return ONLY valid JSON with no markdown fences:
   let data;
   try {
     data = JSON.parse(response.text);
-  } catch {
+  } catch (err) {
+    console.error('[generateReply] JSON parse failed:', err.message, '| raw:', response.text?.slice(0, 120))
     return { speaker: personaIds[0], text: '', conditions_met: [] };
   }
   let speakerId = data.speaker_id || personaIds[0];
@@ -446,7 +447,8 @@ Rules:
 
   try {
     return JSON.parse(response.text);
-  } catch {
+  } catch (err) {
+    console.error('[generateReport] JSON parse failed:', err.message, '| raw:', response.text?.slice(0, 120))
     return { weak_points: [], moments: [] };
   }
 }
