@@ -299,7 +299,7 @@ export default function PanelLibrary() {
       </div>
 
       {(() => {
-        const filtered = PERSONAS.filter(p => p.category === libCategory)
+        const filtered = PERSONAS.filter(p => p.category === libCategory || p.id === 'general')
         const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
         const pageItems = filtered.slice(libPage * PAGE_SIZE, (libPage + 1) * PAGE_SIZE)
         return (
