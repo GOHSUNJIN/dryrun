@@ -23,6 +23,11 @@ export function deleteSession(sessionId) {
   saveSessions(loadSessions().filter(s => s.id !== sessionId))
 }
 
+export function deleteSessions(ids) {
+  const idSet = new Set(ids)
+  saveSessions(loadSessions().filter(s => !idSet.has(s.id)))
+}
+
 export function deleteAllSessions() {
   localStorage.removeItem(SESSIONS_KEY)
 }

@@ -417,6 +417,10 @@ export default function Home({ navigate }) {
                       <Clock size={10} style={{ flexShrink: 0 }} />
                       {s.date} · {s.duration}
                     </div>
+                    <div style={{ fontSize: '0.6875rem', color: s.linkedMeeting ? 'var(--text-muted)' : 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3, opacity: s.linkedMeeting ? 1 : 0.6 }}>
+                      <Calendar size={9} style={{ flexShrink: 0 }} />
+                      {s.linkedMeeting || 'No meeting'}
+                    </div>
                   </div>
                   <span style={{
                     fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,

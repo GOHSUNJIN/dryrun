@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar } from 'lucide-react'
+import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, deleteSession, groupSessionsByProposal, renameProposal } from '../utils/storage.js'
+import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal } from '../utils/storage.js'
 
 function loadGroups() {
   return groupSessionsByProposal(loadSessions())
@@ -16,6 +16,7 @@ export default function PastSessions({ navigate }) {
   const [showAll, setShowAll]           = useState(false)
   const [editingProposal, setEditingProposal] = useState(null)
   const [editingName, setEditingName]   = useState('')
+  const [expandedSession, setExpandedSession] = useState(null)
 
   const filtered = groups.filter(g =>
     g.proposal.toLowerCase().includes(query.toLowerCase())
@@ -43,6 +44,14 @@ export default function PastSessions({ navigate }) {
     e.stopPropagation()
     setEditingProposal(proposal)
     setEditingName(proposal)
+  }
+
+  const handleDeleteGroup = (e, group) => {
+    e.stopPropagation()
+    const count = group.sessions.length
+    if (!window.confirm(`Delete all ${count} session${count !== 1 ? 's' : ''} in this group? This cannot be undone.`)) return
+    deleteSessions(group.sessions.map(s => s.id))
+    setGroups(loadGroups())
   }
 
   const commitRename = (oldName) => {
@@ -144,19 +153,34 @@ export default function PastSessions({ navigate }) {
                     </div>
                   )}
                   {!group.noMeeting && (
-                    <button
-                      onClick={e => startRename(e, group.proposal)}
-                      title="Rename"
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
-                        opacity: 0.6, transition: 'opacity 0.15s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                      onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
-                    >
-                      <Edit2 size={12} />
-                    </button>
+                    <>
+                      <button
+                        onClick={e => startRename(e, group.proposal)}
+                        title="Rename"
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
+                          opacity: 0.6, transition: 'opacity 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                        onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        onClick={e => handleDeleteGroup(e, group)}
+                        title="Delete all sessions in this group"
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
+                          opacity: 0.5, transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -178,67 +202,94 @@ export default function PastSessions({ navigate }) {
               {!collapsed.has(group.proposal) && group.sessions.map((s, si) => {
                 const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
                 const isGood = pct >= 60
+                const sessionKey = s.id || si
+                const isExpanded = expandedSession === sessionKey
                 return (
-                  <div key={s.id || si} className="session-row" onClick={() => navigate('report', { savedSession: s })}>
-                    <div>
-                      <div className="session-row-name">{s.proposal || group.proposal}</div>
-                      <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                        <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
+                  <div key={sessionKey}>
+                    <div className="session-row" onClick={() => navigate('report', { savedSession: s })}>
+                      <div>
+                        <div className="session-row-name">{s.proposal || group.proposal}</div>
+                        <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                          <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex' }}>
+                        {(s.personaIds?.length
+                          ? PERSONAS.filter(p => s.personaIds.includes(p.id))
+                          : PERSONAS
+                        ).map((p, j) => (
+                          <div
+                            key={p.id}
+                            style={{
+                              width: 24, height: 24, borderRadius: '50%',
+                              background: p.color,
+                              border: '2px solid var(--bg-surface)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '0.5625rem', fontWeight: 700, color: 'white',
+                              marginLeft: j > 0 ? -6 : 0,
+                            }}
+                          >{p.initial}</div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 80, height: 5, background: 'var(--bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%', width: `${pct}%`,
+                            background: isGood ? '#059669' : '#F59E0B',
+                            borderRadius: 3, transition: 'width 0.4s ease',
+                          }} />
+                        </div>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: isGood ? '#059669' : '#D97706', minWidth: 48 }}>
+                          {s.condMet}/{s.condTotal}
+                        </span>
+                      </div>
+
+                      <div className="session-row-actions">
+                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('report', { savedSession: s }) }}>
+                          <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
+                          Report
+                        </button>
+                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
+                          Debrief
+                        </button>
+                        {s.proposalText && (
+                          <button
+                            className="session-action-btn"
+                            onClick={e => { e.stopPropagation(); setExpandedSession(isExpanded ? null : sessionKey) }}
+                            style={isExpanded ? { color: 'var(--app-accent)', borderColor: 'rgba(180,83,9,0.25)' } : undefined}
+                          >
+                            <FileText size={12} style={{ display: 'inline', marginRight: 4 }} />
+                            {isExpanded ? 'Hide' : 'Proposal'}
+                          </button>
+                        )}
+                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal }) }}>
+                          <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
+                          Again
+                        </button>
+                        <button
+                          className="session-action-btn"
+                          style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.2)' }}
+                          onClick={e => { e.stopPropagation(); handleDelete(s.id) }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     </div>
-
-                    <div style={{ display: 'flex' }}>
-                      {(s.personaIds?.length
-                        ? PERSONAS.filter(p => s.personaIds.includes(p.id))
-                        : PERSONAS
-                      ).map((p, j) => (
-                        <div
-                          key={p.id}
-                          style={{
-                            width: 24, height: 24, borderRadius: '50%',
-                            background: p.color,
-                            border: '2px solid var(--bg-surface)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.5625rem', fontWeight: 700, color: 'white',
-                            marginLeft: j > 0 ? -6 : 0,
-                          }}
-                        >{p.initial}</div>
-                      ))}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 80, height: 5, background: 'var(--bg-hover)', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%', width: `${pct}%`,
-                          background: isGood ? '#059669' : '#F59E0B',
-                          borderRadius: 3, transition: 'width 0.4s ease',
-                        }} />
+                    {isExpanded && s.proposalText && (
+                      <div style={{
+                        margin: '0 0 8px', padding: '16px 20px',
+                        background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                        borderTop: 'none', borderRadius: '0 0 10px 10px',
+                        whiteSpace: 'pre-wrap', fontSize: '0.8125rem', lineHeight: 1.7,
+                        color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)',
+                        maxHeight: 320, overflowY: 'auto',
+                        userSelect: 'text',
+                      }}>
+                        {s.proposalText}
                       </div>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: isGood ? '#059669' : '#D97706', minWidth: 48 }}>
-                        {s.condMet}/{s.condTotal}
-                      </span>
-                    </div>
-
-                    <div className="session-row-actions">
-                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('report', { savedSession: s }) }}>
-                        <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
-                        Report
-                      </button>
-                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
-                        Debrief
-                      </button>
-                      <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal }) }}>
-                        <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
-                        Again
-                      </button>
-                      <button
-                        className="session-action-btn"
-                        style={{ color: '#DC2626', borderColor: 'rgba(220,38,38,0.2)' }}
-                        onClick={e => { e.stopPropagation(); handleDelete(s.id) }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
+                    )}
                   </div>
                 )
               })}

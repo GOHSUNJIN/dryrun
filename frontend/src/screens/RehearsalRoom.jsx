@@ -487,12 +487,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const handleEndSession = async () => {
     if (!hasRealSession) { navigate('report'); return }
+    if (generatingReport) return
 
     const condMet         = Object.values(localConditions).filter(Boolean).length
     const condTotal       = Object.keys(localConditions).length
     const sessionDuration = `${Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000))} min`
 
     if (session.demoMode) {
+      setGeneratingReport(true)
       const reportData = { demo: true, weak_points: [], moments: [] }
       saveSession({
         id: Date.now(),
