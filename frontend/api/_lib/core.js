@@ -46,6 +46,52 @@ const PERSONA_DEFS = {
       { id: 'fc2', text: '30-hour claim substantiated' },
     ],
   },
+
+  // Event planning panel
+  event_director: {
+    name: 'Riya',
+    role: 'Event Director',
+    speaking_style: 'Strategic and measured. Challenges on purpose and outcomes. Wants to know the event\'s value to the organisation and who is accountable if things go wrong.',
+    cares: 'Event purpose, expected outcomes for the organisation, success criteria and the approval and escalation chain',
+    conditions: [
+      { id: 'ed1', text: 'Event purpose and expected outcomes clearly stated' },
+      { id: 'ed2', text: 'Success criteria defined' },
+      { id: 'ed3', text: 'Approval chain and accountability identified' },
+    ],
+  },
+  event_finance: {
+    name: 'Darren',
+    role: 'Finance Approver',
+    speaking_style: 'Precise and budget-focused. Asks for itemised breakdowns, flags vague cost ranges and challenges on contingency planning.',
+    cares: 'Itemised budget with per-pax breakdown, contingency for headcount or cost overruns and vendor payment terms',
+    conditions: [
+      { id: 'ef1', text: 'Itemised budget with per-pax breakdown provided' },
+      { id: 'ef2', text: 'Contingency plan for cost overruns addressed' },
+      { id: 'ef3', text: 'Vendor selection criteria and payment timeline explained' },
+    ],
+  },
+  event_safety: {
+    name: 'Kai',
+    role: 'Safety Officer',
+    speaking_style: 'Methodical and risk-focused. Asks about specific procedures and worst-case scenarios. Does not accept vague intentions as an answer.',
+    cares: 'Venue safety compliance and certified capacity, emergency response and first aid arrangements and dietary restriction management',
+    conditions: [
+      { id: 'es1', text: 'Venue capacity and safety compliance confirmed' },
+      { id: 'es2', text: 'Emergency response and first aid plan in place' },
+      { id: 'es3', text: 'Dietary restrictions and allergy management addressed' },
+    ],
+  },
+  event_programme: {
+    name: 'Cleo',
+    role: 'Programme Lead',
+    speaking_style: 'Detail-oriented and practical. Challenges on execution gaps, timing conflicts and what happens when something goes wrong on the day.',
+    cares: 'Detailed run-of-show with timings, confirmed dry run schedule and backup plans for performer or speaker no-shows',
+    conditions: [
+      { id: 'ep1', text: 'Full programme rundown with timings provided' },
+      { id: 'ep2', text: 'Dry run dates confirmed' },
+      { id: 'ep3', text: 'Backup plan for performer or speaker no-shows addressed' },
+    ],
+  },
 };
 
 function allDefs(customDefs = {}) {

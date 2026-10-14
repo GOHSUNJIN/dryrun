@@ -163,12 +163,21 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       }
 
       const data = await res.json()
-      if (data.demo) console.error('[NewRehearsal] AI unavailable, demo mode. Reason:', data.demo_reason || 'unknown')
+      console.log('[session/start] response:', {
+        demo:             data.demo || false,
+        demo_reason:      data.demo_reason || null,
+        openings_count:   (data.messages || []).length,
+        conditions_count: Object.keys(data.conditions || {}).length,
+        has_fact_check:   Boolean(data.fact_check),
+        openings:         (data.messages || []).map(m => ({ speaker: m.speaker, text: m.text?.slice(0, 60) + '...' })),
+      })
+      if (data.demo) console.warn('[session/start] AI unavailable, running in demo mode. Reason:', data.demo_reason || 'unknown')
+      if (!data.messages?.length) console.warn('[session/start] No opening messages returned — room will fall back to demo transcript for matching persona IDs')
       resetSession()
       updateSession({ ...sessionBase, transcript: data.messages || [], conditions: data.conditions || {}, factCheckNotes: data.fact_check || '', demoMode: !!data.demo })
       navigate('room')
     } catch (err) {
-      console.error('[NewRehearsal] session/start failed:', err)
+      console.error('[session/start] Request failed — entering demo mode:', err.message)
       resetSession()
       updateSession({ ...sessionBase, transcript: [], conditions: {}, factCheckNotes: '', demoMode: true })
       navigate('room')
