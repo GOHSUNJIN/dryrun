@@ -24,6 +24,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [proposalText, setProposalText] = useState(navPayload.proposalText || '')
   const [uploaded, setUploaded]   = useState(Boolean(navPayload.proposalText))
   const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
+  const [documentName, setDocumentName] = useState('')
   const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(() => loadLastPanel() || ['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
@@ -49,9 +50,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   }
 
   const readFile = (file) => {
-    if (!proposalName.trim()) {
-      setProposalName(file.name.replace(/\.[^/.]+$/, ''))
-    }
+    setDocumentName(file.name.replace(/\.[^/.]+$/, ''))
     const reader = new FileReader()
     reader.onload = (e) => {
       setProposalText(e.target.result)
@@ -112,7 +111,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const selectDriveFile = async (file) => {
     setDriveOpen(false)
     setDriveLoading(true)
-    if (!proposalName.trim()) setProposalName(file.name)
+    setDocumentName(file.name)
     try {
       const text = await fetchDocText(file.id)
       setProposalText(text)
@@ -135,6 +134,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setDetectingPanel(true)
       try {
         const allIds = [...PERSONAS.map(p => p.id), ...customPersonas.map(p => p.id)]
+        console.log('[detect-panel] sending request with available_ids:', allIds)
         const res = await fetch('/api/session/detect-panel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -142,7 +142,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         })
         if (res.ok) {
           const data = await res.json()
+          console.log('[detect-panel] suggested personas:', data.persona_ids)
           if (data.persona_ids?.length) setSelected(data.persona_ids)
+        } else {
+          console.warn('[detect-panel] API returned', res.status, '— keeping current selection')
         }
       } catch (err) {
         console.warn('[detect-panel] failed, keeping current selection:', err.message)
@@ -464,11 +467,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                     <div className="uploaded-file-card">
                       <div className="file-icon"><FileText size={18} /></div>
                       <div>
-                        <div className="file-name">{proposalName || 'Your rehearsal name'}</div>
+                        <div className="file-name">{documentName || 'Uploaded document'}</div>
                         <div className="file-size">{proposalText.trim().split(/\s+/).filter(Boolean).length} words</div>
                       </div>
                       <button
-                        onClick={() => { setUploaded(false); setProposalText('') }}
+                        onClick={() => { setUploaded(false); setProposalText(''); setDocumentName('') }}
                         style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                       >
                         <X size={16} />
