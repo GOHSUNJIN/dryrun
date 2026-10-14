@@ -172,9 +172,9 @@ export default function PastSessions({ navigate }) {
                 return (
                   <div key={s.id || si} className="session-row" onClick={() => navigate('report', { savedSession: s })}>
                     <div>
-                      <div className="session-row-name">Rehearsal {group.sessions.length - si}</div>
+                      <div className="session-row-name">{s.date}</div>
                       <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                        <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
+                        <Clock size={11} /> {s.duration || `Attempt ${group.sessions.length - si}`}
                       </div>
                     </div>
 

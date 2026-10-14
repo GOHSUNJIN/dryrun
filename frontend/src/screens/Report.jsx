@@ -99,7 +99,7 @@ export default function Report({ navigate, session }) {
   }
 
   return (
-    <div className="page" style={{ maxWidth: 820, padding: '40px 48px' }}>
+    <div className="page">
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
           <div className="report-hero">

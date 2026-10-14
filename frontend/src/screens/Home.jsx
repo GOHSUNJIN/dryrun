@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Clock, ChevronRight, Loader, Plus, X, Trash2 } from 'lucide-react'
 import { WEAK_SPOTS, PERSONAS } from '../data.js'
-import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting } from '../utils/storage.js'
+import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
 
 const container = {
@@ -99,6 +99,8 @@ function AddMeetingForm({ onSave, onCancel }) {
 export default function Home({ navigate }) {
   const stored = loadSessions()
   const recent = stored.slice(0, 4).map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
+  const computedSpots = computeWeakSpots()
+  const weakSpots = computedSpots.length > 0 ? computedSpots : WEAK_SPOTS
 
   const [calEvents, setCalEvents]           = useState(null)
   const [calLoading, setCalLoading]         = useState(false)
@@ -207,70 +209,105 @@ export default function Home({ navigate }) {
             </div>
 
             {!hasAnyMeetings ? (
-              <div style={{ ...rowCard(false), cursor: 'default' }}>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                  No upcoming meetings. Add one or sync your calendar above.
+              <div style={{
+                padding: '28px 20px', borderRadius: 10, textAlign: 'center',
+                border: '1.5px dashed var(--border)', background: 'var(--bg-surface)',
+              }}>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                  No upcoming meetings yet.
                 </div>
+                <button
+                  onClick={() => setShowAddMeeting(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    fontSize: '0.8125rem', fontWeight: 500, color: 'var(--app-accent)',
+                    background: 'var(--app-accent-bg)', border: 'none', borderRadius: 6,
+                    padding: '6px 12px', cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                  }}
+                >
+                  <Plus size={12} /> Add a meeting
+                </button>
               </div>
-            ) : allMeetings.map((m, i) => (
-              <div
-                key={m.id || i}
-                onClick={() => navigate('new', { meetingName: m.name })}
-                onMouseEnter={() => setHoveredMeeting(i)}
-                onMouseLeave={() => setHoveredMeeting(null)}
-                style={rowCard(hoveredMeeting === i)}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
+            ) : allMeetings.map((m, i) => {
+              const accentColor = m.daysLeft <= 3 ? '#DC2626' : m.daysLeft <= 7 ? '#B45309' : 'var(--border)'
+              const countColor  = m.daysLeft <= 3 ? '#DC2626' : m.daysLeft <= 7 ? '#B45309' : 'var(--text-muted)'
+              return (
+                <div
+                  key={m.id || i}
+                  onClick={() => navigate('new', { meetingName: m.name })}
+                  onMouseEnter={() => setHoveredMeeting(i)}
+                  onMouseLeave={() => setHoveredMeeting(null)}
+                  style={{
+                    display: 'flex', alignItems: 'stretch',
+                    marginBottom: 8, borderRadius: 8, overflow: 'hidden',
+                    border: '1px solid var(--border)',
+                    borderLeft: `3px solid ${accentColor}`,
+                    background: hoveredMeeting === i ? 'var(--bg-hover)' : 'var(--bg-surface)',
+                    cursor: 'pointer', transition: 'background 0.15s ease',
+                  }}
+                >
+                  {/* Days countdown */}
                   <div style={{
-                    fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>{m.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Calendar size={10} style={{ flexShrink: 0 }} />
-                    {m.date}
-                    {m.local && <span style={{ fontSize: '0.625rem', background: 'var(--bg-hover)', borderRadius: 4, padding: '1px 5px', marginLeft: 2 }}>Manual</span>}
+                    width: 54, flexShrink: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    padding: '10px 0',
+                    borderRight: '1px solid var(--border)',
+                  }}>
+                    <div style={{
+                      fontSize: '1.25rem', fontWeight: 700, lineHeight: 1,
+                      color: countColor, fontFamily: 'var(--font-display)',
+                    }}>{m.daysLeft}</div>
+                    <div style={{
+                      fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.1em',
+                      textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2,
+                    }}>days</div>
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0, padding: '11px 12px' }}>
+                    <div style={{
+                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{m.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Calendar size={10} style={{ flexShrink: 0 }} />
+                      {m.date}
+                      {m.local && (
+                        <span style={{ fontSize: '0.625rem', background: 'var(--bg-hover)', borderRadius: 4, padding: '1px 5px', marginLeft: 2 }}>Manual</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action */}
+                  <div style={{ display: 'flex', alignItems: 'center', paddingRight: 12, flexShrink: 0 }}>
+                    {m.local ? (
+                      <button
+                        onClick={e => handleDeleteMeeting(e, m.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex', opacity: 0.5 }}
+                        onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = 0.5; e.currentTarget.style.color = 'var(--text-muted)' }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    ) : (
+                      <ChevronRight size={13} style={{ color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)', transition: 'color 0.15s ease' }} />
+                    )}
                   </div>
                 </div>
-                <span style={{
-                  fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
-                  background: m.daysLeft <= 5 ? 'rgba(245,158,11,0.1)' : 'var(--bg-hover)',
-                  color: m.daysLeft <= 5 ? '#D97706' : 'var(--text-muted)',
-                  whiteSpace: 'nowrap', flexShrink: 0,
-                }}>{m.daysLeft}d</span>
-                {m.local ? (
-                  <button
-                    onClick={e => handleDeleteMeeting(e, m.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, flexShrink: 0, opacity: 0.6, display: 'flex' }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = '#DC2626' }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.color = 'var(--text-muted)' }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                ) : (
-                  <ArrowRight
-                    size={13}
-                    style={{
-                      color: hoveredMeeting === i ? 'var(--app-accent)' : 'var(--border)',
-                      flexShrink: 0, transition: 'color 0.15s ease',
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+              )
+            })}
           </motion.div>
 
           {/* Recent sessions */}
           <motion.div variants={item}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-label" style={{ marginBottom: 0 }}>Recent sessions</div>
-              {recent.length > 0 && (
-                <button
-                  onClick={() => navigate('past')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-ui)' }}
-                >
-                  View all <ChevronRight size={12} />
-                </button>
-              )}
+              <button
+                onClick={() => navigate(recent.length > 0 ? 'past' : 'new')}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none', fontFamily: 'var(--font-ui)' }}
+              >
+                {recent.length > 0 ? <>View all <ChevronRight size={12} /></> : <><Plus size={11} /> New</>}
+              </button>
             </div>
 
             {recent.length === 0 ? (
@@ -345,7 +382,7 @@ export default function Home({ navigate }) {
           <motion.div variants={item} style={{ gridColumn: '1 / -1' }}>
             <div className="section-label">Recurring weak spots</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              {WEAK_SPOTS.map((w, i) => (
+              {weakSpots.map((w, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'flex-start', gap: 14,
                   padding: '16px 18px', borderRadius: 10,

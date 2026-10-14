@@ -120,6 +120,36 @@ export function renameProposal(oldName, newName) {
   saveSessions(loadSessions().map(s => s.proposal === oldName ? { ...s, proposal: newName } : s))
 }
 
+export function computeWeakSpots() {
+  const sessions = loadSessions()
+  const byLabel = {}
+
+  for (const s of sessions) {
+    const wps = s.reportData?.weak_points
+    if (!Array.isArray(wps) || wps.length === 0) continue
+    const seenLabels = new Set()
+    for (const wp of wps) {
+      if (!wp.label) continue
+      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, sessionCount: 0, latestIssue: '' }
+      byLabel[wp.label].count++
+      byLabel[wp.label].latestIssue = wp.issue || wp.label
+      if (!seenLabels.has(wp.label)) {
+        byLabel[wp.label].sessionCount++
+        seenLabels.add(wp.label)
+      }
+    }
+  }
+
+  return Object.entries(byLabel)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 3)
+    .map(([, data]) => ({
+      count: data.count,
+      text: data.latestIssue,
+      sub: `Across ${data.sessionCount} session${data.sessionCount !== 1 ? 's' : ''}`,
+    }))
+}
+
 export function groupSessionsByProposal(sessions) {
   const groups = {}
   for (const s of sessions) {

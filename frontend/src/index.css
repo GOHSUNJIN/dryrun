@@ -76,6 +76,7 @@ ul { list-style: none; }
 
   /* Radii */
   --r-sm: 4px;
+  --r-base: 8px;
   --r-md: 8px;
   --r-lg: 12px;
   --r-xl: 16px;
@@ -344,7 +345,7 @@ ul { list-style: none; }
 }
 
 .btn-accent:hover {
-  background: #1A45C4;
+  background: #92400E;
 }
 
 .btn-lg {
