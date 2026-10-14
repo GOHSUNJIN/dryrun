@@ -273,7 +273,7 @@ export default function PastSessions({ navigate }) {
                             {isExpanded ? 'Hide' : 'Proposal'}
                           </button>
                         )}
-                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal, linkedMeeting: s.linkedMeeting || '' }) }}>
+                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal, linkedMeeting: s.linkedMeeting || '', proposalText: s.proposalText || '' }) }}>
                           <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Again
                         </button>

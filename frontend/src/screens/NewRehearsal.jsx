@@ -21,8 +21,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const allPersonas    = [...PERSONAS, ...customPersonas]
   const defaults       = loadRehearsalDefaults()
   const [step, setStep]           = useState(0)
-  const [uploaded, setUploaded]   = useState(false)
-  const [proposalText, setProposalText] = useState('')
+  const [proposalText, setProposalText] = useState(navPayload.proposalText || '')
+  const [uploaded, setUploaded]   = useState(Boolean(navPayload.proposalText))
   const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
   const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(() => loadLastPanel() || ['finance', 'legal', 'ops', 'factcheck'])
@@ -32,6 +32,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [launching, setLaunching] = useState(false)
   const [driveOpen, setDriveOpen]       = useState(false)
   const [driveLoading, setDriveLoading] = useState(false)
+  const [driveError, setDriveError]     = useState(null)
   const [driveItems, setDriveItems]     = useState([])
   const [driveStack, setDriveStack]     = useState([])
   const [recentDocs, setRecentDocs]     = useState([])
@@ -60,6 +61,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
   const openDrivePicker = async () => {
     setDriveLoading(true)
+    setDriveError(null)
     setDriveStack([])
     try {
       const items = await listDriveItems('root')
@@ -67,6 +69,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setDriveOpen(true)
     } catch (err) {
       console.error('[Drive] failed to open picker:', err)
+      setDriveError('Could not connect to Drive. Check your connection and try again.')
+      setDriveOpen(true)
     } finally {
       setDriveLoading(false)
     }
@@ -74,12 +78,14 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
   const navigateDriveFolder = async (folder) => {
     setDriveLoading(true)
+    setDriveError(null)
     try {
       const items = await listDriveItems(folder.id)
       setDriveItems(items)
       setDriveStack(prev => [...prev, { id: folder.id, name: folder.name }])
     } catch (err) {
       console.error('[Drive] folder nav failed:', err)
+      setDriveError('Failed to open folder. Try again.')
     } finally {
       setDriveLoading(false)
     }
@@ -89,12 +95,14 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     const newStack = driveStack.slice(0, stackIndex)
     const folderId = newStack[newStack.length - 1]?.id || 'root'
     setDriveLoading(true)
+    setDriveError(null)
     try {
       const items = await listDriveItems(folderId)
       setDriveItems(items)
       setDriveStack(newStack)
     } catch (err) {
       console.error('[Drive] breadcrumb nav failed:', err)
+      setDriveError('Failed to navigate. Try again.')
     } finally {
       setDriveLoading(false)
     }
@@ -379,6 +387,10 @@ const canContinue = () => {
                             {driveLoading ? (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
                                 <Loader size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-muted)' }} />
+                              </div>
+                            ) : driveError ? (
+                              <div style={{ padding: '16px', fontSize: '0.8125rem', color: '#DC2626', textAlign: 'center' }}>
+                                {driveError}
                               </div>
                             ) : driveItems.length === 0 ? (
                               <div style={{ padding: '16px', fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center' }}>

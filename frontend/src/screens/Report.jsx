@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader, ArrowLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { exportToGoogleDoc } from '../utils/google.js'
+import { useToast } from '../components/Toast.jsx'
+import ToastStack from '../components/Toast.jsx'
 
 
 const container = {
@@ -20,6 +22,7 @@ export default function Report({ navigate, session }) {
   const [exporting, setExporting] = useState(false)
   const [docUrl, setDocUrl]       = useState(null)
   const [exportError, setExportError] = useState(null)
+  const { toasts, show: showToast } = useToast()
 
   const isDemoReport  = Boolean(session?.reportData?.demo) || !session?.reportData?.weak_points?.length
   const hasRealReport = !isDemoReport
@@ -59,9 +62,11 @@ export default function Report({ navigate, session }) {
       const url = await exportToGoogleDoc(proposalName, weakPoints, personas, conditions)
       setDocUrl(url)
       window.open(url, '_blank')
+      showToast('Report exported to Google Docs')
     } catch (err) {
       console.error('[Docs] export failed:', err)
       setExportError('Export failed. Sign in to Google and try again.')
+      showToast('Export failed. Sign in to Google and try again.', 'error')
     } finally {
       setExporting(false)
     }
@@ -83,10 +88,12 @@ export default function Report({ navigate, session }) {
     navigator.clipboard.writeText(lines.join('\n')).catch(() => {})
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+    showToast('Report copied to clipboard')
   }
 
   return (
     <div className="page">
+      <ToastStack toasts={toasts} />
       <button
         onClick={() => navigate('home')}
         style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 20, fontFamily: 'var(--font-ui)', padding: 0 }}

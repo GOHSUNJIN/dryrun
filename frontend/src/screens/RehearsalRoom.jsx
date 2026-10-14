@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
 import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
 
@@ -212,6 +212,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [speechOn, setSpeechOn]                     = useState(() => loadVoiceSettings().enabled)
   const [openingsDone, setOpeningsDone]             = useState(openingMsgs.length === 0)
   const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
+  const [showProposal, setShowProposal]             = useState(false)
 
   const [elapsed, setElapsed] = useState('0:00')
 
@@ -653,6 +654,21 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
 
         <div className="room-topbar-right">
+          {session.proposalText && (
+            <button
+              className="room-input-btn"
+              onClick={() => setShowProposal(v => !v)}
+              title="View proposal"
+              style={{
+                background: showProposal ? 'rgba(255,255,255,0.08)' : 'transparent',
+                border: 'none', color: showProposal ? 'var(--room-text-2)' : 'var(--room-text-3)',
+                cursor: 'pointer', padding: '4px 8px', borderRadius: 6,
+                display: 'flex', alignItems: 'center', transition: 'all 0.15s ease',
+              }}
+            >
+              <FileText size={16} />
+            </button>
+          )}
           <button
             className="room-input-btn"
             onClick={toggleSpeech}
@@ -866,6 +882,52 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         <div className="room-input-hint">Press Enter to send · Shift+Enter for new line</div>
         </div>
       </div>
+
+      {showProposal && (
+        <div
+          onClick={() => setShowProposal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#1C1917', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 12, width: '100%', maxWidth: 680, maxHeight: '72vh',
+              display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FileText size={14} style={{ color: 'var(--room-text-3)' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--room-text-2)' }}>
+                  {session.proposalName || 'Proposal'}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowProposal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--room-text-3)', padding: 4, display: 'flex' }}
+              >
+                <XIcon size={15} />
+              </button>
+            </div>
+            <div style={{
+              overflowY: 'auto', padding: '20px 24px',
+              fontSize: '0.875rem', lineHeight: 1.75, color: 'var(--room-text-2)',
+              fontFamily: 'var(--font-ui)', whiteSpace: 'pre-wrap',
+            }}>
+              {session.proposalText}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

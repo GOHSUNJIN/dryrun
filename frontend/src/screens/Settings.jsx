@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { ExternalLink, Check, Zap, Loader, User, Sliders, Volume2, Link2, Shield, ChevronRight } from 'lucide-react'
+import { useToast } from '../components/Toast.jsx'
+import ToastStack from '../components/Toast.jsx'
 import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults, loadCalEvents, clearCalEvents } from '../utils/storage.js'
 import { signIn, isSignedIn, signOut } from '../utils/google.js'
 
@@ -46,6 +48,7 @@ export default function Settings() {
   const init         = loadProfile()
   const initVoice    = loadVoiceSettings()
   const initDefaults = loadRehearsalDefaults()
+  const { toasts, show: showToast } = useToast()
 
   const [activeSection, setActiveSection] = useState('Profile')
   const [name, setName]           = useState(init.name)
@@ -76,8 +79,10 @@ export default function Settings() {
     try {
       await signIn()
       setGoogleConnected(true)
+      showToast('Connected to Google')
     } catch (err) {
       console.error('[Settings] Google sign-in failed:', err)
+      showToast('Sign-in failed. Try again.', 'error')
     } finally {
       setGoogleConnecting(false)
     }
@@ -132,6 +137,7 @@ export default function Settings() {
 
   return (
     <div className="page" style={{ maxWidth: 1000 }}>
+      <ToastStack toasts={toasts} />
       <div className="page-header" style={{ marginBottom: 32 }}>
         <div className="page-title">Settings</div>
       </div>

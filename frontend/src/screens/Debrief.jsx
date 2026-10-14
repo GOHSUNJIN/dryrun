@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingDown, TrendingUp, Award, Zap, Minus, RotateCcw, ArrowLeft, ChevronRight } from 'lucide-react'
+import { PERSONAS } from '../data.js'
+import { loadCustomPersonas } from '../utils/storage.js'
 
 const MARKER_ICONS = {
   strong:  TrendingUp,
@@ -18,30 +20,29 @@ const MARKER_COLORS = {
   neutral: '#9B9BAB',
 }
 
-
-const PERSONA_FILTER_OPTIONS = ['All personas', 'Finance', 'Legal', 'Operations', 'Fact-Checker']
-
-const PERSONA_KEYWORDS = {
-  Finance:       ['morgan', 'finance', 'cost', 'budget', 'payback', 'tco'],
-  Legal:         ['alex', 'legal', 'privacy', 'gdpr', 'compliance', 'contract', 'vendor'],
-  Operations:    ['jordan', 'ops', 'operations', 'timeline', 'process', 'milestone'],
-  'Fact-Checker': ['sam', 'fact', 'verify', 'source', 'substantiat', 'salary', 'claim'],
-}
-
 export default function Debrief({ navigate, session }) {
-  const [selected, setSelected] = useState(1)
-  const [filter, setFilter]     = useState('All personas')
+  const [selected, setSelected]       = useState(1)
+  const [filterPersonaId, setFilterPersonaId] = useState(null)
+
+  const allPersonaBase   = [...PERSONAS, ...loadCustomPersonas()]
+  const sessionPersonas  = session?.personaIds?.length
+    ? allPersonaBase.filter(p => session.personaIds.includes(p.id))
+    : PERSONAS
+
+  const matchesPersona = (m, personaId) => {
+    const p = sessionPersonas.find(p => p.id === personaId)
+    if (!p) return false
+    const text     = `${m.excerpt} ${m.asked || ''} ${m.tag} ${m.turn}`.toLowerCase()
+    const keywords = [p.id, ...p.name.toLowerCase().split(/\s+/), ...p.role.toLowerCase().split(/\s+/)].filter(k => k.length > 2)
+    return keywords.some(k => text.includes(k))
+  }
 
   const isDemoReport = Boolean(session?.reportData?.demo) || !session?.reportData?.moments?.length
   const moments = session?.reportData?.moments || []
 
-  const filteredMoments = filter === 'All personas'
+  const filteredMoments = filterPersonaId === null
     ? moments
-    : moments.filter(m => {
-        const keywords = PERSONA_KEYWORDS[filter] || []
-        const text = `${m.excerpt} ${m.asked || ''} ${m.tag} ${m.turn}`.toLowerCase()
-        return keywords.some(k => text.includes(k))
-      })
+    : moments.filter(m => matchesPersona(m, filterPersonaId))
 
   const selectedInFiltered = filteredMoments.find(m => m.id === selected)
   const effectiveSelected  = selectedInFiltered ? selected : (filteredMoments[0]?.id ?? 1)
@@ -110,12 +111,16 @@ export default function Debrief({ navigate, session }) {
           </div>
 
           <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-            {PERSONA_FILTER_OPTIONS.map(f => (
+            <button
+              className={`timeline-filter-btn ${filterPersonaId === null ? 'active' : ''}`}
+              onClick={() => setFilterPersonaId(null)}
+            >All personas</button>
+            {sessionPersonas.map(p => (
               <button
-                key={f}
-                className={`timeline-filter-btn ${filter === f ? 'active' : ''}`}
-                onClick={() => setFilter(f)}
-              >{f}</button>
+                key={p.id}
+                className={`timeline-filter-btn ${filterPersonaId === p.id ? 'active' : ''}`}
+                onClick={() => setFilterPersonaId(p.id)}
+              >{p.role}</button>
             ))}
           </div>
 
