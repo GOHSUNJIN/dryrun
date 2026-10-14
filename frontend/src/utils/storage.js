@@ -169,9 +169,10 @@ export function computeWeakSpots() {
     const seenLabels = new Set()
     for (const wp of wps) {
       if (!wp.label) continue
-      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, latestIssue: '', sessions: [] }
+      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, latestIssue: '', latestFix: '', sessions: [] }
       byLabel[wp.label].count++
       byLabel[wp.label].latestIssue = wp.issue || wp.label
+      byLabel[wp.label].latestFix = wp.fix || ''
       if (!seenLabels.has(wp.label)) {
         byLabel[wp.label].sessions.push({ proposal: s.proposal || '', meeting: s.linkedMeeting || '' })
         seenLabels.add(wp.label)
@@ -181,21 +182,15 @@ export function computeWeakSpots() {
 
   return Object.entries(byLabel)
     .sort((a, b) => b[1].count - a[1].count)
-    .map(([, data]) => {
+    .map(([label, data]) => {
       const { sessions } = data
-      let sub
-      if (sessions.length === 1) {
-        const { proposal, meeting } = sessions[0]
-        sub = `In: ${proposal || 'a session'}${meeting ? ` · ${meeting}` : ''}`
-      } else {
-        const names = sessions.map(s => s.proposal).filter(Boolean)
-        const shown = names.slice(0, 2)
-        const extra = names.length - 2
-        sub = shown.length
-          ? `From: ${shown.join(', ')}${extra > 0 ? ` +${extra} more` : ''}`
-          : `Across ${sessions.length} sessions`
-      }
-      return { count: data.count, text: data.latestIssue, sub }
+      const names = sessions.map(s => s.proposal).filter(Boolean)
+      const shown = names.slice(0, 2)
+      const extra = names.length - 2
+      const sub = shown.length
+        ? `${shown.join(', ')}${extra > 0 ? ` +${extra} more` : ''}`
+        : `${sessions.length} session${sessions.length !== 1 ? 's' : ''}`
+      return { count: data.count, label, text: data.latestIssue, fix: data.latestFix, sub, sessions: data.sessions }
     })
 }
 
@@ -235,10 +230,14 @@ export function dismissWeakSpot(text) {
 const NO_MEETING_KEY = '__no_meeting__'
 
 export function groupSessionsByProposal(sessions) {
+  const meetings  = loadLocalMeetings()
+  const calEvents = loadCalEvents() ?? []
+  const meetingNames = new Set([...meetings.map(m => m.name), ...calEvents.map(e => e.name)])
+
   const groups = {}
   for (const s of sessions) {
-    if (s.linkedMeeting) {
-      const key = s.linkedMeeting
+    const key = s.linkedMeeting || (meetingNames.has(s.proposal) ? s.proposal : null)
+    if (key) {
       if (!groups[key]) groups[key] = { proposal: key, linkedMeeting: key, noMeeting: false, sessions: [] }
       groups[key].sessions.push(s)
     } else {
@@ -246,10 +245,14 @@ export function groupSessionsByProposal(sessions) {
       groups[NO_MEETING_KEY].sessions.push(s)
     }
   }
-  // Include meetings with no sessions yet so they still appear in the list
-  for (const m of loadLocalMeetings()) {
+  for (const m of meetings) {
     if (!groups[m.name]) {
       groups[m.name] = { proposal: m.name, linkedMeeting: m.name, noMeeting: false, sessions: [], meetingId: m.id }
+    }
+  }
+  for (const e of calEvents) {
+    if (!groups[e.name]) {
+      groups[e.name] = { proposal: e.name, linkedMeeting: e.name, noMeeting: false, sessions: [] }
     }
   }
   const linked   = Object.entries(groups).filter(([k]) => k !== NO_MEETING_KEY).map(([, v]) => v)

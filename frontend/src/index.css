@@ -1820,9 +1820,9 @@ ul { list-style: none; }
 }
 
 .weak-point-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--amber);
   margin-bottom: 6px;
@@ -1832,22 +1832,30 @@ ul { list-style: none; }
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.weak-point-fix-block {
+  background: rgba(5, 150, 105, 0.05);
+  border: 1px solid rgba(5, 150, 105, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
 }
 
 .weak-point-fix-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.625rem;
+  font-weight: 700;
   color: #059669;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 4px;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
 }
 
 .weak-point-fix {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* ─── DEBRIEF ─── */

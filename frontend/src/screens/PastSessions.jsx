@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp, ArrowRight } from 'lucide-react'
+import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp, FolderInput, LayoutList } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting, loadLocalMeetings, deleteLocalMeeting } from '../utils/storage.js'
 
@@ -292,8 +292,8 @@ export default function PastSessions({ navigate }) {
                           <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Report
                         </button>
-                        <button className="session-action-btn" title="Debrief" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
-                          <BookOpen size={12} style={{ opacity: 0.6 }} />
+                        <button className="session-action-btn" title="Debrief — moment by moment replay" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
+                          <LayoutList size={12} style={{ opacity: 0.6 }} />
                         </button>
                         {s.proposalText && (
                           <button
@@ -343,10 +343,10 @@ export default function PastSessions({ navigate }) {
                         ) : (
                           <button
                             className="session-action-btn"
-                            title="Assign to meeting"
+                            title="Move to meeting"
                             onClick={e => { e.stopPropagation(); setAssigningSession(sessionKey) }}
                           >
-                            <ArrowRight size={12} />
+                            <FolderInput size={12} />
                           </button>
                         )}
                         <button

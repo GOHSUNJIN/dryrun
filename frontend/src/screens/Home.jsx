@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X, Trash2, RefreshCw } from 'lucide-react'
+import { ArrowRight, BookOpen, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X, Trash2, RefreshCw } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots, loadDismissedSpots, dismissWeakSpot, loadCalEvents, saveCalEvents, deleteCalEvent, loadProfile } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
@@ -87,6 +87,63 @@ function AddMeetingForm({ onSave, onCancel }) {
   )
 }
 
+function WeakSpotModal({ spot, onClose, onDismiss }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 420, position: 'relative' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, display: 'flex' }}>
+          <X size={15} />
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--app-accent)', fontFamily: 'var(--font-display)', lineHeight: 1 }}>{spot.count}</div>
+          <div>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{spot.label}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{spot.count === 1 ? '1 occurrence' : `${spot.count} occurrences`}</div>
+          </div>
+        </div>
+
+        <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: spot.fix ? 12 : 16 }}>{spot.text}</div>
+
+        {spot.fix && (
+          <div style={{ background: 'rgba(180,83,9,0.05)', border: '1px solid rgba(180,83,9,0.15)', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--app-accent)', marginBottom: 4 }}>How to fix</div>
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{spot.fix}</div>
+          </div>
+        )}
+
+        {spot.sessions?.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8 }}>Appeared in</div>
+            {spot.sessions.map((s, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--text-muted)', flexShrink: 0 }} />
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                  {s.proposal || 'Untitled'}
+                  {s.meeting && <span style={{ color: 'var(--text-muted)' }}> · {s.meeting}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => { onDismiss(spot.text); onClose() }}
+          style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
+        >
+          Dismiss this spot
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Home({ navigate }) {
   const stored      = loadSessions()
   const allSessions = stored.map(s => ({ ...s, proposal: s.proposal || 'Untitled proposal' }))
@@ -103,6 +160,7 @@ export default function Home({ navigate }) {
   const [dismissedSpots, setDismissedSpots] = useState(() => loadDismissedSpots())
   const [spotsExpanded, setSpotsExpanded]   = useState(false)
   const [showDismissed, setShowDismissed]   = useState(false)
+  const [selectedSpot, setSelectedSpot]     = useState(null)
 
   const totalPages   = Math.ceil(allSessions.length / SESSION_PAGE_SIZE)
   const pageItems    = allSessions.slice(sessionPage * SESSION_PAGE_SIZE, (sessionPage + 1) * SESSION_PAGE_SIZE)
@@ -176,6 +234,13 @@ export default function Home({ navigate }) {
           onCancel={() => setShowAddMeeting(false)}
         />
       )}
+      {selectedSpot && (
+        <WeakSpotModal
+          spot={selectedSpot}
+          onClose={() => setSelectedSpot(null)}
+          onDismiss={handleDismissSpot}
+        />
+      )}
 
       <motion.div variants={container} initial="hidden" animate="show">
 
@@ -239,20 +304,20 @@ export default function Home({ navigate }) {
             {!hasAnyMeetings ? (
               <div style={{
                 flex: 1, borderRadius: 10, textAlign: 'center',
-                border: '1.5px dashed var(--border)', background: 'var(--bg-surface)',
+                border: '1px solid var(--border)', background: 'var(--bg-surface)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                padding: '28px 20px',
+                padding: '32px 20px', gap: 10,
               }}>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-                  No upcoming meetings yet.
-                </div>
+                <Calendar size={20} style={{ color: 'var(--border)', marginBottom: 2 }} />
+                <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>No upcoming meetings</div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: 200 }}>Add a meeting to track your prep timeline.</div>
                 <button
                   onClick={() => setShowAddMeeting(true)}
                   style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4,
                     fontSize: '0.8125rem', fontWeight: 500, color: 'var(--app-accent)',
-                    background: 'var(--app-accent-bg)', border: 'none', borderRadius: 6,
-                    padding: '6px 12px', cursor: 'pointer', fontFamily: 'var(--font-ui)',
+                    background: 'var(--app-accent-bg)', border: '1px solid rgba(180,83,9,0.15)',
+                    borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: 'var(--font-ui)',
                   }}
                 >
                   <Plus size={12} /> Add a meeting
@@ -375,19 +440,24 @@ export default function Home({ navigate }) {
             </div>
 
             {allSessions.length === 0 ? (
-              <div style={{ ...rowCard(false), cursor: 'default', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No sessions yet.</div>
+              <div style={{
+                border: '1px solid var(--border)', background: 'var(--bg-surface)',
+                borderRadius: 10, padding: '32px 20px', textAlign: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              }}>
+                <BookOpen size={20} style={{ color: 'var(--border)' }} />
+                <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>No sessions yet</div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: 220 }}>Run a rehearsal to start tracking your progress.</div>
                 <button
                   onClick={() => navigate('new')}
                   style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    fontSize: '0.8125rem', fontWeight: 600, color: 'var(--app-accent)',
-                    background: 'rgba(180,83,9,0.06)', border: '1px solid rgba(180,83,9,0.15)',
-                    borderRadius: 6, padding: '7px 12px', cursor: 'pointer',
-                    fontFamily: 'var(--font-ui)',
+                    display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4,
+                    fontSize: '0.8125rem', fontWeight: 500, color: 'var(--app-accent)',
+                    background: 'var(--app-accent-bg)', border: '1px solid rgba(180,83,9,0.15)',
+                    borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: 'var(--font-ui)',
                   }}
                 >
-                  <Plus size={13} /> Start your first rehearsal
+                  <Plus size={12} /> Start your first rehearsal
                 </button>
               </div>
             ) : pageItems.map((s, idx) => {
@@ -502,12 +572,18 @@ export default function Home({ navigate }) {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                 {visibleSpots.map((w, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 14,
-                    padding: '16px 18px', borderRadius: 10,
-                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                    position: 'relative',
-                  }}>
+                  <div
+                    key={i}
+                    onClick={() => setSelectedSpot(w)}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 14,
+                      padding: '16px 18px', borderRadius: 10,
+                      background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                      cursor: 'pointer', transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-surface)'}
+                  >
                     <div style={{
                       fontSize: '1.25rem', fontWeight: 700, color: 'var(--app-accent)',
                       fontFamily: 'var(--font-display)', lineHeight: 1, flexShrink: 0, minWidth: 28,
@@ -516,20 +592,6 @@ export default function Home({ navigate }) {
                       <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4 }}>{w.text}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{w.sub}</div>
                     </div>
-                    <button
-                      onClick={() => handleDismissSpot(w.text)}
-                      title="Dismiss"
-                      style={{
-                        position: 'absolute', top: 10, right: 10,
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--text-muted)', padding: 2, display: 'flex',
-                        opacity: 0.4, transition: 'opacity 0.15s',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                      onMouseLeave={e => e.currentTarget.style.opacity = 0.4}
-                    >
-                      <X size={12} />
-                    </button>
                   </div>
                 ))}
               </div>

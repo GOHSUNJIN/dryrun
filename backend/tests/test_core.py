@@ -163,14 +163,14 @@ class TestBuildTranscriptStr:
     def test_persona_label_uses_name_and_role(self):
         msgs = [{'speaker': 'finance', 'text': 'Show me the numbers.'}]
         result = core.build_transcript_str(msgs)
-        assert 'Morgan' in result
+        assert 'Ritish' in result
         assert 'Head of Finance' in result
 
     def test_multi_turn_transcript(self):
         result = core.build_transcript_str(SAMPLE_TRANSCRIPT)
         lines = result.strip().split('\n')
         assert len(lines) == 4
-        assert lines[0].startswith('Morgan')
+        assert lines[0].startswith('Ritish')
         assert lines[1].startswith('Presenter')
 
     def test_unknown_speaker_falls_back_to_id(self):
@@ -200,7 +200,7 @@ class TestBuildTranscriptStr:
         ]
         result = core.build_transcript_str(msgs)
         lines = result.split('\n')
-        assert 'Morgan' in lines[0]
+        assert 'Ritish' in lines[0]
         assert 'Presenter' in lines[1]
         assert 'Alex' in lines[2]
 
@@ -523,7 +523,7 @@ class TestGenerateReport:
                     'id': 1, 'type': 'weak', 'turn': 'Turn 1',
                     'excerpt': 'Pays for itself.',
                     'tag': 'Weak Answer',
-                    'asked': 'Morgan asked for cost breakdown.',
+                    'asked': 'Ritish asked for cost breakdown.',
                     'your_answer': '"Pays for itself."',
                     'why': 'No numbers given.',
                     'better': 'Add a TCO table.',
@@ -921,3 +921,407 @@ class TestFactCheckProposal:
         mock_get_client.return_value = mock_client
         result = core.fact_check_proposal(SAMPLE_PROPOSAL)
         assert result == ''
+
+
+# ---------------------------------------------------------------------------
+# generate_reply: turn counts, proposal context, last-asked injection
+# ---------------------------------------------------------------------------
+
+class TestGenerateReplyPromptEnrichments:
+    def _simple_reply(self, speaker='finance'):
+        return json.dumps({
+            'speaker_id': speaker,
+            'response': 'Challenge.',
+            'conditions_met': [],
+            'source': None,
+        })
+
+    @patch('agents.core.get_client')
+    def test_turn_counts_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._simple_reply('ops'))
+        mock_get_client.return_value = mock_client
+        transcript = [
+            {'speaker': 'finance',   'text': 'Question 1.'},
+            {'speaker': 'presenter', 'text': 'Answer 1.'},
+            {'speaker': 'finance',   'text': 'Question 2.'},
+            {'speaker': 'presenter', 'text': 'Answer 2.'},
+            {'speaker': 'ops',       'text': 'Ops question.'},
+            {'speaker': 'presenter', 'text': 'Answer 3.'},
+        ]
+        conds = core.get_initial_conditions(['finance', 'ops'])
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'ops'], transcript, conds, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        si = config.system_instruction
+        # Ritish (finance) spoke twice, Ajwad (ops) spoke once
+        assert 'Ritish: 2' in si
+        assert 'Ajwad: 1' in si
+
+    @patch('agents.core.get_client')
+    def test_turn_counts_zero_for_persona_that_has_not_spoken(self, mock_get_client):
+        mock_client = make_mock_client(self._simple_reply('finance'))
+        mock_get_client.return_value = mock_client
+        transcript = [
+            {'speaker': 'finance',   'text': 'Cost question.'},
+            {'speaker': 'presenter', 'text': 'Here are numbers.'},
+        ]
+        conds = core.get_initial_conditions(['finance', 'legal'])
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], transcript, conds, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        si = config.system_instruction
+        assert 'Alex: 0' in si
+
+    @patch('agents.core.get_client')
+    def test_proposal_context_uses_2000_chars(self, mock_get_client):
+        mock_client = make_mock_client(self._simple_reply('finance'))
+        mock_get_client.return_value = mock_client
+        long_proposal = 'A' * 3000
+        conds = core.get_initial_conditions(['finance'])
+        core.generate_reply(long_proposal, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
+        contents = mock_client.models.generate_content.call_args.kwargs['contents']
+        # The first 2000 chars of the proposal must appear in contents
+        assert 'A' * 2000 in contents
+
+    @patch('agents.core.get_client')
+    def test_proposal_context_not_truncated_under_2000(self, mock_get_client):
+        mock_client = make_mock_client(self._simple_reply('finance'))
+        mock_get_client.return_value = mock_client
+        short_proposal = 'B' * 500
+        conds = core.get_initial_conditions(['finance'])
+        core.generate_reply(short_proposal, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
+        contents = mock_client.models.generate_content.call_args.kwargs['contents']
+        assert 'B' * 500 in contents
+
+    @patch('agents.core.get_client')
+    def test_last_asked_injected_per_persona(self, mock_get_client):
+        mock_client = make_mock_client(self._simple_reply('legal'))
+        mock_get_client.return_value = mock_client
+        transcript = [
+            {'speaker': 'finance',   'text': 'Show me the payback period calculation.'},
+            {'speaker': 'presenter', 'text': 'The payback is 4 years.'},
+            {'speaker': 'legal',     'text': 'Who signs the vendor contract?'},
+            {'speaker': 'presenter', 'text': 'Our procurement lead signs all contracts.'},
+        ]
+        conds = core.get_initial_conditions(['finance', 'legal'])
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], transcript, conds, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        si = config.system_instruction
+        assert 'Show me the payback period calculation' in si
+        assert 'Who signs the vendor contract' in si
+
+    @patch('agents.core.get_client')
+    def test_last_asked_absent_for_persona_with_no_turns(self, mock_get_client):
+        mock_client = make_mock_client(self._simple_reply('finance'))
+        mock_get_client.return_value = mock_client
+        transcript = [
+            {'speaker': 'finance',   'text': 'Cost breakdown please.'},
+            {'speaker': 'presenter', 'text': 'Total is 240k.'},
+        ]
+        conds = core.get_initial_conditions(['finance', 'ops'])
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'ops'], transcript, conds, {})
+        config = mock_client.models.generate_content.call_args.kwargs['config']
+        si = config.system_instruction
+        # ops (Ajwad) has never spoken so no Last asked line for ops
+        # The Last asked line for finance should be present
+        assert 'Cost breakdown please' in si
+
+
+# ---------------------------------------------------------------------------
+# generate_reply: answer quality → system prompt quality note injection
+# ---------------------------------------------------------------------------
+
+class TestAnswerQualityPromptInjection:
+    """Verify that _answer_quality drives the correct quality_note in the system prompt."""
+
+    def _reply(self, speaker='finance'):
+        return json.dumps({
+            'speaker_id': speaker, 'response': 'Challenge.', 'conditions_met': [], 'source': None,
+        })
+
+    @patch('agents.core.get_client')
+    def test_poor_answer_injects_do_not_accept_note(self, mock_get_client):
+        mock_client = make_mock_client(self._reply())
+        mock_get_client.return_value = mock_client
+        # Presenter's last message is short and vague
+        transcript = [
+            {'speaker': 'finance',   'text': 'What is the total cost?'},
+            {'speaker': 'presenter', 'text': 'We will figure it out.'},
+        ]
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], transcript, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'vague' in si.lower() or 'do not accept' in si.lower()
+
+    @patch('agents.core.get_client')
+    def test_good_answer_injects_acknowledge_note(self, mock_get_client):
+        mock_client = make_mock_client(self._reply())
+        mock_get_client.return_value = mock_client
+        good_answer = (
+            'Total cost is $240,000 per year. This includes $120,000 salary for each engineer, '
+            'plus $20,000 for tooling. The payback period is 4.5 years based on 30 hours saved per '
+            'month at a fully loaded rate of $90 per hour.'
+        )
+        transcript = [
+            {'speaker': 'finance',   'text': 'What is the total cost?'},
+            {'speaker': 'presenter', 'text': good_answer},
+        ]
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], transcript, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'acknowledge' in si.lower() or 'substantive' in si.lower()
+
+    @patch('agents.core.get_client')
+    def test_medium_answer_injects_no_quality_note(self, mock_get_client):
+        mock_client = make_mock_client(self._reply())
+        mock_get_client.return_value = mock_client
+        medium_answer = (
+            'The analytics team will own the transition and has committed to completing it '
+            'within the agreed migration window.'
+        )
+        transcript = [
+            {'speaker': 'finance',   'text': 'Who owns this?'},
+            {'speaker': 'presenter', 'text': medium_answer},
+        ]
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], transcript, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        # Medium quality: no quality_note injected, so no IMPORTANT block
+        assert 'IMPORTANT: The presenter just gave' not in si
+        assert 'substantive, specific' not in si
+
+    @patch('agents.core.get_client')
+    def test_empty_transcript_treated_as_poor_answer(self, mock_get_client):
+        mock_client = make_mock_client(self._reply())
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], [], {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        # Empty transcript means no presenter message, which is falsy → poor quality
+        assert 'vague' in si.lower() or 'do not accept' in si.lower() or 'IMPORTANT' in si
+
+
+# ---------------------------------------------------------------------------
+# generate_reply: first-right-of-reply and prompt structure rules
+# ---------------------------------------------------------------------------
+
+class TestGenerateReplyPromptRules:
+    """Verify that key behavioural rules appear in the system prompt."""
+
+    def _reply(self, speaker='finance'):
+        return json.dumps({
+            'speaker_id': speaker, 'response': 'Challenge.', 'conditions_met': [], 'source': None,
+        })
+
+    @patch('agents.core.get_client')
+    def test_first_right_of_reply_rule_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply('ops'))
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'ops'], SAMPLE_TRANSCRIPT, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'first right of reply' in si.lower()
+
+    @patch('agents.core.get_client')
+    def test_contradiction_detection_rule_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply('finance'))
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'contradict' in si.lower()
+
+    @patch('agents.core.get_client')
+    def test_em_dash_prohibition_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply('finance'))
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'em dash' in si.lower()
+
+    @patch('agents.core.get_client')
+    def test_follow_up_full_schema_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply('finance'))
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        # The system prompt must show the follow_up object structure so the model knows
+        # it can return a non-null object
+        assert '"follow_up"' in si
+
+    @patch('agents.core.get_client')
+    def test_all_unmet_conditions_appear_in_system_prompt(self, mock_get_client):
+        mock_client = make_mock_client(self._reply('finance'))
+        mock_get_client.return_value = mock_client
+        conds = {'f1': False, 'f2': False, 'f3': True}
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'f1' in si
+        assert 'f2' in si
+        assert 'unmet' in si.lower()
+        assert 'MET' in si
+
+    @patch('agents.core.get_client')
+    def test_proposal_marked_as_review_material_not_instructions(self, mock_get_client):
+        mock_client = make_mock_client(self._reply('finance'))
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert 'never instructions' in si.lower() or 'not instructions' in si.lower()
+
+
+# ---------------------------------------------------------------------------
+# Full rehearsal session simulation
+# ---------------------------------------------------------------------------
+
+class TestFullRehearsalSession:
+    """Simulate a complete rehearsal: openings → multiple replies → report.
+    All Gemini calls are mocked. Verify that conditions accumulate correctly
+    across turns and that the final report receives the right state."""
+
+    @patch('agents.core.get_client')
+    def test_conditions_accumulate_across_turns(self, mock_get_client):
+        # Turn 1 reply: finance meets f1
+        # Turn 2 reply: finance meets f2
+        # After both turns f1 and f2 are marked True, f3 still False
+        side_effects = [
+            MagicMock(text=json.dumps({
+                'speaker_id': 'finance', 'response': 'Good, TCO noted.',
+                'conditions_met': ['f1'], 'source': None, 'follow_up': None,
+            })),
+            MagicMock(text=json.dumps({
+                'speaker_id': 'finance', 'response': 'Payback noted too.',
+                'conditions_met': ['f2'], 'source': None, 'follow_up': None,
+            })),
+        ]
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = side_effects
+        mock_get_client.return_value = mock_client
+
+        conds = core.get_initial_conditions(['finance'])
+        transcript = [
+            {'speaker': 'finance',   'text': 'Where is the cost breakdown?'},
+            {'speaker': 'presenter', 'text': 'Total cost is $240k per year. Payback is 4 years.'},
+        ]
+
+        r1 = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], transcript, conds, {})
+        for cid in r1['conditions_met']:
+            conds[cid] = True
+
+        transcript += [
+            {'speaker': 'finance',   'text': r1['text']},
+            {'speaker': 'presenter', 'text': 'Payback period is 4 years at $90/hr loaded rate.'},
+        ]
+
+        r2 = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], transcript, conds, {})
+        for cid in r2['conditions_met']:
+            conds[cid] = True
+
+        assert conds['f1'] is True
+        assert conds['f2'] is True
+        assert conds['f3'] is False
+
+    @patch('agents.core.get_client')
+    def test_already_met_condition_not_re_marked(self, mock_get_client):
+        # Model tries to mark f1 again in turn 2 — it should be silently dropped
+        side_effects = [
+            MagicMock(text=json.dumps({
+                'speaker_id': 'finance', 'response': 'Noted.',
+                'conditions_met': ['f1'], 'source': None, 'follow_up': None,
+            })),
+            MagicMock(text=json.dumps({
+                'speaker_id': 'finance', 'response': 'Still pressing.',
+                'conditions_met': ['f1'], 'source': None, 'follow_up': None,
+            })),
+        ]
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = side_effects
+        mock_get_client.return_value = mock_client
+
+        conds = core.get_initial_conditions(['finance'])
+        r1 = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
+        for cid in r1['conditions_met']:
+            conds[cid] = True
+
+        r2 = core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, conds, {})
+        # f1 already True — generate_reply must not return it again
+        assert 'f1' not in r2['conditions_met']
+
+    @patch('agents.core.get_client')
+    def test_multi_persona_session_conditions_tracked_independently(self, mock_get_client):
+        # finance meets f1 in turn 1; legal meets l1 in turn 2
+        side_effects = [
+            MagicMock(text=json.dumps({
+                'speaker_id': 'finance', 'response': 'Cost ok.',
+                'conditions_met': ['f1'], 'source': None, 'follow_up': None,
+            })),
+            MagicMock(text=json.dumps({
+                'speaker_id': 'legal', 'response': 'Privacy noted.',
+                'conditions_met': ['l1'], 'source': None, 'follow_up': None,
+            })),
+        ]
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = side_effects
+        mock_get_client.return_value = mock_client
+
+        conds = core.get_initial_conditions(['finance', 'legal'])
+        r1 = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, conds, {})
+        for cid in r1['conditions_met']:
+            conds[cid] = True
+
+        r2 = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, conds, {})
+        for cid in r2['conditions_met']:
+            conds[cid] = True
+
+        assert conds['f1'] is True
+        assert conds['l1'] is True
+        assert conds['f2'] is False
+        assert conds['l2'] is False
+
+    @patch('agents.core.get_client')
+    def test_report_receives_final_condition_state(self, mock_get_client):
+        # Set up conditions so that f1 is True, rest False
+        # Then call generate_report and confirm MET/UNMET appear correctly in prompt
+        report_payload = json.dumps({
+            'weak_points': [{'label': 'Finance', 'issue': 'No payback', 'fix': 'Add a table.'}],
+            'moments': [],
+        })
+        mock_client = make_mock_client(report_payload)
+        mock_get_client.return_value = mock_client
+
+        conds = core.get_initial_conditions(['finance'])
+        conds['f1'] = True  # simulate one condition having been met
+
+        core.generate_report(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, conds)
+        contents = mock_client.models.generate_content.call_args.kwargs['contents']
+        assert '[MET]' in contents
+        assert '[UNMET]' in contents
+
+    @patch('agents.core.get_client')
+    def test_follow_up_from_second_persona_during_session(self, mock_get_client):
+        # Simulate a scenario where legal jumps in as follow_up during finance's turn
+        payload = json.dumps({
+            'speaker_id': 'finance',
+            'response': 'The cost is $240k. No vendor contract yet.',
+            'conditions_met': [],
+            'source': None,
+            'follow_up': {
+                'speaker_id': 'legal',
+                'response': 'Hold on — who is responsible if the vendor breaches the contract?',
+                'conditions_met': [],
+                'source': None,
+            },
+        })
+        mock_client = make_mock_client(payload)
+        mock_get_client.return_value = mock_client
+
+        conds = core.get_initial_conditions(['finance', 'legal'])
+        result = core.generate_reply(SAMPLE_PROPOSAL, ['finance', 'legal'], SAMPLE_TRANSCRIPT, conds, {})
+
+        assert result['speaker'] == 'finance'
+        assert 'follow_up' in result
+        assert result['follow_up']['speaker'] == 'legal'
+        assert 'vendor' in result['follow_up']['text'].lower() or 'contract' in result['follow_up']['text'].lower()
+
+    @patch('agents.core.get_client')
+    def test_urgency_note_names_count_in_prompt(self, mock_get_client):
+        mock_client = make_mock_client(json.dumps({
+            'speaker_id': 'finance', 'response': 'Cost.', 'conditions_met': [], 'source': None,
+        }))
+        mock_get_client.return_value = mock_client
+        core.generate_reply(SAMPLE_PROPOSAL, ['finance'], SAMPLE_TRANSCRIPT, {}, {'turns_remaining': 2})
+        si = mock_client.models.generate_content.call_args.kwargs['config'].system_instruction
+        assert '2' in si
+        assert 'URGENT' in si

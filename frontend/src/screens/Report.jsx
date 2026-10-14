@@ -239,8 +239,12 @@ export default function Report({ navigate, session }) {
                 <div key={i} className="weak-point-card">
                   <div className="weak-point-label">{w.label}</div>
                   <div className="weak-point-issue">{w.issue}</div>
-                  <div className="weak-point-fix-label">Suggested fix</div>
-                  <div className="weak-point-fix">{w.fix}</div>
+                  {w.fix && (
+                    <div className="weak-point-fix-block">
+                      <div className="weak-point-fix-label">How to fix</div>
+                      <div className="weak-point-fix">{w.fix}</div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
