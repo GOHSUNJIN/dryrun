@@ -26,7 +26,7 @@ The primary users are professionals who present proposals to approval committees
 1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. Recent Drive docs appear automatically if you are already signed in. The panel reads the proposal and generates challenges specific to your content.
 2. **Choose your panel.** Select which stakeholder roles will challenge you across five categories: Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests up to 4 panelists relevant to your document, mixing categories freely, and shows a recommendation banner. If no targeted panelists are detected, Quinn (General Reviewer) is selected as a fallback. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
 3. **Configure the session.** Set panel toughness (Supportive, Balanced, Tough) and turn limit.
-4. **Enter the room.** A random panelist fires the first question immediately. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer satisfied any conditions and sometimes triggers a second panelist to pile on. An elapsed timer and turn counter are shown in the top bar.
+4. **Enter the room.** A random panelist fires the first question immediately. You type or speak your responses. After each reply the AI picks the next speaker, gives the last questioner first right of reply if they still have unmet conditions and sometimes triggers a second panelist to pile on immediately when your answer contradicts their domain. An elapsed timer and turn counter are shown in the top bar.
 5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually at any time. The AI analyses the full transcript and generates a coaching report.
 6. **Read the debrief.** Every key moment is annotated: what was asked, what you said, why it worked or fell short and a stronger version to try. Filter moments by persona.
 7. **Rehearse again.** One click puts you back in the room. Past sessions are saved locally and grouped by meeting.
@@ -134,7 +134,7 @@ backend/
   server.py              FastAPI server (for Cloud Run deployment)
   Dockerfile             multi-stage: Node 20 builds React, Python 3.12 runs FastAPI
 tests/
-  test_core.py           pytest tests for backend/agents/core.py
+  test_core.py           126 pytest tests for backend/agents/core.py
 ```
 
 ---
@@ -145,7 +145,7 @@ All three AI calls use a single-call batch approach: one Gemini call returns the
 
 ### `factCheckProposal` (Google Search grounding)
 
-Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding to verify the proposal's key quantitative claims against live web data. The findings are injected into Sam's context so every challenge Sam makes references real market data.
+Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding to verify the proposal's key quantitative claims against live web data. The findings are injected into Jun's context so every challenge Jun makes references real market data.
 
 ### `generateOpenings`
 
@@ -155,9 +155,11 @@ Called once. Returns one opening challenge per selected panelist written specifi
 
 Called after every presenter turn. The system prompt applies several layers of intelligence:
 
-- **Speaker selection.** Picks the panelist with the most unmet conditions. Avoids repeating the last speaker.
+- **Speaker selection.** Picks the panelist with the most unmet conditions. The last questioner gets first right of reply: if they still have unmet conditions they are preferred before switching to another panelist.
+- **Multi-panelist pile-on.** After any reply a second panelist can jump in via `follow_up` when the presenter's answer directly contradicts their domain or raises a cross-domain concern. The presenter can face two challenges in a single turn.
+- **Answer quality check.** Classifies the presenter's latest message as poor, medium or good. A poor answer (vague, hedged or too short) injects a push-back instruction into the prompt; a good answer (specific, contains numbers or 40+ words) injects an acknowledgment instruction.
 - **Condition acknowledgment.** Only marks a condition as met when the presenter's latest message explicitly and specifically addressed it with concrete information.
-- **Push-back.** Calls out vague or hedged answers directly without softening.
+- **Contradiction detection.** If the presenter's current answer contradicts an earlier turn, the panelist is instructed to reference both statements directly.
 - **Satisfied panelist mode.** When all of a panelist's conditions are met they shift from challenging to supportive.
 
 ### `generateReport`
@@ -172,12 +174,12 @@ Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested 
 
 | Category | Panelists |
 |----------|-----------|
-| Business | Alan (Finance), Alex (Legal), Renes (Operations), Charles (Board), Maya (HR), Kevin (Engineering), Priya (Marketing), Sam (Fact-Checker), Elena (Sustainability), Nadia (Customer Success), Marcus (DPO) |
+| Business | Ritish (Finance), Alex (Legal), Ajwad (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Mei (Marketing), Jun (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
 | Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
-| Event Planning | Riya (Event Director), Darren (Finance Approver), Kai (Safety Officer), Cleo (Programme Lead) |
-| Academic | Prof. Lin (Supervisor), Johann (External Examiner), Dr. Patel (Internal Examiner), Dr. Chen (Ethics Reviewer), Raj (Industry Mentor), Dr. Kim (Research Funder) |
-| Policy | Omar (Policy Analyst), Victor (Regulatory Advisor), Zara (Community Representative) |
-| General | Quinn (General Reviewer) - fallback selected only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
+| Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
+| Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
+| Policy | Zul (Policy Analyst), Boon (Regulatory Advisor), Nurul (Community Representative) |
+| General | Wei (General Reviewer) — fallback selected only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
 
 Custom personas follow the same structure and are passed to every API call in `custom_personas`.
 
@@ -198,7 +200,7 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   },
   transcript: [],             // full message history
   conditions: {},             // { f1: false, f2: true, ... }
-  factCheckNotes: '',         // Sam's verified research briefing
+  factCheckNotes: '',         // Jun's verified research briefing
   customPersonaDefs: {},      // serialised custom personas for API calls
   reportData: null,           // weak_points + moments from generateReport
   startTime: null,            // Date.now() at session start
@@ -258,9 +260,16 @@ If AI is unavailable the response also includes `"demo": true` and `"demo_reason
   "speaker": "legal",
   "text": "...",
   "conditions_met": ["l1"],
-  "source": null
+  "source": null,
+  "follow_up": {
+    "speaker": "finance",
+    "text": "...",
+    "conditions_met": []
+  }
 }
 ```
+
+`follow_up` is omitted when only one panelist responds. When present it is rendered as a second message immediately after the primary response with no additional presenter turn required.
 
 ### `POST /api/session/end`
 
@@ -453,9 +462,11 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Individual calendar event deletion
 - Recent sessions with meeting badge, paginated 3 per page
 - Recurring weak spots section: per-card dismiss with recovery ("Show dismissed")
+- Click any weak spot card to open a detail popup with the full issue, a how-to-fix callout and the list of sessions it appeared in
 
 ### Past sessions
-- Sessions grouped by linked meeting
+- Sessions grouped by linked meeting or proposal
+- Calendar-synced meetings appear as groups even before any rehearsals are done
 - Per-group rename and bulk delete
 - Per-session: conditions met, turns, duration, demo badge
 - Inline proposal text expand/collapse per session row
@@ -490,6 +501,14 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Vercel deployment as a secondary live URL
 - Google Drive, Docs and Calendar integrations
 - Code refactor: TTS and elapsed timer extracted to custom hooks, shared time utilities, deduplicated session save and launch logic, CSS classes for room status banners
+- Multi-panelist pile-on via `follow_up`: second panelist jumps in when presenter contradicts their domain
+- First right of reply: last questioner is preferred for the next turn until their conditions are met
+- Contradiction detection: panelist references both conflicting statements when answer contradicts an earlier turn
+- Answer quality classification drives automatic push-back or acknowledgment instructions
+- Weak spot detail popup: issue text, how-to-fix callout and session list on click
+- Calendar-synced meetings appear in Past Sessions as empty groups before any rehearsals
+- Singapore-localised persona names across all 28 built-in roles
+- 126 pytest tests covering all Gemini logic including full multi-turn session simulation
 
 ### Still to do
 - Google Cloud Run backend (Dockerfile ready)
