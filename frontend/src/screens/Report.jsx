@@ -15,10 +15,11 @@ const item = {
 }
 
 export default function Report({ navigate, session }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied]       = useState(false)
   const [activeTab, setActiveTab] = useState('conditions')
   const [exporting, setExporting] = useState(false)
-  const [docUrl, setDocUrl] = useState(null)
+  const [docUrl, setDocUrl]       = useState(null)
+  const [exportError, setExportError] = useState(null)
 
   const isDemoReport  = Boolean(session?.reportData?.demo) || !session?.reportData?.weak_points?.length
   const hasRealReport = !isDemoReport
@@ -53,12 +54,14 @@ export default function Report({ navigate, session }) {
   const handleExportToDoc = async () => {
     if (docUrl) { window.open(docUrl, '_blank'); return }
     setExporting(true)
+    setExportError(null)
     try {
       const url = await exportToGoogleDoc(proposalName, weakPoints, personas, conditions)
       setDocUrl(url)
       window.open(url, '_blank')
     } catch (err) {
       console.error('[Docs] export failed:', err)
+      setExportError('Export failed. Sign in to Google and try again.')
     } finally {
       setExporting(false)
     }
@@ -123,13 +126,19 @@ export default function Report({ navigate, session }) {
                 className="btn btn-secondary btn-sm"
                 onClick={handleExportToDoc}
                 disabled={exporting}
-                style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }}
+                style={{
+                  background: exportError ? 'rgba(220,38,38,0.1)' : 'rgba(255,255,255,0.08)',
+                  borderColor: exportError ? 'rgba(220,38,38,0.3)' : 'rgba(255,255,255,0.12)',
+                  color: exportError ? '#F87171' : '#E8E5DF',
+                }}
               >
                 {exporting
                   ? <><Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> Exporting...</>
-                  : docUrl
-                    ? <><ExternalLink size={13} /> Open in Docs</>
-                    : <><ExternalLink size={13} /> Export to Docs</>
+                  : exportError
+                    ? <><ExternalLink size={13} /> Retry export</>
+                    : docUrl
+                      ? <><ExternalLink size={13} /> Open in Docs</>
+                      : <><ExternalLink size={13} /> Export to Docs</>
                 }
               </button>
             </div>

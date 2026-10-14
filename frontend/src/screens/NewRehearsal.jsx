@@ -1,9 +1,9 @@
-import { useState, useRef, Fragment } from 'react'
+import { useState, useRef, useEffect, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadCustomPersonas, loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents } from '../utils/storage.js'
-import { listDriveItems, fetchDocText } from '../utils/google.js'
+import { loadCustomPersonas, loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel } from '../utils/storage.js'
+import { listDriveItems, listDriveDocs, fetchDocText, isSignedIn } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
@@ -25,7 +25,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [proposalText, setProposalText] = useState('')
   const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
   const [drag, setDrag]           = useState(false)
-  const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
+  const [selected, setSelected]   = useState(() => loadLastPanel() || ['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
   const [turnLimit, setTurnLimit] = useState(parseInt(defaults.turnLimit) || 15)
   const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
@@ -34,7 +34,13 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [driveLoading, setDriveLoading] = useState(false)
   const [driveItems, setDriveItems]     = useState([])
   const [driveStack, setDriveStack]     = useState([])
+  const [recentDocs, setRecentDocs]     = useState([])
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    if (!isSignedIn()) return
+    listDriveDocs().then(docs => setRecentDocs(docs.slice(0, 5))).catch(() => {})
+  }, [])
 
   const togglePersona = (id) => {
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
@@ -117,6 +123,7 @@ const canContinue = () => {
     const text = proposalText
     const config = { toughness, turnLimit }
 
+    saveLastPanel(selected)
     try {
       const res = await fetch('/api/session/start', {
         method: 'POST',
@@ -258,6 +265,37 @@ const canContinue = () => {
                   )
                 })()}
 
+                {recentDocs.length > 0 && !uploaded && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <FolderOpen size={12} style={{ color: 'var(--app-accent)' }} /> Recent from Drive
+                    </div>
+                    {recentDocs.map(doc => (
+                      <button
+                        key={doc.id}
+                        onClick={() => selectDriveFile(doc)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          width: '100%', padding: '8px 12px', marginBottom: 4,
+                          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                          borderRadius: 7, cursor: 'pointer', textAlign: 'left',
+                          fontFamily: 'var(--font-ui)', transition: 'background 0.1s ease',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-surface)'}
+                      >
+                        <FileText size={13} style={{ color: '#4285F4', flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{doc.name}</span>
+                        {doc.modifiedTime && (
+                          <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+                            {new Date(doc.modifiedTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {!uploaded ? (
                   <>
                     <div
@@ -385,7 +423,7 @@ const canContinue = () => {
                       <div className="file-icon"><FileText size={18} /></div>
                       <div>
                         <div className="file-name">{proposalName || 'Your rehearsal name'}</div>
-                        <div className="file-size">{proposalText.length} characters</div>
+                        <div className="file-size">{proposalText.trim().split(/\s+/).filter(Boolean).length} words</div>
                       </div>
                       <button
                         onClick={() => { setUploaded(false); setProposalText('') }}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
 import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
 
@@ -72,10 +72,21 @@ function TranscriptMsg({ msg, personas, appearing }) {
   const isPresenter  = msg.speaker === 'presenter'
   const persona      = personas.find(p => p.id === msg.speaker)
   const replyPersona = msg.replyTo ? personas.find(p => p.id === msg.replyTo) : null
+  const [hovered, setHovered] = useState(false)
+  const [copied, setCopied]   = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(msg.text).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
 
   return (
     <motion.div
       className={`transcript-msg ${isPresenter ? 'presenter' : ''}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ position: 'relative' }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -110,6 +121,24 @@ function TranscriptMsg({ msg, personas, appearing }) {
           <ExternalLink size={10} />
           {msg.source.label}
         </div>
+      )}
+
+      {hovered && !appearing && (
+        <button
+          onClick={handleCopy}
+          style={{
+            position: 'absolute', top: 6, right: 6,
+            background: copied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, cursor: 'pointer',
+            padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
+            fontSize: '0.6875rem', color: copied ? '#34D399' : 'var(--room-text-2)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {copied ? <Check size={10} /> : <Copy size={10} />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
       )}
     </motion.div>
   )
@@ -184,15 +213,18 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [openingsDone, setOpeningsDone]             = useState(openingMsgs.length === 0)
   const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
 
-  const transcriptRef    = useRef(null)
-  const inputRef         = useRef(null)
-  const recognitionRef   = useRef(null)
-  const roomStateRef     = useRef(roomState)
-  const speechOnRef      = useRef(speechOn)
-  const ttsQueueRef      = useRef([])
-  const ttsBusyRef       = useRef(false)
-  const openingsFiredRef = useRef(false)
-  const startTimeRef     = useRef(Date.now())
+  const [elapsed, setElapsed] = useState('0:00')
+
+  const transcriptRef      = useRef(null)
+  const inputRef           = useRef(null)
+  const recognitionRef     = useRef(null)
+  const roomStateRef       = useRef(roomState)
+  const speechOnRef        = useRef(speechOn)
+  const ttsQueueRef        = useRef([])
+  const ttsBusyRef         = useRef(false)
+  const openingsFiredRef   = useRef(false)
+  const startTimeRef       = useRef(Date.now())
+  const userScrolledUpRef  = useRef(false)
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
@@ -262,13 +294,29 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (transcriptRef.current) {
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight
-    }
+    if (userScrolledUpRef.current) return
+    const el = transcriptRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [localTranscript, typingPersonaId])
 
   useEffect(() => { roomStateRef.current = roomState }, [roomState])
   useEffect(() => { speechOnRef.current  = speechOn  }, [speechOn])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const secs = Math.floor((Date.now() - startTimeRef.current) / 1000)
+      const m = Math.floor(secs / 60)
+      const s = secs % 60
+      setElapsed(`${m}:${s.toString().padStart(2, '0')}`)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const handleTranscriptScroll = useCallback(() => {
+    const el = transcriptRef.current
+    if (!el) return
+    userScrolledUpRef.current = (el.scrollHeight - el.scrollTop - el.clientHeight) > 40
+  }, [])
 
   // Cancel TTS on unmount
   useEffect(() => () => {
@@ -292,10 +340,17 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
   }, [inputValue])
 
+  const handleRetry = () => {
+    const lastPresenterMsg = [...localTranscript].reverse().find(m => m.speaker === 'presenter')
+    if (lastPresenterMsg) setInputValue(lastPresenterMsg.text)
+    setApiError(false)
+  }
+
   const handleSend = async (textOverride) => {
     const text = textOverride !== undefined ? String(textOverride).trim() : inputValue.trim()
     if (!text || roomStateRef.current === 'thinking') return
 
+    userScrolledUpRef.current = false
     if (listening) stopListening()
     cancelTTS()
 
@@ -611,6 +666,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           >
             {speechOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
+          <span style={{ fontSize: '0.75rem', color: 'var(--room-text-3)', fontVariantNumeric: 'tabular-nums', minWidth: 34 }}>
+            {elapsed}
+          </span>
           <span
             className="room-turn-counter"
             style={nearTurnLimit || turnLimitReached ? { color: '#F59E0B' } : undefined}
@@ -658,7 +716,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       <div className="room-sep" />
 
-      <div className="room-transcript" ref={transcriptRef}>
+      <div className="room-transcript" ref={transcriptRef} onScroll={handleTranscriptScroll}>
         <div className="room-transcript-inner">
           {localTranscript.map(msg => (
             <TranscriptMsg
@@ -684,6 +742,26 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             fontSize: '0.8125rem', color: '#34D399', fontWeight: 500,
           }}>
             <Check size={13} style={{ flexShrink: 0 }} /> Condition met
+          </div>
+        </div>
+      )}
+
+      {apiError && (
+        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 6px' }}>
+          <div style={{
+            padding: '8px 16px', borderRadius: 8,
+            background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+            fontSize: '0.8125rem', color: '#F87171',
+          }}>
+            <span>AI connection lost. Your last message was not processed.</span>
+            <button
+              className="btn btn-sm"
+              onClick={handleRetry}
+              style={{ background: 'rgba(220,38,38,0.12)', borderColor: 'rgba(220,38,38,0.25)', color: '#F87171', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+            >
+              Retry
+            </button>
           </div>
         </div>
       )}

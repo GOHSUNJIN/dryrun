@@ -114,6 +114,17 @@ export function saveVoiceSettings(settings) {
   localStorage.setItem(VOICE_KEY, JSON.stringify(settings))
 }
 
+const LAST_PANEL_KEY = 'dryrun_last_panel'
+
+export function loadLastPanel() {
+  try { return JSON.parse(localStorage.getItem(LAST_PANEL_KEY) || 'null') }
+  catch { return null }
+}
+
+export function saveLastPanel(ids) {
+  localStorage.setItem(LAST_PANEL_KEY, JSON.stringify(ids))
+}
+
 const MEETINGS_KEY = 'dryrun_meetings'
 
 export function loadLocalMeetings() {
