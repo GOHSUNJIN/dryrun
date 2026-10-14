@@ -1,7 +1,7 @@
 import { onRequest } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
 import {
-  factCheckProposal, generateOpenings, getInitialConditions,
+  detectPanel, factCheckProposal, generateOpenings, getInitialConditions,
   generateReply, generateReport,
 } from './core.js'
 import {
@@ -11,6 +11,20 @@ import {
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 
 const opts = { secrets: [GEMINI_API_KEY], cors: true, timeoutSeconds: 120 }
+
+export const sessionDetectPanel = onRequest(opts, async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  const { proposal_text = '', available_ids = [] } = req.body
+  if (!process.env.GEMINI_API_KEY || !available_ids.length) {
+    return res.status(200).json({ persona_ids: available_ids.slice(0, 4) })
+  }
+  try {
+    res.status(200).json({ persona_ids: await detectPanel(proposal_text, available_ids) })
+  } catch (err) {
+    console.error('[detect-panel] failed:', err.message)
+    res.status(200).json({ persona_ids: available_ids.slice(0, 4) })
+  }
+})
 
 export const sessionStart = onRequest(opts, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })

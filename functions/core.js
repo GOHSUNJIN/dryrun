@@ -121,6 +121,45 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+export async function detectPanel(proposalText, availableIds) {
+  const ai = getClient()
+  const defs = PERSONA_DEFS
+
+  const panelDescLines = availableIds
+    .filter(pid => defs[pid])
+    .map(pid => {
+      const p = defs[pid]
+      return `- ${pid}: ${p.name}, ${p.role}. Cares about: ${p.cares}.`
+    })
+
+  const system = `You are selecting a stakeholder review panel for a business document.
+Select the 2 to 4 panelists whose expertise is most relevant to this specific document's content.
+You may select fewer than 4 if only 1 or 2 are genuinely relevant.
+
+Available panelists:
+${panelDescLines.join('\n')}
+
+Return ONLY valid JSON with no markdown fences:
+{"persona_ids": ["id1", "id2"]}`
+
+  try {
+    const response = await withRetry(() => ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: `Document:\n${proposalText.slice(0, 1500)}\n\nSelect the best panel.`,
+      config: {
+        systemInstruction: system,
+        responseMimeType: 'application/json',
+        maxOutputTokens: 80,
+      },
+    }))
+    const data = JSON.parse(response.text)
+    const ids = (data.persona_ids || []).filter(id => availableIds.includes(id))
+    return ids.length > 0 ? ids : availableIds.slice(0, 4)
+  } catch {
+    return availableIds.slice(0, 4)
+  }
+}
+
 export async function factCheckProposal(proposalText) {
   const ai = getClient();
   const prompt =

@@ -29,7 +29,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [toughness, setToughness] = useState(defaults.toughness)
   const [turnLimit, setTurnLimit] = useState(parseInt(defaults.turnLimit) || 15)
   const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
-  const [launching, setLaunching] = useState(false)
+  const [launching, setLaunching]     = useState(false)
+  const [detectingPanel, setDetectingPanel] = useState(false)
   const [driveOpen, setDriveOpen]       = useState(false)
   const [driveLoading, setDriveLoading] = useState(false)
   const [driveError, setDriveError]     = useState(null)
@@ -125,8 +126,31 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
   const canContinue = () => {
     if (step === 0) return uploaded && proposalName.trim().length > 0
-    if (step === 1) return selected.length >= 2
+    if (step === 1) return selected.length >= 1
     return true
+  }
+
+  const handleNext = async () => {
+    if (step === 0 && proposalText) {
+      setDetectingPanel(true)
+      try {
+        const allIds = [...PERSONAS.map(p => p.id), ...customPersonas.map(p => p.id)]
+        const res = await fetch('/api/session/detect-panel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proposal_text: proposalText, available_ids: allIds }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.persona_ids?.length) setSelected(data.persona_ids)
+        }
+      } catch (err) {
+        console.warn('[detect-panel] failed, keeping current selection:', err.message)
+      } finally {
+        setDetectingPanel(false)
+      }
+    }
+    setStep(s => s + 1)
   }
 
   const enterRoom = async () => {
@@ -560,11 +584,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         {step < STEPS.length - 1 ? (
           <button
             className="btn btn-primary"
-            onClick={() => setStep(s => s + 1)}
-            disabled={!canContinue()}
-            style={{ opacity: canContinue() ? 1 : 0.4, cursor: canContinue() ? 'pointer' : 'not-allowed' }}
+            onClick={handleNext}
+            disabled={!canContinue() || detectingPanel}
+            style={{ opacity: (canContinue() && !detectingPanel) ? 1 : 0.4, cursor: (canContinue() && !detectingPanel) ? 'pointer' : 'not-allowed' }}
           >
-            Continue <ArrowRight size={14} />
+            {detectingPanel ? <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Analysing...</> : <>Continue <ArrowRight size={14} /></>}
           </button>
         ) : (
           <button
