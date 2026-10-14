@@ -23,13 +23,13 @@ The primary users are professionals who present proposals to approval committees
 
 ## How it works
 
-1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. The panel reads it and generates challenges specific to your content.
-2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library.
-3. **Configure the session.** Set panel toughness and turn limit.
-4. **Enter the room.** A random panelist fires the first question immediately. The rest stagger in. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer was specific enough to satisfy any conditions and sometimes triggers a second panelist to pile on.
-5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually. The AI analyses the full transcript and generates a coaching report.
-6. **Read the debrief.** Every key moment is annotated with what was asked, what you said, why it worked or fell short and a stronger version to try.
-7. **Rehearse again.** One click puts you back in the room. Past sessions are saved locally.
+1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. Recent Drive docs appear automatically if you are already signed in. The panel reads the proposal and generates challenges specific to your content.
+2. **Choose your panel.** Select which stakeholder roles will challenge you. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
+3. **Configure the session.** Set panel toughness (Supportive, Balanced, Tough) and turn limit.
+4. **Enter the room.** A random panelist fires the first question immediately. You type or speak your responses. After each reply the AI picks the next speaker whose concerns are least addressed, checks whether your answer satisfied any conditions and sometimes triggers a second panelist to pile on. An elapsed timer and turn counter are shown in the top bar.
+5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually at any time. The AI analyses the full transcript and generates a coaching report.
+6. **Read the debrief.** Every key moment is annotated: what was asked, what you said, why it worked or fell short and a stronger version to try. Filter moments by persona.
+7. **Rehearse again.** One click puts you back in the room. Past sessions are saved locally and grouped by meeting.
 
 ---
 
@@ -47,7 +47,7 @@ The primary users are professionals who present proposals to approval committees
 | Hosting | Firebase Hosting (SPA with function rewrites) |
 | Secrets | Firebase Secret Manager (`GEMINI_API_KEY`) |
 | State management | React `useState` with session lifted to `App.jsx` |
-| Persistence | `localStorage` for past sessions and custom personas |
+| Persistence | `localStorage` for sessions, personas, meetings, cal events, voice settings |
 | Styling | Plain CSS with CSS custom properties |
 
 ---
@@ -100,18 +100,20 @@ frontend/
     App.jsx              root: screen routing and session state
     components/
       Sidebar.jsx        left nav with profile footer
+      Toast.jsx          ToastStack component and useToast hook
     screens/
       Home.jsx           dashboard: greeting, upcoming meetings, recent sessions, weak spots
       NewRehearsal.jsx   3-step setup wizard: upload, choose panel, configure
-      RehearsalRoom.jsx  live rehearsal: panel seats, transcript, input bar
-      Report.jsx         post-session summary with tabbed Conditions / Coaching view
-      Debrief.jsx        moment-by-moment coaching with timeline and analysis
-      PastSessions.jsx   history grouped by proposal
-      PanelLibrary.jsx   browse built-in roles and create custom ones
-      Settings.jsx       preferences: voice rate and rehearsal defaults
+      RehearsalRoom.jsx  live rehearsal: panel seats, transcript, elapsed timer, input bar
+      Report.jsx         post-session summary with tabbed Conditions / Coaching / Proposal view
+      Debrief.jsx        moment-by-moment coaching with timeline and persona filter
+      PastSessions.jsx   history grouped by meeting with inline proposal preview
+      PanelLibrary.jsx   browse built-in roles and create custom personas
+      Settings.jsx       voice settings, rehearsal defaults, Google account management
     utils/
-      storage.js         localStorage helpers (sessions, meetings, cal events, dismissed spots, voice settings)
-    data.js              static personas and demo openings
+      google.js          OAuth2 token client, Drive, Calendar and Docs helpers
+      storage.js         localStorage helpers: sessions, meetings, cal events, personas, settings
+    data.js              static persona definitions and demo openings
     index.css            design system: tokens, components, room theme
   vercel.json            function timeout config (maxDuration 60s for session/start)
 functions/
@@ -169,7 +171,7 @@ Each persona has 2 to 3 conditions. A condition is a specific claim the presente
 | `finance` | Morgan | Head of Finance | Total cost breakdown, payback period calculated, plan if budget is halved |
 | `legal` | Alex | Legal Counsel | Data privacy plan confirmed, vendor contract terms addressed, accountability structure defined |
 | `ops` | Jordan | Operations Lead | Timeline with milestones given, current process owner identified, disruption assessment complete |
-| `factcheck` | Sam | Fact-Checker | Salary range verified, 30-hour claim substantiated |
+| `factcheck` | Sam | Fact-Checker | Key figures verified against sources, supporting evidence cited for main claims |
 
 Custom personas created in the Panel Library follow the same structure and are passed to every API call in `custom_personas`.
 
@@ -182,7 +184,7 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
 ```js
 {
   proposalText: '',           // full proposal text
-  proposalName: '',           // rehearsal name (user-entered, not auto-filled from filename)
+  proposalName: '',           // rehearsal name, auto-filled from filename or Drive doc title if not set
   personaIds: [...],          // active persona IDs
   config: {
     toughness: 'Balanced',    // Supportive | Balanced | Tough
@@ -392,39 +394,85 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
 
-**Planned integrations before submission:**
-- [x] Google Drive: import proposals with full folder navigation breadcrumb
-- [x] Google Docs: export session reports as formatted documents
-- [x] Google Calendar: sync upcoming meetings to the Home screen dashboard
+**Google integrations:**
+- [x] Google Drive: import proposals with full folder navigation and breadcrumb trail; auto-shows recent docs when signed in
+- [x] Google Docs: export session report as a formatted document, with error recovery if not signed in
+- [x] Google Calendar: sync upcoming meetings to Home dashboard; persisted to localStorage; individual event deletion; disconnect from Settings
 
 ---
 
-## Progress and what is left
+## Feature summary
+
+### Rehearsal setup
+- 3-step wizard: upload, panel selection, configure
+- File upload (drag-and-drop or browse) or Google Drive import
+- Auto-fills rehearsal name from filename or Drive doc title if not already set
+- Recent Drive docs shown automatically when signed in (no picker required); dismissible with Clear
+- Word count shown on uploaded file card
+- Meeting link: connect a rehearsal to an upcoming calendar event
+- Panel selection remembers the last configuration across sessions
+- Custom turn limit (5/10/15/20/25) and toughness level (Supportive/Balanced/Tough)
+
+### Rehearsal room
+- Panelist seats with speaking animations, condition dots and met/total counts
+- Transcript with time-stamped messages, source chips for fact-checked claims
+- Elapsed timer and turn counter in the top bar
+- Smart auto-scroll: pauses when the user scrolls up, resumes on new message
+- Voice input via Web Speech API
+- Text-to-speech panel voices with per-persona pitch and rate
+- Copy-on-hover for every transcript message
+- Condition met flash banner
+- Turn limit warning with actionable "End and get report" button
+- All-conditions-met exit offer with keep-going option
+- Retry banner when API connection is lost, pre-fills last message into input
+- Demo mode banner when AI is unavailable
+
+### Report and debrief
+- Post-session summary: conditions met, turn count, session duration
+- Tabbed view: Conditions, Coaching (weak points), Proposal text
+- Copy report to clipboard
+- Export to Google Docs (opens new tab; retries gracefully on auth failure)
+- Full session debrief: annotated moments timeline with persona filter
+- Per-moment coaching: what was asked, what you said, why it worked or fell short, stronger answer to try
+- "Next weak point" button cycles through weak moments
+
+### Home dashboard
+- Time-of-day greeting with profile name (configurable in Settings)
+- Upcoming meetings column: Google Calendar sync + manual entries
+- Individual calendar event deletion
+- Recent sessions with meeting badge, paginated 3 per page
+- Recurring weak spots section: per-card dismiss with recovery ("Show dismissed")
+
+### Past sessions
+- Sessions grouped by linked meeting
+- Per-group rename and bulk delete
+- Per-session: conditions met, turns, duration, demo badge
+- Inline proposal text expand/collapse per session row
+- "Rehearse again" restores linked meeting context
+
+### Panel Library
+- Built-in personas: name, role, conditions and agenda shown per card
+- Custom persona creation with name, role, speaking style and conditions
+- Edit and delete custom personas
+
+### Settings
+- Voice output: enable/disable, playback rate slider
+- Default toughness and turn limit (applied to new rehearsals)
+- Google account: connect for Drive, Docs and Calendar; connection state persists across reloads; disconnect with one click
+- Profile name and role
+
+---
+
+## Progress
 
 ### Done
 - Full React SPA with sidebar navigation, 7 screens and a shared design system
-- 3-step rehearsal setup: file upload + meeting link, panel selection, toughness + turn limit
-- Live rehearsal room: panel seats, transcript, speaking animations and input bar
-- AI-driven panel with per-persona conditions, speaker rotation logic and fact-checking
-- Post-session coaching report with weak points and annotated moments
-- Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped entirely with no retry. `generateReply` and `generateReport` use `withRetry(fn, 0)` to fail immediately to fallback
-- Custom persona creation in the Panel Library
-- Past sessions persisted to `localStorage` with replay navigation
+- All features listed in the Feature summary section above
+- AI-driven panel with per-persona conditions, speaker rotation and fact-checking
+- Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped with no retry
 - Firebase Cloud Functions v2 deployment with Secret Manager
 - Vercel deployment as a secondary live URL
-- Google Search grounding for the Fact-Checker persona
-- Google Drive proposal import with folder navigation and breadcrumb trail
-- Google Docs report export
-- Google Calendar sync: events persisted to `localStorage` so they survive navigation and appear in the meeting picker
-- Manual meeting creation from the Home screen
-- Meeting linkage: rehearsals can be linked to an upcoming meeting; shown as a badge in Past Sessions rows
-- Past Sessions rows show meeting badge, rehearsal name, date and duration
-- Rehearsal name field (step 1): user-entered, not auto-filled from uploaded filename
-- Home: recurring weak spots section with "Show all" toggle and per-card dismiss (X)
-- Home: recent sessions paginated 3 per page with prev/next controls
-- Home: upcoming meetings column stretches to fill the grid row height
-- Step 3 simplified: removed company size, industry and focus dropdowns
-- Proposal rename inline from Past Sessions (pencil icon on group header)
+- Google Drive, Docs and Calendar integrations
 
 ### Still to do
 - Google Cloud Run backend (Dockerfile ready)
