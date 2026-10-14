@@ -123,7 +123,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     }
   }
 
-const canContinue = () => {
+  const canContinue = () => {
     if (step === 0) return uploaded && proposalName.trim().length > 0
     if (step === 1) return selected.length >= 2
     return true
@@ -132,8 +132,17 @@ const canContinue = () => {
   const enterRoom = async () => {
     setLaunching(true)
 
-    const text = proposalText
-    const config = { toughness, turnLimit }
+    const config     = { toughness, turnLimit }
+    const customDefs = buildCustomDefs(customPersonas.filter(p => selected.includes(p.id)))
+    const sessionBase = {
+      proposalText:      proposalText,
+      proposalName:      proposalName || 'Untitled proposal',
+      personaIds:        selected,
+      config,
+      customPersonaDefs: customDefs,
+      startTime:         Date.now(),
+      linkedMeeting,
+    }
 
     saveLastPanel(selected)
     try {
@@ -141,10 +150,10 @@ const canContinue = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          proposal_text: text,
-          persona_ids: selected,
+          proposal_text:   proposalText,
+          persona_ids:     selected,
           config,
-          custom_personas: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
+          custom_personas: customDefs,
         }),
       })
 
@@ -156,36 +165,12 @@ const canContinue = () => {
       const data = await res.json()
       if (data.demo) console.error('[NewRehearsal] AI unavailable, demo mode. Reason:', data.demo_reason || 'unknown')
       resetSession()
-      updateSession({
-        proposalText: text,
-        proposalName: proposalName || 'Untitled proposal',
-        personaIds: selected,
-        config,
-        transcript: data.messages || [],
-        conditions: data.conditions || {},
-        factCheckNotes: data.fact_check || '',
-        customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
-        startTime: Date.now(),
-        demoMode: !!data.demo,
-        linkedMeeting,
-      })
+      updateSession({ ...sessionBase, transcript: data.messages || [], conditions: data.conditions || {}, factCheckNotes: data.fact_check || '', demoMode: !!data.demo })
       navigate('room')
     } catch (err) {
       console.error('[NewRehearsal] session/start failed:', err)
       resetSession()
-      updateSession({
-        proposalText: text,
-        proposalName: proposalName || 'Untitled proposal',
-        personaIds: selected,
-        config,
-        transcript: [],
-        conditions: {},
-        factCheckNotes: '',
-        customPersonaDefs: buildCustomDefs(customPersonas.filter(p => selected.includes(p.id))),
-        startTime: Date.now(),
-        demoMode: true,
-        linkedMeeting,
-      })
+      updateSession({ ...sessionBase, transcript: [], conditions: {}, factCheckNotes: '', demoMode: true })
       navigate('room')
     }
   }

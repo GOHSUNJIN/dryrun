@@ -4,6 +4,7 @@ import { ArrowRight, Calendar, Clock, ChevronRight, ChevronLeft, Loader, Plus, X
 import { PERSONAS } from '../data.js'
 import { loadSessions, loadLocalMeetings, addLocalMeeting, deleteLocalMeeting, computeWeakSpots, loadDismissedSpots, dismissWeakSpot, loadCalEvents, saveCalEvents, deleteCalEvent, loadProfile } from '../utils/storage.js'
 import { fetchCalendarEvents } from '../utils/google.js'
+import { formatDate, daysFromNow } from '../utils/time.js'
 
 const SESSION_PAGE_SIZE = 3
 
@@ -21,18 +22,6 @@ function getGreeting() {
   if (h < 12) return 'Good morning'
   if (h < 17) return 'Good afternoon'
   return 'Good evening'
-}
-
-function daysFromNow(isoDate) {
-  const target = new Date(isoDate)
-  const today  = new Date()
-  target.setHours(0, 0, 0, 0)
-  today.setHours(0, 0, 0, 0)
-  return Math.round((target - today) / 86400000)
-}
-
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const rowCard = (hovered) => ({

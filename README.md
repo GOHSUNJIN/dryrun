@@ -101,6 +101,9 @@ frontend/
     components/
       Sidebar.jsx        left nav with profile footer
       Toast.jsx          ToastStack component and useToast hook
+    hooks/
+      useTTS.js          text-to-speech queue with per-persona pitch and rate
+      useElapsedTimer.js session elapsed timer with helper to get elapsed minutes
     screens/
       Home.jsx           dashboard: greeting, upcoming meetings, recent sessions, weak spots
       NewRehearsal.jsx   3-step setup wizard: upload, choose panel, configure
@@ -113,6 +116,7 @@ frontend/
     utils/
       google.js          OAuth2 token client, Drive, Calendar and Docs helpers
       storage.js         localStorage helpers: sessions, meetings, cal events, personas, settings
+      time.js            shared time helpers: getCurrentTime, formatDate, daysFromNow, formatSessionDate
     data.js              static persona definitions and demo openings
     index.css            design system: tokens, components, room theme
   vercel.json            function timeout config (maxDuration 60s for session/start)
@@ -473,6 +477,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Firebase Cloud Functions v2 deployment with Secret Manager
 - Vercel deployment as a secondary live URL
 - Google Drive, Docs and Calendar integrations
+- Code refactor: TTS and elapsed timer extracted to custom hooks, shared time utilities, deduplicated session save and launch logic, CSS classes for room status banners
 
 ### Still to do
 - Google Cloud Run backend (Dockerfile ready)
