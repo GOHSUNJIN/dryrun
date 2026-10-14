@@ -47,6 +47,9 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   }
 
   const readFile = (file) => {
+    if (!proposalName.trim()) {
+      setProposalName(file.name.replace(/\.[^/.]+$/, ''))
+    }
     const reader = new FileReader()
     reader.onload = (e) => {
       setProposalText(e.target.result)
@@ -100,6 +103,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const selectDriveFile = async (file) => {
     setDriveOpen(false)
     setDriveLoading(true)
+    if (!proposalName.trim()) setProposalName(file.name)
     try {
       const text = await fetchDocText(file.id)
       setProposalText(text)
@@ -267,8 +271,16 @@ const canContinue = () => {
 
                 {recentDocs.length > 0 && !uploaded && (
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <FolderOpen size={12} style={{ color: 'var(--app-accent)' }} /> Recent from Drive
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <FolderOpen size={12} style={{ color: 'var(--app-accent)' }} /> Recent from Drive
+                      </span>
+                      <button
+                        onClick={() => setRecentDocs([])}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.6875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', padding: 0 }}
+                      >
+                        Clear
+                      </button>
                     </div>
                     {recentDocs.map(doc => (
                       <button

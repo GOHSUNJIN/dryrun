@@ -18,9 +18,9 @@ const item = {
 
 function getGreeting() {
   const h = new Date().getHours()
-  if (h < 12) return 'Good morning,'
-  if (h < 17) return 'Good afternoon,'
-  return 'Good evening,'
+  if (h < 12) return 'Good morning'
+  if (h < 17) return 'Good afternoon'
+  return 'Good evening'
 }
 
 function daysFromNow(isoDate) {
@@ -192,7 +192,7 @@ export default function Home({ navigate }) {
         <motion.div variants={item} style={{ marginBottom: 44 }}>
           <div style={{ width: 24, height: 3, background: 'var(--app-accent)', borderRadius: 2, marginBottom: 18 }} />
           <div className="home-greeting">
-            {getGreeting()} {profile.name}.<br />
+            {getGreeting()}{profile.name ? `, ${profile.name}` : ''}.<br />
             <em>Ready to rehearse?</em>
           </div>
           <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: 8, maxWidth: 420, lineHeight: 1.55 }}>

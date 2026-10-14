@@ -54,13 +54,14 @@ export function exportSessions() {
 export function loadProfile() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}')
+    const name = p.name || ''
     return {
-      name:    p.name    || 'Sun Jin',
-      role:    p.role    || 'Product Manager',
-      initial: (p.name || 'Sun Jin').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
+      name,
+      role:    p.role || '',
+      initial: name ? name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?',
     }
   } catch {
-    return { name: 'Sun Jin', role: 'Product Manager', initial: 'SJ' }
+    return { name: '', role: '', initial: '?' }
   }
 }
 
