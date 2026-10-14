@@ -8,6 +8,31 @@ const SCOPES = [
 let _token = null
 let _client = null
 
+const STORAGE_KEY = 'dryrun_google_token'
+
+function loadStoredToken() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+    if (!stored) return null
+    if (Date.now() >= stored.expiresAt - 60000) {
+      localStorage.removeItem(STORAGE_KEY)
+      return null
+    }
+    return stored.token
+  } catch { return null }
+}
+
+function storeToken(accessToken, expiresIn = 3600) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    token: accessToken,
+    expiresAt: Date.now() + expiresIn * 1000,
+  }))
+}
+
+function clearStoredToken() {
+  localStorage.removeItem(STORAGE_KEY)
+}
+
 function waitForGis() {
   if (window.google?.accounts?.oauth2) return Promise.resolve()
   return new Promise(resolve => {
@@ -30,22 +55,31 @@ export async function signIn() {
     _client.callback = (resp) => {
       if (resp.error) { reject(new Error(resp.error_description || resp.error)); return }
       _token = resp.access_token
+      storeToken(resp.access_token, resp.expires_in)
       resolve(_token)
     }
     _client.requestAccessToken()
   })
 }
 
-export function isSignedIn() { return Boolean(_token) }
+export function isSignedIn() {
+  if (_token) return true
+  const stored = loadStoredToken()
+  if (stored) { _token = stored; return true }
+  return false
+}
 
 export function signOut() {
   if (_token) window.google?.accounts?.oauth2?.revoke(_token, () => {})
   _token = null
   _client = null
+  clearStoredToken()
 }
 
 async function tok() {
   if (_token) return _token
+  const stored = loadStoredToken()
+  if (stored) { _token = stored; return _token }
   return signIn()
 }
 

@@ -254,6 +254,18 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const spotlightX     = `${activePersona?.panelPct ?? 50}%`
   const spotlightColor = activePersona?.glow ?? 'transparent'
 
+  const _rawTurnLimit = parseInt(session.config?.turnLimit)
+  if (!_rawTurnLimit) console.warn('[RehearsalRoom] session.config.turnLimit missing, falling back to 15')
+  const turnLimit        = _rawTurnLimit || 15
+  const turnsLeft        = turnLimit - turnCount
+  const turnLimitReached = hasRealSession && turnCount >= turnLimit
+  const nearTurnLimit    = hasRealSession && turnsLeft <= 3 && turnsLeft > 0
+  const isInputDisabled  = !openingsDone || turnLimitReached || (roomState !== 'idle' && roomState !== 'condition-met')
+  const allConditionsMet = hasRealSession && openingsDone
+    && Object.keys(localConditions).length > 0
+    && Object.values(localConditions).every(Boolean)
+  const showExitOffer    = allConditionsMet && !exitOfferDismissed
+
   // Fire one random opening question on mount. Guard against StrictMode double-invocation.
   useEffect(() => {
     if (openingsFiredRef.current || openingMsgs.length === 0) return
@@ -560,18 +572,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
-
-  const _rawTurnLimit = parseInt(session.config?.turnLimit)
-  if (!_rawTurnLimit) console.warn('[RehearsalRoom] session.config.turnLimit missing, falling back to 15')
-  const turnLimit        = _rawTurnLimit || 15
-  const turnsLeft        = turnLimit - turnCount
-  const turnLimitReached = hasRealSession && turnCount >= turnLimit
-  const nearTurnLimit    = hasRealSession && turnsLeft <= 3 && turnsLeft > 0
-  const isInputDisabled  = !openingsDone || turnLimitReached || (roomState !== 'idle' && roomState !== 'condition-met')
-  const allConditionsMet = hasRealSession && openingsDone
-    && Object.keys(localConditions).length > 0
-    && Object.values(localConditions).every(Boolean)
-  const showExitOffer    = allConditionsMet && !exitOfferDismissed
 
   const typingPersona  = visiblePersonas.find(p => p.id === typingPersonaId)
   const spotlightStyle = {
