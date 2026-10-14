@@ -39,6 +39,7 @@ export default function App() {
       setSession({
         ...DEFAULT_SESSION,
         proposalName:  sv.proposal || '',
+        proposalText:  sv.proposalText || '',
         personaIds:    sv.personaIds || [],
         conditions:    sv.conditions || {},
         reportData:    sv.reportData || null,
@@ -63,7 +64,7 @@ export default function App() {
       case 'debrief':  return <Debrief navigate={navigate} session={session} />
       case 'past':     return <PastSessions navigate={navigate} />
       case 'library':  return <PanelLibrary navigate={navigate} />
-      case 'settings': return <Settings />
+      case 'settings': return <Settings navigate={navigate} />
       default:         return <Home navigate={navigate} />
     }
   }

@@ -79,7 +79,7 @@ export default function Debrief({ navigate, session }) {
         </button>
         <div style={{ width: 1, height: 16, background: 'var(--border)' }} />
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Session debrief: {session?.proposalName || 'Data Engineering Hires'}
+          Session debrief: {session?.proposalName || 'Untitled proposal'}
         </div>
         {isDemoReport && (
           <div style={{
@@ -90,7 +90,10 @@ export default function Debrief({ navigate, session }) {
             AI analysis not generated
           </div>
         )}
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => navigate('home')} style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+            Home
+          </button>
           <button className="btn btn-secondary btn-sm" onClick={() => navigate('room')}>
             <RotateCcw size={12} /> Rehearse again
           </button>

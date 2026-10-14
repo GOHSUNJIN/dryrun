@@ -1,9 +1,15 @@
 import { useState } from 'react'
-import { ExternalLink, Check, Zap, Loader } from 'lucide-react'
+import { ExternalLink, Check, Zap, Loader, User, Sliders, Volume2, Link2, Shield, ChevronRight } from 'lucide-react'
 import { loadProfile, saveProfile, exportSessions, deleteAllSessions, loadVoiceSettings, saveVoiceSettings, loadRehearsalDefaults, saveRehearsalDefaults } from '../utils/storage.js'
 import { signIn, isSignedIn } from '../utils/google.js'
 
-const NAV = ['Profile', 'Rehearsal Defaults', 'Voice', 'Integrations', 'Privacy']
+const NAV = [
+  { id: 'Profile',            label: 'Profile',             icon: User    },
+  { id: 'Rehearsal Defaults', label: 'Rehearsal defaults',  icon: Sliders },
+  { id: 'Voice',              label: 'Voice',               icon: Volume2 },
+  { id: 'Integrations',       label: 'Integrations',        icon: Link2   },
+  { id: 'Privacy',            label: 'Privacy',             icon: Shield  },
+]
 
 const INTEGRATIONS = [
   { icon: '📁', name: 'Google Drive',    desc: 'Import proposals directly from Drive'  },
@@ -22,39 +28,16 @@ function Row({ label, sublabel, children, last }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '14px 0', borderBottom: last ? 'none' : '1px solid var(--border-light)',
-      gap: 16,
+      padding: '16px 0', borderBottom: last ? 'none' : '1px solid var(--border-light)',
+      gap: 24,
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{label}</div>
         {sublabel && (
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2, maxWidth: 380 }}>{sublabel}</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 3, maxWidth: 360, lineHeight: 1.5 }}>{sublabel}</div>
         )}
       </div>
       {children && <div style={{ flexShrink: 0 }}>{children}</div>}
-    </div>
-  )
-}
-
-function SectionTitle({ children, style }) {
-  return (
-    <div style={{
-      fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 600,
-      color: 'var(--text-primary)', marginBottom: 4, paddingBottom: 14,
-      borderBottom: '1px solid var(--border-light)', ...style,
-    }}>{children}</div>
-  )
-}
-
-function SaveRow({ saved, onSave, label = 'Save' }) {
-  return (
-    <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
-      {saved && (
-        <span style={{ fontSize: '0.8125rem', color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Check size={13} /> Saved
-        </span>
-      )}
-      <button className="btn btn-primary" onClick={onSave}>{label}</button>
     </div>
   )
 }
@@ -113,26 +96,28 @@ export default function Settings() {
     if (!next) window.speechSynthesis?.cancel()
   }
 
+  const activeNav = NAV.find(n => n.id === activeSection)
+
   const ToggleBtn = ({ on, onClick }) => (
     <button onClick={onClick} style={{
-      padding: '6px 16px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 600,
+      padding: '7px 18px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 600,
       cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
       borderColor: on ? '#059669' : 'var(--border)',
-      background:  on ? 'rgba(5,150,105,0.1)' : 'transparent',
+      background:  on ? 'rgba(5,150,105,0.08)' : 'var(--bg-base)',
       color:       on ? '#059669' : 'var(--text-secondary)',
       transition: 'all 0.15s ease', whiteSpace: 'nowrap',
     }}>{on ? 'On' : 'Off'}</button>
   )
 
   const SegmentedBtn = ({ options, value, onChange }) => (
-    <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{ display: 'flex', gap: 4, background: 'var(--bg-base)', padding: 3, borderRadius: 8, border: '1px solid var(--border)' }}>
       {options.map(opt => (
         <button key={opt} onClick={() => onChange(opt)} style={{
           padding: '6px 14px', borderRadius: 6, fontSize: '0.8125rem', fontWeight: 500,
-          cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
-          borderColor: value === opt ? 'var(--text-primary)' : 'var(--border)',
-          background:  value === opt ? 'var(--text-primary)' : 'transparent',
-          color:       value === opt ? 'white' : 'var(--text-secondary)',
+          cursor: 'pointer', fontFamily: 'var(--font-ui)', border: 'none',
+          background:  value === opt ? 'var(--bg-surface)' : 'transparent',
+          color:       value === opt ? 'var(--text-primary)' : 'var(--text-muted)',
+          boxShadow:   value === opt ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
           transition: 'all 0.15s ease',
         }}>{opt}</button>
       ))}
@@ -140,27 +125,52 @@ export default function Settings() {
   )
 
   return (
-    <div className="page">
-      <div className="page-header">
+    <div className="page" style={{ maxWidth: 1000 }}>
+      <div className="page-header" style={{ marginBottom: 32 }}>
         <div className="page-title">Settings</div>
       </div>
 
-      <div className="settings-layout">
-        <div className="settings-nav">
-          {NAV.map(n => (
-            <button
-              key={n}
-              className={`settings-nav-item ${activeSection === n ? 'active' : ''}`}
-              onClick={() => setActiveSection(n)}
-            >{n}</button>
-          ))}
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 32, alignItems: 'start' }}>
+
+        {/* Left nav */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'sticky', top: 24 }}>
+          {NAV.map(n => {
+            const Icon = n.icon
+            const isActive = activeSection === n.id
+            return (
+              <button
+                key={n.id}
+                onClick={() => setActiveSection(n.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '0.875rem', fontWeight: isActive ? 600 : 500,
+                  textAlign: 'left',
+                  background: isActive ? 'var(--bg-surface)' : 'transparent',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--border)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)' }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+              >
+                <Icon size={15} style={{ color: isActive ? 'var(--app-accent)' : 'var(--text-muted)', flexShrink: 0 }} />
+                {n.label}
+                {isActive && <ChevronRight size={13} style={{ marginLeft: 'auto', color: 'var(--text-muted)' }} />}
+              </button>
+            )
+          })}
         </div>
 
+        {/* Right content */}
         <div style={{ minWidth: 0 }}>
 
           {activeSection === 'Profile' && (
             <div className="settings-section">
-              <SectionTitle>Profile</SectionTitle>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
+                <User size={16} style={{ color: 'var(--app-accent)' }} />
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Profile</div>
+              </div>
               <Row label="Display name" sublabel="How your name appears in session reports">
                 <input
                   className="settings-input"
@@ -177,13 +187,23 @@ export default function Settings() {
                   placeholder="Your job title"
                 />
               </Row>
-              <SaveRow saved={savedProfile} onSave={handleSaveProfile} label="Save profile" />
+              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+                {savedProfile && (
+                  <span style={{ fontSize: '0.8125rem', color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Check size={13} /> Saved
+                  </span>
+                )}
+                <button className="btn btn-primary" onClick={handleSaveProfile}>Save profile</button>
+              </div>
             </div>
           )}
 
           {activeSection === 'Rehearsal Defaults' && (
             <div className="settings-section">
-              <SectionTitle>Rehearsal Defaults</SectionTitle>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
+                <Sliders size={16} style={{ color: 'var(--app-accent)' }} />
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Rehearsal defaults</div>
+              </div>
               <Row label="Turn limit" sublabel="Maximum turns before the session auto-ends">
                 <select className="settings-select" value={turnLimit} onChange={e => setTurnLimit(e.target.value)}>
                   {['5', '10', '15', '20', '25'].map(v => <option key={v}>{v}</option>)}
@@ -192,13 +212,23 @@ export default function Settings() {
               <Row label="Panel toughness" sublabel="How hard the panel pushes back by default" last>
                 <SegmentedBtn options={['Supportive', 'Balanced', 'Tough']} value={toughness} onChange={setToughness} />
               </Row>
-              <SaveRow saved={savedDefaults} onSave={handleSaveDefaults} label="Save defaults" />
+              <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+                {savedDefaults && (
+                  <span style={{ fontSize: '0.8125rem', color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Check size={13} /> Saved
+                  </span>
+                )}
+                <button className="btn btn-primary" onClick={handleSaveDefaults}>Save defaults</button>
+              </div>
             </div>
           )}
 
           {activeSection === 'Voice' && (
             <div className="settings-section">
-              <SectionTitle>Voice settings</SectionTitle>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
+                <Volume2 size={16} style={{ color: 'var(--app-accent)' }} />
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Voice</div>
+              </div>
               <Row label="Panel voices" sublabel="Panel members read their challenges aloud during rehearsal">
                 <ToggleBtn on={voiceEnabled} onClick={toggleVoice} />
               </Row>
@@ -211,16 +241,20 @@ export default function Settings() {
                     saveVoiceSettings({ enabled: voiceEnabled, rate: Number(e.target.value) })
                   }}
                 >
-                  <option value="0.8">Slow (0.8×)</option>
-                  <option value="1">Normal (1×)</option>
-                  <option value="1.2">Slightly faster (1.2×)</option>
-                  <option value="1.5">Fast (1.5×)</option>
+                  <option value="0.8">Slow (0.8x)</option>
+                  <option value="1">Normal (1x)</option>
+                  <option value="1.2">Slightly faster (1.2x)</option>
+                  <option value="1.5">Fast (1.5x)</option>
                 </select>
               </Row>
 
-              <SectionTitle style={{ marginTop: 28, fontSize: '0.75rem', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, borderBottom: '1px solid var(--border-light)', paddingBottom: 12, marginBottom: 0 }}>
+              <div style={{
+                marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)',
+                fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em',
+                textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4,
+              }}>
                 Persona voices
-              </SectionTitle>
+              </div>
               {PERSONA_VOICES.map(({ label, sub, desc }, i) => (
                 <div key={label} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -241,13 +275,16 @@ export default function Settings() {
 
           {activeSection === 'Integrations' && (
             <div className="settings-section">
-              <SectionTitle>Integrations</SectionTitle>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
+                <Link2 size={16} style={{ color: 'var(--app-accent)' }} />
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Integrations</div>
+              </div>
+
               {googleConnected ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '12px 16px', borderRadius: 8,
-                  background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)',
-                  marginBottom: 20,
+                  padding: '11px 14px', borderRadius: 8, marginBottom: 20,
+                  background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.18)',
                 }}>
                   <Check size={14} style={{ color: '#059669', flexShrink: 0 }} />
                   <div style={{ fontSize: '0.8125rem', color: '#059669', lineHeight: 1.5 }}>
@@ -257,36 +294,33 @@ export default function Settings() {
               ) : (
                 <div style={{
                   display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: '14px 16px', borderRadius: 8,
+                  padding: '12px 14px', borderRadius: 8, marginBottom: 20,
                   background: 'var(--bg-hover)', border: '1px solid var(--border)',
-                  marginBottom: 20,
                 }}>
-                  <Zap size={15} style={{ color: 'var(--text-muted)', marginTop: 1, flexShrink: 0 }} />
+                  <Zap size={14} style={{ color: 'var(--text-muted)', marginTop: 2, flexShrink: 0 }} />
                   <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    One Google sign-in unlocks all three. Connect below to get started.
+                    One Google sign-in unlocks all three integrations. Connect below to get started.
                   </div>
                 </div>
               )}
+
               {INTEGRATIONS.map((int, i) => (
                 <div key={int.name} style={{
                   display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '12px 0',
+                  padding: '14px 0',
                   borderBottom: i < INTEGRATIONS.length - 1 ? '1px solid var(--border-light)' : 'none',
                 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 8, background: 'var(--bg-hover)',
+                    width: 38, height: 38, borderRadius: 9, background: 'var(--bg-hover)',
                     border: '1px solid var(--border)', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0,
                   }}>{int.icon}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{int.name}</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>{int.name}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{int.desc}</div>
                   </div>
                   {googleConnected ? (
-                    <span style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      fontSize: '0.8125rem', fontWeight: 600, color: '#059669',
-                    }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.8125rem', fontWeight: 600, color: '#059669' }}>
                       <Check size={13} /> Connected
                     </span>
                   ) : (
@@ -308,8 +342,11 @@ export default function Settings() {
 
           {activeSection === 'Privacy' && (
             <>
-              <div className="settings-section">
-                <SectionTitle>Data and privacy</SectionTitle>
+              <div className="settings-section" style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
+                  <Shield size={16} style={{ color: 'var(--app-accent)' }} />
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Data and privacy</div>
+                </div>
                 <Row label="Data storage" sublabel="Session transcripts and reports are stored locally in your browser. No data is sent to external servers unless you connect an integration." />
                 <Row label="Export all session data" sublabel="Download a full JSON archive of your sessions" last>
                   <button className="btn btn-secondary btn-sm" onClick={exportSessions} style={{ gap: 6 }}>
@@ -318,11 +355,11 @@ export default function Settings() {
                 </Row>
               </div>
 
-              <div className="settings-section" style={{ borderColor: 'rgba(220,38,38,0.2)' }}>
+              <div className="settings-section" style={{ borderColor: 'rgba(220,38,38,0.18)' }}>
                 <div style={{
-                  fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 600,
-                  color: '#DC2626', marginBottom: 4, paddingBottom: 14,
-                  borderBottom: '1px solid rgba(220,38,38,0.15)',
+                  fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600,
+                  color: '#DC2626', marginBottom: 4, paddingBottom: 16,
+                  borderBottom: '1px solid rgba(220,38,38,0.12)',
                 }}>Danger zone</div>
                 <Row label="Delete all sessions" sublabel="Permanently removes all rehearsal data. This cannot be undone." last>
                   <button className="btn-danger" onClick={handleDeleteAll}>Delete all</button>

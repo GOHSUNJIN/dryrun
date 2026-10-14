@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader } from 'lucide-react'
+import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader, ArrowLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { exportToGoogleDoc } from '../utils/google.js'
 
@@ -28,7 +28,7 @@ export default function Report({ navigate, session }) {
   const condMet      = Object.values(conditions).filter(Boolean).length
   const condTotal    = Object.keys(conditions).length || 11
   const turns        = session?.transcript?.filter(m => m.speaker === 'presenter').length || 6
-  const proposalName = session?.proposalName || 'Data Engineering Hires'
+  const proposalName = session?.proposalName || 'Untitled proposal'
 
   // Snapshot both values once on mount so they don't drift if the page stays open
   const [duration] = useState(() =>
@@ -84,6 +84,12 @@ export default function Report({ navigate, session }) {
 
   return (
     <div className="page">
+      <button
+        onClick={() => navigate('home')}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 20, fontFamily: 'var(--font-ui)', padding: 0 }}
+      >
+        <ArrowLeft size={14} /> Home
+      </button>
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
           <div className="report-hero">
@@ -149,6 +155,7 @@ export default function Report({ navigate, session }) {
             {[
               { id: 'conditions', label: 'Conditions' },
               { id: 'coaching',   label: 'Coaching' },
+              ...(session?.proposalText ? [{ id: 'proposal', label: 'Proposal' }] : []),
             ].map(tab => (
               <button
                 key={tab.id}
@@ -216,6 +223,16 @@ export default function Report({ navigate, session }) {
                   <div className="weak-point-fix">{w.fix}</div>
                 </div>
               ))}
+            </div>
+          )}
+          {activeTab === 'proposal' && (
+            <div style={{
+              whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.75,
+              color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)',
+              background: 'var(--bg-surface)', border: '1px solid var(--border)',
+              borderRadius: 10, padding: '20px 24px', maxHeight: 480, overflowY: 'auto',
+            }}>
+              {session.proposalText}
             </div>
           )}
         </motion.div>

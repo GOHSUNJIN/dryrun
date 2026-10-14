@@ -497,6 +497,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       saveSession({
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
+        proposalText: session.proposalText || '',
         date: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Singapore' }),
         condMet,
         condTotal,
@@ -530,6 +531,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       saveSession({
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
+        proposalText: session.proposalText || '',
         date: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Singapore' }),
         condMet,
         condTotal,
@@ -588,7 +590,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             <span className="room-logo-text">Dry Run</span>
           </div>
           <div className="room-divider" />
-          <span className="room-proposal-title">{session.proposalName || 'Data Engineering Hires'}</span>
+          <span className="room-proposal-title">{session.proposalName || 'Untitled proposal'}</span>
         </div>
 
         <div className="room-topbar-right">
@@ -629,6 +631,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           </button>
         </div>
       </header>
+
+      {session.demoMode && (
+        <div style={{
+          textAlign: 'center', padding: '7px 20px',
+          background: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.15)',
+          fontSize: '0.75rem', color: '#D97706', letterSpacing: '0.01em',
+        }}>
+          AI not connected. Panel responses are sample messages and will not reflect your proposal.
+        </div>
+      )}
 
       <div className="room-panel">
         {visiblePersonas.map(p => (

@@ -20,11 +20,10 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const customPersonas = loadCustomPersonas()
   const allPersonas    = [...PERSONAS, ...customPersonas]
   const defaults       = loadRehearsalDefaults()
-  const autoName = useRef(navPayload.meetingName || `Rehearsal ${loadSessions().length + 1}`)
   const [step, setStep]           = useState(0)
   const [uploaded, setUploaded]   = useState(false)
   const [proposalText, setProposalText] = useState('')
-  const [proposalName, setProposalName] = useState(autoName.current)
+  const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
   const [drag, setDrag]           = useState(false)
   const [selected, setSelected]   = useState(['finance', 'legal', 'ops', 'factcheck'])
   const [toughness, setToughness] = useState(defaults.toughness)
@@ -219,7 +218,7 @@ const canContinue = () => {
                     className="settings-input"
                     value={proposalName}
                     onChange={e => setProposalName(e.target.value)}
-                    placeholder="Rehearsal name"
+                    placeholder="Your rehearsal name"
                     style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
                   />
                 </div>
@@ -385,7 +384,7 @@ const canContinue = () => {
                     <div className="uploaded-file-card">
                       <div className="file-icon"><FileText size={18} /></div>
                       <div>
-                        <div className="file-name">{proposalName || 'Sample proposal'}</div>
+                        <div className="file-name">{proposalName || 'Your rehearsal name'}</div>
                         <div className="file-size">{proposalText.length} characters</div>
                       </div>
                       <button

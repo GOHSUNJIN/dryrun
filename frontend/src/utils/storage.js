@@ -172,12 +172,21 @@ export function dismissWeakSpot(text) {
   localStorage.setItem(DISMISSED_SPOTS_KEY, JSON.stringify([...prev]))
 }
 
+const NO_MEETING_KEY = '__no_meeting__'
+
 export function groupSessionsByProposal(sessions) {
   const groups = {}
   for (const s of sessions) {
-    const key = s.linkedMeeting || s.proposal || 'Untitled proposal'
-    if (!groups[key]) groups[key] = { proposal: key, linkedMeeting: s.linkedMeeting || '', sessions: [] }
-    groups[key].sessions.push(s)
+    if (s.linkedMeeting) {
+      const key = s.linkedMeeting
+      if (!groups[key]) groups[key] = { proposal: key, linkedMeeting: key, noMeeting: false, sessions: [] }
+      groups[key].sessions.push(s)
+    } else {
+      if (!groups[NO_MEETING_KEY]) groups[NO_MEETING_KEY] = { proposal: 'No meeting', linkedMeeting: '', noMeeting: true, sessions: [] }
+      groups[NO_MEETING_KEY].sessions.push(s)
+    }
   }
-  return Object.values(groups)
+  const linked   = Object.entries(groups).filter(([k]) => k !== NO_MEETING_KEY).map(([, v]) => v)
+  const unlinked = groups[NO_MEETING_KEY] ? [groups[NO_MEETING_KEY]] : []
+  return [...linked, ...unlinked]
 }

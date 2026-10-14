@@ -115,7 +115,11 @@ export default function PastSessions({ navigate }) {
                       flexShrink: 0,
                     }}
                   />
-                  {editingProposal === group.proposal ? (
+                  {group.noMeeting ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="proposal-group-name" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>No meeting</span>
+                    </div>
+                  ) : editingProposal === group.proposal ? (
                     <input
                       value={editingName}
                       onChange={e => setEditingName(e.target.value)}
@@ -135,25 +139,25 @@ export default function PastSessions({ navigate }) {
                     />
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {group.linkedMeeting && (
-                        <Calendar size={13} style={{ color: 'var(--app-accent)', flexShrink: 0 }} />
-                      )}
+                      <Calendar size={13} style={{ color: 'var(--app-accent)', flexShrink: 0 }} />
                       <span className="proposal-group-name">{group.proposal}</span>
                     </div>
                   )}
-                  <button
-                    onClick={e => startRename(e, group.proposal)}
-                    title="Rename"
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
-                      opacity: 0.6, transition: 'opacity 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                    onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
-                  >
-                    <Edit2 size={12} />
-                  </button>
+                  {!group.noMeeting && (
+                    <button
+                      onClick={e => startRename(e, group.proposal)}
+                      title="Rename"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
+                        opacity: 0.6, transition: 'opacity 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                      onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {group.sessions.length > 1 && (() => {
