@@ -2,10 +2,14 @@ import { useCallback, useRef } from 'react'
 import { loadVoiceSettings } from '../utils/storage.js'
 
 const PERSONA_VOICE = {
-  finance:   { pitch: 0.85, rate: 0.92 },
-  legal:     { pitch: 1.0,  rate: 0.88 },
-  ops:       { pitch: 0.8,  rate: 1.0  },
-  factcheck: { pitch: 1.05, rate: 0.9  },
+  finance:         { pitch: 0.85, rate: 0.92 },
+  legal:           { pitch: 1.0,  rate: 0.88 },
+  ops:             { pitch: 0.8,  rate: 1.0  },
+  factcheck:       { pitch: 1.05, rate: 0.9  },
+  event_director:  { pitch: 0.95, rate: 0.93 },
+  event_finance:   { pitch: 0.88, rate: 0.9  },
+  event_safety:    { pitch: 1.0,  rate: 0.87 },
+  event_programme: { pitch: 0.92, rate: 0.95 },
 }
 
 export function useTTS(speechOnRef) {

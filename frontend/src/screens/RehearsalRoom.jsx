@@ -7,7 +7,7 @@ import { getCurrentTime, formatSessionDate } from '../utils/time.js'
 import { useTTS } from '../hooks/useTTS.js'
 import { useElapsedTimer } from '../hooks/useElapsedTimer.js'
 
-const DEMO_PERSONA_IDS = ['finance', 'legal', 'ops', 'factcheck']
+const DEMO_PERSONA_IDS = ['finance', 'legal', 'ops', 'factcheck', 'event_director', 'event_finance', 'event_safety', 'event_programme']
 
 function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
   const isActive    = activeSpeaker === persona.id
@@ -367,6 +367,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           has_follow_up:  Boolean(data.follow_up),
           text_preview:   data.text?.slice(0, 80) + '...',
         })
+
+        if (!data.text?.trim()) {
+          console.warn('[session/message] empty response — using fallback to keep conversation moving')
+          setTypingPersonaId(null)
+          setRoomState('idle')
+          fallbackResponse()
+          return
+        }
 
         const replyMsg = {
           id: Date.now() + 1,

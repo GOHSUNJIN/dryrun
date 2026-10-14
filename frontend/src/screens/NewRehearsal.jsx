@@ -7,6 +7,32 @@ import { listDriveItems, listDriveDocs, fetchDocText, isSignedIn } from '../util
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
 
+const FC_CACHE_PREFIX = 'dryrun_fc_'
+const FC_CACHE_TTL = 24 * 60 * 60 * 1000
+
+function hashProposal(text) {
+  let h = 0
+  for (let i = 0; i < Math.min(text.length, 2000); i++) {
+    h = Math.imul(31, h) + text.charCodeAt(i) | 0
+  }
+  return String(Math.abs(h))
+}
+
+function loadFactCheckCache(text) {
+  try {
+    const entry = JSON.parse(localStorage.getItem(FC_CACHE_PREFIX + hashProposal(text)) || 'null')
+    if (entry && Date.now() < entry.expiresAt) return entry.value
+  } catch {}
+  return ''
+}
+
+function saveFactCheckCache(text, value) {
+  if (!value) return
+  try {
+    localStorage.setItem(FC_CACHE_PREFIX + hashProposal(text), JSON.stringify({ value, expiresAt: Date.now() + FC_CACHE_TTL }))
+  } catch {}
+}
+
 
 function buildCustomDefs(customPersonas) {
   const defs = {}
@@ -172,6 +198,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     }
 
     saveLastPanel(selected)
+    const cachedFactCheck = selected.includes('factcheck') ? loadFactCheckCache(proposalText) : ''
+    if (cachedFactCheck) console.log('[session/start] using cached fact_check, skipping server call')
     try {
       const res = await fetch('/api/session/start', {
         method: 'POST',
@@ -181,6 +209,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
           persona_ids:     selected,
           config,
           custom_personas: customDefs,
+          fact_check:      cachedFactCheck,
         }),
       })
 
@@ -190,12 +219,14 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       }
 
       const data = await res.json()
+      if (data.fact_check) saveFactCheckCache(proposalText, data.fact_check)
       console.log('[session/start] response:', {
         demo:             data.demo || false,
         demo_reason:      data.demo_reason || null,
         openings_count:   (data.messages || []).length,
         conditions_count: Object.keys(data.conditions || {}).length,
         has_fact_check:   Boolean(data.fact_check),
+        fact_check_cached: Boolean(cachedFactCheck),
         openings:         (data.messages || []).map(m => ({ speaker: m.speaker, text: m.text?.slice(0, 60) + '...' })),
       })
       if (data.demo) console.warn('[session/start] AI unavailable, running in demo mode. Reason:', data.demo_reason || 'unknown')

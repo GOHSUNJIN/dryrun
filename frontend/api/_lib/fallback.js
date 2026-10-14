@@ -2,10 +2,14 @@
 // Keeps the rehearsal room fully usable for local development and demos.
 
 const CANNED_OPENINGS = {
-  finance: 'You have listed the headcount cost, but what does the full three-year TCO look like once you add tooling, onboarding, cloud infrastructure and the cost of backfilling if someone leaves?',
-  legal: 'Before we discuss budget: who owns the data these engineers will access? We need a data classification audit and a GDPR scope assessment before anyone touches production systems.',
-  ops: 'Someone is doing this work manually right now. Who is that person, what is the plan for their role, and how long does a parallel run last before we cut over?',
-  factcheck: 'The proposal cites a 30-hour-per-month saving and a $240,000 annual cost. Both figures need sources. What market data supports the salary range and what evidence backs the time estimate?',
+  finance:         'You have listed the headcount cost, but what does the full three-year TCO look like once you add tooling, onboarding, cloud infrastructure and the cost of backfilling if someone leaves?',
+  legal:           'Before we discuss budget: who owns the data these engineers will access? We need a data classification audit and a GDPR scope assessment before anyone touches production systems.',
+  ops:             'Someone is doing this work manually right now. Who is that person, what is the plan for their role, and how long does a parallel run last before we cut over?',
+  factcheck:       'The proposal cites a 30-hour-per-month saving and a $240,000 annual cost. Both figures need sources. What market data supports the salary range and what evidence backs the time estimate?',
+  event_director:  'This plan describes what will happen on the day but not why the event is being held. What is the purpose, the expected outcome for the organisation and who has final sign-off authority?',
+  event_finance:   'The budget is presented as a range rather than a fixed figure. I need an itemised breakdown per line and a contingency plan if attendance or costs exceed the upper estimate.',
+  event_safety:    "The plan names a Safety IC but gives no specific procedures. What is the venue's certified capacity, what first aid arrangement is in place and how will dietary restrictions be tracked?",
+  event_programme: 'There is no consolidated run-of-show with timings. What is the full sequence from doors open to close, and are dry run dates already confirmed?',
 };
 
 const CANNED_REPLIES = [
@@ -78,10 +82,14 @@ const CANNED_REPORT = {
 export function getDemoConditions(personaIds) {
   const conditions = {};
   const condMap = {
-    finance:   ['f1', 'f2', 'f3'],
-    legal:     ['l1', 'l2', 'l3'],
-    ops:       ['o1', 'o2', 'o3'],
-    factcheck: ['fc1', 'fc2'],
+    finance:         ['f1', 'f2', 'f3'],
+    legal:           ['l1', 'l2', 'l3'],
+    ops:             ['o1', 'o2', 'o3'],
+    factcheck:       ['fc1', 'fc2'],
+    event_director:  ['ed1', 'ed2', 'ed3'],
+    event_finance:   ['ef1', 'ef2', 'ef3'],
+    event_safety:    ['es1', 'es2', 'es3'],
+    event_programme: ['ep1', 'ep2', 'ep3'],
   };
   for (const pid of personaIds) {
     for (const id of (condMap[pid] || [])) {

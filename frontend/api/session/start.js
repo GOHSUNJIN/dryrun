@@ -10,6 +10,7 @@ export default async function handler(req, res) {
     persona_ids = ['finance', 'legal', 'ops'],
     config = {},
     custom_personas = {},
+    fact_check: cachedFactCheck = '',
   } = req.body;
 
   if (!process.env.GEMINI_API_KEY) {
@@ -22,9 +23,11 @@ export default async function handler(req, res) {
     });
   }
 
-  const factCheck = persona_ids.includes('factcheck')
+  const wordCount = proposal_text.trim().split(/\s+/).length;
+  const needsFactCheck = persona_ids.includes('factcheck') && wordCount >= 150 && !cachedFactCheck;
+  const factCheck = needsFactCheck
     ? await factCheckProposal(proposal_text)
-    : '';
+    : (persona_ids.includes('factcheck') ? cachedFactCheck : '');
 
   try {
     res.status(200).json({

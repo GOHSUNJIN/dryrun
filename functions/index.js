@@ -16,13 +16,13 @@ export const sessionDetectPanel = onRequest(opts, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const { proposal_text = '', available_ids = [] } = req.body
   if (!process.env.GEMINI_API_KEY || !available_ids.length) {
-    return res.status(200).json({ persona_ids: available_ids.slice(0, 4) })
+    return res.status(200).json({ persona_ids: [] })
   }
   try {
     res.status(200).json({ persona_ids: await detectPanel(proposal_text, available_ids) })
   } catch (err) {
     console.error('[detect-panel] failed:', err.message)
-    res.status(200).json({ persona_ids: available_ids.slice(0, 4) })
+    res.status(200).json({ persona_ids: [] })
   }
 })
 
@@ -34,6 +34,7 @@ export const sessionStart = onRequest(opts, async (req, res) => {
     persona_ids = ['finance', 'legal', 'ops'],
     config = {},
     custom_personas = {},
+    fact_check: cachedFactCheck = '',
   } = req.body
 
   if (!process.env.GEMINI_API_KEY) {
@@ -46,9 +47,11 @@ export const sessionStart = onRequest(opts, async (req, res) => {
     })
   }
 
-  const factCheck = persona_ids.includes('factcheck')
+  const wordCount = proposal_text.trim().split(/\s+/).length
+  const needsFactCheck = persona_ids.includes('factcheck') && wordCount >= 150 && !cachedFactCheck
+  const factCheck = needsFactCheck
     ? await factCheckProposal(proposal_text)
-    : ''
+    : (persona_ids.includes('factcheck') ? cachedFactCheck : '')
 
   try {
     res.status(200).json({

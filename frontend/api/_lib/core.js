@@ -116,8 +116,8 @@ export async function detectPanel(proposalText, availableIds) {
     })
 
   const system = `You are selecting a stakeholder review panel for a business document.
-Select the 2 to 4 panelists whose expertise is most relevant to this specific document's content.
-You may select fewer than 4 if only 1 or 2 are genuinely relevant.
+Select only the panelists whose expertise is genuinely relevant to this specific document.
+You may select 1 to 4 panelists. Do not include a panelist just to fill the panel — only include those whose concerns are directly raised by the document.
 
 Available panelists:
 ${panelDescLines.join('\n')}
@@ -137,9 +137,9 @@ Return ONLY valid JSON with no markdown fences:
     })
     const data = JSON.parse(response.text)
     const ids = (data.persona_ids || []).filter(id => availableIds.includes(id))
-    return ids.length > 0 ? ids : availableIds.slice(0, 4)
+    return ids
   } catch {
-    return availableIds.slice(0, 4)
+    return []
   }
 }
 
@@ -235,7 +235,7 @@ Return ONLY valid JSON with no markdown fences:
     config: {
       systemInstruction: system,
       responseMimeType: 'application/json',
-      maxOutputTokens: 700,
+      maxOutputTokens: 500,
     },
   });
 
@@ -281,7 +281,7 @@ export async function generateReply(proposalText, personaIds, transcript, condit
       return `${pid} (${p.name}, ${p.role}):\n  Style: ${p.speaking_style}${research}\n  Conditions:\n  ${condDetail}\n  Unmet: ${unmetCount}`;
     });
 
-  const transcriptStr = buildTranscriptStr(transcript.slice(-14), customDefs);
+  const transcriptStr = buildTranscriptStr(transcript.slice(-10), customDefs);
 
   let presenterMsg = '';
   for (let i = transcript.length - 1; i >= 0; i--) {
@@ -302,6 +302,7 @@ Rules:
 - Pick the panelist whose concerns are least addressed. Do not repeat the last speaker unless all others are satisfied.
 - Keep the response under 90 words.
 - Be direct, specific and challenging. Push back on vague or incomplete answers.
+- You must always return a non-empty response string. Never leave "response" blank.
 - Do not use em dashes.
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
 - If Sam (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
@@ -364,7 +365,7 @@ Return ONLY valid JSON with no markdown fences:
 {
   "weak_points": [
     {
-      "label": "Finance|Legal|Operations|Fact-Checker",
+      "label": "Finance|Legal|Operations|Fact-Checker|Event Director|Event Finance|Event Safety|Event Programme",
       "issue": "one-line summary of the gap",
       "fix": "concrete actionable suggestion under 60 words"
     }
@@ -400,7 +401,7 @@ Rules:
     config: {
       systemInstruction: system,
       responseMimeType: 'application/json',
-      maxOutputTokens: 2000,
+      maxOutputTokens: 1400,
     },
   });
 

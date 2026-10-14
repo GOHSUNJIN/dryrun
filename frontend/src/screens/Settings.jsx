@@ -20,10 +20,14 @@ const INTEGRATIONS = [
 ]
 
 const PERSONA_VOICES = [
-  { label: 'Morgan', sub: 'Finance',    desc: 'Low pitch, measured pace'            },
-  { label: 'Alex',   sub: 'Legal',      desc: 'Neutral pitch, deliberate pace'      },
-  { label: 'Jordan', sub: 'Operations', desc: 'Low pitch, direct pace'              },
-  { label: 'Sam',    sub: 'Fact-check', desc: 'Slightly higher pitch, careful pace' },
+  { label: 'Morgan', sub: 'Finance',         desc: 'Low pitch, measured pace'            },
+  { label: 'Alex',   sub: 'Legal',           desc: 'Neutral pitch, deliberate pace'      },
+  { label: 'Jordan', sub: 'Operations',      desc: 'Low pitch, direct pace'              },
+  { label: 'Sam',    sub: 'Fact-check',      desc: 'Slightly higher pitch, careful pace' },
+  { label: 'Riya',   sub: 'Event Director',  desc: 'Measured pitch, strategic pace'      },
+  { label: 'Darren', sub: 'Event Finance',   desc: 'Crisp pitch, deliberate pace'        },
+  { label: 'Kai',    sub: 'Event Safety',    desc: 'Neutral pitch, methodical pace'      },
+  { label: 'Cleo',   sub: 'Event Programme', desc: 'Detail-focused pitch, practical pace'},
 ]
 
 function Row({ label, sublabel, children, last }) {
