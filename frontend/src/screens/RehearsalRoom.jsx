@@ -616,7 +616,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     transition: 'background 0.8s ease',
   }
 
-  const turnLimit        = parseInt(session.config?.turnLimit) || 15
+  const _rawTurnLimit = parseInt(session.config?.turnLimit)
+  if (!_rawTurnLimit) console.warn('[RehearsalRoom] session.config.turnLimit missing, falling back to 15')
+  const turnLimit        = _rawTurnLimit || 15
   const turnsLeft        = turnLimit - turnCount
   const turnLimitReached = hasRealSession && turnCount >= turnLimit
   const nearTurnLimit    = hasRealSession && turnsLeft <= 3 && turnsLeft > 0
