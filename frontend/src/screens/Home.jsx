@@ -396,6 +396,8 @@ export default function Home({ navigate }) {
               const personas = s.personaIds?.length
                 ? PERSONAS.filter(p => s.personaIds.includes(p.id))
                 : PERSONAS
+              const shownPersonas = personas.slice(0, 4)
+              const extraCount    = personas.length - 4
               return (
                 <div
                   key={idx}
@@ -404,28 +406,42 @@ export default function Home({ navigate }) {
                   onMouseLeave={() => setHoveredSession(null)}
                   style={rowCard(hoveredSession === idx)}
                 >
-                  <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-                    {personas.map(p => (
-                      <div key={p.id} style={{
-                        width: 20, height: 20, borderRadius: '50%',
-                        background: p.color, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700,
-                        color: 'white', fontFamily: 'var(--font-ui)',
-                      }}>{p.initial}</div>
-                    ))}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{s.proposal}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Clock size={10} style={{ flexShrink: 0 }} />
-                      {s.date} · {s.duration}
+                  {/* Fixed-width left section keeps text pinned at a consistent X */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: 3, flexShrink: 0, width: 92, paddingTop: 2 }}>
+                      {shownPersonas.map(p => (
+                        <div key={p.id} style={{
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: p.color, display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700,
+                          color: 'white', fontFamily: 'var(--font-ui)', flexShrink: 0,
+                        }}>{p.initial}</div>
+                      ))}
+                      {extraCount > 0 && (
+                        <div style={{
+                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                          background: 'var(--bg-hover)', border: '1px solid var(--border)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-muted)',
+                          fontFamily: 'var(--font-ui)',
+                        }}>+{extraCount}</div>
+                      )}
                     </div>
-                    <div style={{ fontSize: '0.6875rem', color: s.linkedMeeting ? 'var(--text-muted)' : 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3, opacity: s.linkedMeeting ? 1 : 0.6 }}>
-                      <Calendar size={9} style={{ flexShrink: 0 }} />
-                      {s.linkedMeeting || 'No meeting'}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{s.proposal}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Clock size={10} style={{ flexShrink: 0 }} />
+                        {s.date} · {s.duration}
+                      </div>
+                      <div style={{ fontSize: '0.6875rem', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3, opacity: s.linkedMeeting ? 1 : 0.5 }}>
+                        <Calendar size={9} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+                        <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {s.linkedMeeting || 'No meeting'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <span style={{
