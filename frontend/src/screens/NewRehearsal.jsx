@@ -222,7 +222,7 @@ const canContinue = () => {
                     className="settings-input"
                     value={proposalName}
                     onChange={e => setProposalName(e.target.value)}
-                    placeholder="Name this rehearsal..."
+                    placeholder="Rehearsal name"
                     style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
                   />
                 </div>

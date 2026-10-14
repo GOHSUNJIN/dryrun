@@ -174,7 +174,7 @@ export default function Settings() {
                   className="settings-input"
                   value={role}
                   onChange={e => setRole(e.target.value)}
-                  placeholder="e.g. Product Manager"
+                  placeholder="Your job title"
                 />
               </Row>
               <SaveRow saved={savedProfile} onSave={handleSaveProfile} label="Save profile" />

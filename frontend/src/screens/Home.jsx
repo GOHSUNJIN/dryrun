@@ -69,7 +69,7 @@ function AddMeetingForm({ onSave, onCancel }) {
             className="settings-input"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="e.g. Budget Review: Q4 Headcount"
+            placeholder="Meeting name"
             style={{ width: '100%', boxSizing: 'border-box' }}
             autoFocus
           />
