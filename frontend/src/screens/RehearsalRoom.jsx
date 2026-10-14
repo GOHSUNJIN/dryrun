@@ -550,7 +550,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     if (!speechSupported || roomStateRef.current === 'thinking') return
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SR()
-    recognition.lang = 'en-US'
+    recognition.lang = navigator.language || 'en-US'
     recognition.continuous = false
     recognition.interimResults = false
     recognition.onstart  = () => setListening(true)
@@ -660,7 +660,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       {session.demoMode && (
         <div className="room-demo-banner">
-          AI not connected. Panel responses are sample messages and will not reflect your proposal.
+          {session.demoReason === 'GEMINI_API_KEY not set'
+            ? 'No AI key configured. Panel responses are sample messages and will not reflect your proposal.'
+            : session.demoReason === 'connection_failed'
+              ? 'Could not reach AI service. Panel responses are sample messages and will not reflect your proposal.'
+              : 'AI unavailable. Panel responses are sample messages and will not reflect your proposal.'}
         </div>
       )}
 

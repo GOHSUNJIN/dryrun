@@ -161,9 +161,10 @@ export function computeWeakSpots() {
     const seenLabels = new Set()
     for (const wp of wps) {
       if (!wp.label) continue
-      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, sessionCount: 0, latestIssue: '' }
+      if (!byLabel[wp.label]) byLabel[wp.label] = { count: 0, sessionCount: 0, latestIssue: '', latestProposal: '' }
       byLabel[wp.label].count++
       byLabel[wp.label].latestIssue = wp.issue || wp.label
+      byLabel[wp.label].latestProposal = s.proposal || ''
       if (!seenLabels.has(wp.label)) {
         byLabel[wp.label].sessionCount++
         seenLabels.add(wp.label)
@@ -176,7 +177,9 @@ export function computeWeakSpots() {
     .map(([, data]) => ({
       count: data.count,
       text: data.latestIssue,
-      sub: `Across ${data.sessionCount} session${data.sessionCount !== 1 ? 's' : ''}`,
+      sub: data.sessionCount === 1
+        ? `In: ${data.latestProposal || 'a session'}`
+        : `Across ${data.sessionCount} sessions · last: ${data.latestProposal || 'unknown'}`,
     }))
 }
 

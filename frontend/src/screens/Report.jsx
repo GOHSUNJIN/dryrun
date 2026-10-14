@@ -133,6 +133,7 @@ export default function Report({ navigate, session }) {
                 className="btn btn-secondary btn-sm"
                 onClick={handleExportToDoc}
                 disabled={exporting}
+                title="Requires a Google account. You will be prompted to sign in if needed."
                 style={{
                   background: exportError ? 'rgba(220,38,38,0.1)' : 'rgba(255,255,255,0.08)',
                   borderColor: exportError ? 'rgba(220,38,38,0.3)' : 'rgba(255,255,255,0.12)',

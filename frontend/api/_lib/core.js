@@ -155,7 +155,7 @@ export async function factCheckProposal(proposalText) {
     'and use web search to verify whether each is accurate based on current market data. ' +
     'For each claim state what was claimed and what the evidence shows. ' +
     'Be concise and cite your sources briefly. Under 180 words total.\n\n' +
-    `Proposal:\n${proposalText.slice(0, 800)}`;
+    `Proposal:\n${proposalText.slice(0, 4000)}`;
   try {
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,

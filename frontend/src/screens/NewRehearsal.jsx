@@ -358,7 +358,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             setPanelCategory('all')
             setPanelPage(0)
           } else {
-            setSelected([])
+            setSelected(['general'])
             setRecommended([])
           }
         }
@@ -371,7 +371,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
           setPanelCategory('all')
           setPanelPage(0)
         } else {
-          setSelected([])
+          setSelected(['general'])
           setRecommended([])
         }
       } finally {
@@ -428,12 +428,12 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       if (data.demo) console.warn('[session/start] AI unavailable, running in demo mode. Reason:', data.demo_reason || 'unknown')
       if (!data.messages?.length) console.warn('[session/start] No opening messages returned  -  room will fall back to demo transcript for matching persona IDs')
       resetSession()
-      updateSession({ ...sessionBase, transcript: data.messages || [], conditions: data.conditions || {}, factCheckNotes: data.fact_check || '', demoMode: !!data.demo })
+      updateSession({ ...sessionBase, transcript: data.messages || [], conditions: data.conditions || {}, factCheckNotes: data.fact_check || '', demoMode: !!data.demo, demoReason: data.demo_reason || '' })
       navigate('room')
     } catch (err) {
       console.error('[session/start] Request failed  -  entering demo mode:', err.message)
       resetSession()
-      updateSession({ ...sessionBase, transcript: [], conditions: {}, factCheckNotes: '', demoMode: true })
+      updateSession({ ...sessionBase, transcript: [], conditions: {}, factCheckNotes: '', demoMode: true, demoReason: 'connection_failed' })
       navigate('room')
     }
   }

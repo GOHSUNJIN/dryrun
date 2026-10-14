@@ -75,7 +75,7 @@ def fact_check_proposal(proposal_text: str) -> str:
         "and use web search to verify whether each is accurate based on current market data. "
         "For each claim state what was claimed and what the evidence shows. "
         "Be concise and cite your sources briefly. Under 180 words total.\n\n"
-        f"Proposal:\n{proposal_text[:800]}"
+        f"Proposal:\n{proposal_text[:4000]}"
     )
     try:
         response = client.models.generate_content(
