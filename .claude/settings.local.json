@@ -52,7 +52,14 @@
       "Bash(firebase login *)",
       "Bash(firebase projects:list *)",
       "Bash(firebase functions:secrets:set *)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "mcp__plugin_vercel_vercel__get_auth_user",
+      "Bash(firebase deploy *)",
+      "Bash(firebase functions:artifacts:setpolicy --force)",
+      "Bash(firebase functions:log --only sessionStart)",
+      "Bash(node -e ' *)",
+      "WebSearch",
+      "PowerShell(head *)"
     ]
   }
 }
