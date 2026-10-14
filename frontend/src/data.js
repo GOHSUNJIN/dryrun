@@ -11,7 +11,7 @@ export const PERSONAS = [
     cares: ['ROI and full cost breakdown', 'Budget risk and contingency', 'Payback period evidence'],
     conditions: [
       { id: 'f1', text: 'Total cost breakdown provided', met: false },
-      { id: 'f2', text: 'Payback period calculated',     met: true  },
+      { id: 'f2', text: 'Payback period calculated',     met: false },
       { id: 'f3', text: 'Plan if budget is halved',      met: false },
     ],
   },
@@ -42,7 +42,7 @@ export const PERSONAS = [
     panelPct: 62.5,
     cares: ['Realistic timelines', 'Who does the work today', 'Integration disruption risk'],
     conditions: [
-      { id: 'o1', text: 'Timeline with milestones given',      met: true  },
+      { id: 'o1', text: 'Timeline with milestones given',      met: false },
       { id: 'o2', text: 'Current process owner identified',    met: false },
       { id: 'o3', text: 'Disruption assessment complete',      met: false },
     ],
@@ -58,8 +58,8 @@ export const PERSONAS = [
     panelPct: 87.5,
     cares: ['Verifies quantitative claims', 'Cites market sources', 'Flags unsupported assertions'],
     conditions: [
-      { id: 'fc1', text: 'Salary range verified',           met: true  },
-      { id: 'fc2', text: '30-hour claim substantiated',     met: false },
+      { id: 'fc1', text: 'Key figures verified against sources', met: false },
+      { id: 'fc2', text: 'Supporting evidence cited for main claims', met: false },
     ],
   },
 ];

@@ -155,9 +155,10 @@ export default function PastSessions({ navigate }) {
                     const first = group.sessions[group.sessions.length - 1]
                     const last  = group.sessions[0]
                     const delta = (last.condMet || 0) - (first.condMet || 0)
+                    if (delta <= 0) return null
                     return (
-                      <span style={{ fontSize: '0.75rem', color: delta > 0 ? '#059669' : 'var(--text-muted)', fontWeight: 600 }}>
-                        {delta > 0 ? `+${delta} conditions` : 'No change'} across rehearsals
+                      <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>
+                        +{delta} conditions across rehearsals
                       </span>
                     )
                   })()}
@@ -173,7 +174,7 @@ export default function PastSessions({ navigate }) {
                     <div>
                       <div className="session-row-name">Rehearsal {group.sessions.length - si}</div>
                       <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                        <Clock size={11} /> {s.date} · {s.mode} · {s.duration}
+                        <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
                       </div>
                     </div>
 

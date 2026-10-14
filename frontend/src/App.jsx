@@ -16,7 +16,7 @@ const DEFAULT_SESSION = {
   proposalText: '',
   proposalName: '',
   personaIds: ['finance', 'legal', 'ops', 'factcheck'],
-  config: { mode: 'Type', toughness: 'Balanced' },
+  config: { toughness: 'Balanced' },
   transcript: [],
   conditions: {},
   factCheckNotes: '',

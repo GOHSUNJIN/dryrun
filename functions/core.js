@@ -40,10 +40,10 @@ const PERSONA_DEFS = {
     name: 'Sam',
     role: 'Fact-Checker',
     speaking_style: 'Neutral and methodical. Cites sources and flags unsupported quantitative claims.',
-    cares: 'Accuracy of salary benchmarks, verifiability of time estimates and whether efficiency claims have cited sources',
+    cares: 'Accuracy of quantitative claims, whether key figures are supported by cited sources and whether efficiency or cost projections have been independently verified',
     conditions: [
-      { id: 'fc1', text: 'Salary range verified' },
-      { id: 'fc2', text: '30-hour claim substantiated' },
+      { id: 'fc1', text: 'Key figures verified against sources' },
+      { id: 'fc2', text: 'Supporting evidence cited for main claims' },
     ],
   },
 };

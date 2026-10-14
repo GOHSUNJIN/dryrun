@@ -571,7 +571,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        mode: 'Type',
         condMet,
         condTotal,
         duration: sessionDuration,

@@ -207,28 +207,10 @@ export default function Home({ navigate }) {
             </div>
 
             {!hasAnyMeetings ? (
-              <div style={{ ...rowCard(false), cursor: 'default', flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ ...rowCard(false), cursor: 'default' }}>
                 <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                  No upcoming meetings. Add one or sync your calendar.
+                  No upcoming meetings. Add one or sync your calendar above.
                 </div>
-                {calEvents === null && (
-                  <button
-                    onClick={connectCalendar}
-                    disabled={calLoading}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      fontSize: '0.8125rem', fontWeight: 600, color: 'var(--app-accent)',
-                      background: 'rgba(180,83,9,0.06)', border: '1px solid rgba(180,83,9,0.15)',
-                      borderRadius: 6, padding: '7px 12px', cursor: calLoading ? 'default' : 'pointer',
-                      fontFamily: 'var(--font-ui)', opacity: calLoading ? 0.6 : 1,
-                    }}
-                  >
-                    {calLoading
-                      ? <><Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> Connecting...</>
-                      : <><Calendar size={12} /> Sync Google Calendar</>
-                    }
-                  </button>
-                )}
               </div>
             ) : allMeetings.map((m, i) => (
               <div
