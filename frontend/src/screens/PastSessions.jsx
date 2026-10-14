@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp, ArrowRight } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting, loadLocalMeetings } from '../utils/storage.js'
+import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting, loadLocalMeetings, deleteLocalMeeting } from '../utils/storage.js'
 
 function loadGroups() {
   return groupSessionsByProposal(loadSessions())
@@ -49,6 +49,13 @@ export default function PastSessions({ navigate }) {
 
   const handleDeleteGroup = (e, group) => {
     e.stopPropagation()
+    if (group.sessions.length === 0) {
+      if (!window.confirm(`Remove "${group.proposal}" from your meetings?`)) return
+      const m = loadLocalMeetings().find(lm => lm.name === group.linkedMeeting)
+      if (m) deleteLocalMeeting(m.id)
+      setGroups(loadGroups())
+      return
+    }
     const count = group.sessions.length
     if (!window.confirm(`Delete all ${count} session${count !== 1 ? 's' : ''} in this group? This cannot be undone.`)) return
     deleteSessions(group.sessions.map(s => s.id))
@@ -155,22 +162,24 @@ export default function PastSessions({ navigate }) {
                   )}
                   {!group.noMeeting && (
                     <>
-                      <button
-                        onClick={e => startRename(e, group.proposal)}
-                        title="Rename"
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
-                          opacity: 0.6, transition: 'opacity 0.15s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                        onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
-                      >
-                        <Edit2 size={12} />
-                      </button>
+                      {group.sessions.length > 0 && (
+                        <button
+                          onClick={e => startRename(e, group.proposal)}
+                          title="Rename"
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
+                            opacity: 0.6, transition: 'opacity 0.15s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                          onMouseLeave={e => e.currentTarget.style.opacity = 0.6}
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                      )}
                       <button
                         onClick={e => handleDeleteGroup(e, group)}
-                        title="Delete all sessions in this group"
+                        title={group.sessions.length === 0 ? 'Remove meeting' : 'Delete all sessions in this group'}
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer',
                           color: 'var(--text-muted)', padding: 4, display: 'flex', alignItems: 'center',
@@ -196,10 +205,32 @@ export default function PastSessions({ navigate }) {
                       </span>
                     )
                   })()}
-                  <span className="proposal-group-count">{group.sessions.length} rehearsal{group.sessions.length !== 1 ? 's' : ''}</span>
+                  <span className="proposal-group-count">
+                    {group.sessions.length === 0 ? 'No rehearsals yet' : `${group.sessions.length} rehearsal${group.sessions.length !== 1 ? 's' : ''}`}
+                  </span>
                 </div>
               </div>
 
+              {!collapsed.has(group.proposal) && group.sessions.length === 0 && (
+                <div style={{
+                  padding: '18px 20px', marginBottom: 8,
+                  borderRadius: 8, border: '1px dashed var(--border)',
+                  color: 'var(--text-muted)', fontSize: '0.875rem',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  No rehearsals yet.{' '}
+                  <button
+                    onClick={() => navigate('new', { meetingName: group.proposal, linkedMeeting: group.linkedMeeting })}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: 'var(--app-accent)', fontWeight: 600,
+                      fontFamily: 'var(--font-ui)', fontSize: '0.875rem', padding: 0,
+                    }}
+                  >
+                    Start one now →
+                  </button>
+                </div>
+              )}
               {!collapsed.has(group.proposal) && group.sessions.map((s, si) => {
                 const pct    = s.condTotal ? Math.round((s.condMet / s.condTotal) * 100) : 0
                 const isGood = pct >= 60
@@ -261,17 +292,17 @@ export default function PastSessions({ navigate }) {
                           <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Report
                         </button>
-                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
-                          Debrief
+                        <button className="session-action-btn" title="Debrief" onClick={e => { e.stopPropagation(); navigate('debrief', { savedSession: s }) }}>
+                          <BookOpen size={12} style={{ opacity: 0.6 }} />
                         </button>
                         {s.proposalText && (
                           <button
                             className="session-action-btn"
+                            title={isExpanded ? 'Hide proposal' : 'View proposal'}
                             onClick={e => { e.stopPropagation(); setExpandedSession(isExpanded ? null : sessionKey) }}
                             style={isExpanded ? { color: 'var(--app-accent)', borderColor: 'rgba(180,83,9,0.25)' } : undefined}
                           >
-                            <FileText size={12} style={{ display: 'inline', marginRight: 4 }} />
-                            {isExpanded ? 'Hide' : 'Proposal'}
+                            <FileText size={12} />
                           </button>
                         )}
                         <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal, linkedMeeting: s.linkedMeeting || '', proposalText: s.proposalText || '' }) }}>
@@ -315,8 +346,7 @@ export default function PastSessions({ navigate }) {
                             title="Assign to meeting"
                             onClick={e => { e.stopPropagation(); setAssigningSession(sessionKey) }}
                           >
-                            <ArrowRight size={12} style={{ display: 'inline', marginRight: 4 }} />
-                            Assign
+                            <ArrowRight size={12} />
                           </button>
                         )}
                         <button

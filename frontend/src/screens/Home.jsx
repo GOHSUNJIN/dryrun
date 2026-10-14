@@ -396,8 +396,8 @@ export default function Home({ navigate }) {
               const personas = s.personaIds?.length
                 ? PERSONAS.filter(p => s.personaIds.includes(p.id))
                 : PERSONAS
-              const shownPersonas = personas.slice(0, 4)
-              const extraCount    = personas.length - 4
+              const shownPersonas = personas.slice(0, 3)
+              const extraCount    = personas.length - 3
               return (
                 <div
                   key={idx}
@@ -406,57 +406,61 @@ export default function Home({ navigate }) {
                   onMouseLeave={() => setHoveredSession(null)}
                   style={rowCard(hoveredSession === idx)}
                 >
-                  {/* Fixed-width left section keeps text pinned at a consistent X */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', gap: 3, flexShrink: 0, width: 92, paddingTop: 2 }}>
-                      {shownPersonas.map(p => (
+                  {/* Text always flush left */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{s.proposal}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Clock size={10} style={{ flexShrink: 0 }} />
+                      {s.date} · {s.duration}
+                    </div>
+                    <div style={{ fontSize: '0.6875rem', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3, opacity: s.linkedMeeting ? 1 : 0.5 }}>
+                      <Calendar size={9} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+                      <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.linkedMeeting || 'No meeting'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Compact overlapping avatars + score + arrow — all flexShrink: 0 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {shownPersonas.map((p, j) => (
                         <div key={p.id} style={{
                           width: 20, height: 20, borderRadius: '50%',
                           background: p.color, display: 'flex', alignItems: 'center',
                           justifyContent: 'center', fontSize: '0.5625rem', fontWeight: 700,
-                          color: 'white', fontFamily: 'var(--font-ui)', flexShrink: 0,
+                          color: 'white', fontFamily: 'var(--font-ui)',
+                          marginLeft: j > 0 ? -6 : 0,
+                          border: '1.5px solid var(--bg-surface)',
+                          position: 'relative', zIndex: shownPersonas.length - j,
                         }}>{p.initial}</div>
                       ))}
                       {extraCount > 0 && (
                         <div style={{
-                          width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                          background: 'var(--bg-hover)', border: '1px solid var(--border)',
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: 'var(--bg-hover)', border: '1.5px solid var(--bg-surface)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-muted)',
-                          fontFamily: 'var(--font-ui)',
+                          fontFamily: 'var(--font-ui)', marginLeft: -6,
                         }}>+{extraCount}</div>
                       )}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>{s.proposal}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <Clock size={10} style={{ flexShrink: 0 }} />
-                        {s.date} · {s.duration}
-                      </div>
-                      <div style={{ fontSize: '0.6875rem', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3, opacity: s.linkedMeeting ? 1 : 0.5 }}>
-                        <Calendar size={9} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
-                        <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {s.linkedMeeting || 'No meeting'}
-                        </span>
-                      </div>
-                    </div>
+                    <span style={{
+                      fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
+                      background: isGood ? 'rgba(5,150,105,0.08)' : 'rgba(245,158,11,0.08)',
+                      color: isGood ? '#059669' : '#D97706', whiteSpace: 'nowrap',
+                    }}>{s.condMet}/{s.condTotal}</span>
+                    <ArrowRight
+                      size={13}
+                      style={{
+                        color: hoveredSession === idx ? 'var(--app-accent)' : 'var(--border)',
+                        transition: 'color 0.15s ease',
+                      }}
+                    />
                   </div>
-                  <span style={{
-                    fontSize: '0.6875rem', fontWeight: 600, padding: '2px 7px', borderRadius: 99,
-                    background: isGood ? 'rgba(5,150,105,0.08)' : 'rgba(245,158,11,0.08)',
-                    color: isGood ? '#059669' : '#D97706',
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                  }}>{s.condMet}/{s.condTotal}</span>
-                  <ArrowRight
-                    size={13}
-                    style={{
-                      color: hoveredSession === idx ? 'var(--app-accent)' : 'var(--border)',
-                      flexShrink: 0, transition: 'color 0.15s ease',
-                    }}
-                  />
                 </div>
               )
             })}

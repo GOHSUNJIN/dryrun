@@ -165,17 +165,19 @@ function TypingIndicator({ persona }) {
 
 function StreamingText({ text }) {
   const [displayed, setDisplayed] = useState('')
+  const [done, setDone] = useState(false)
   useEffect(() => {
     setDisplayed('')
+    setDone(false)
     let i = 0
     const interval = setInterval(() => {
       i += 3
       setDisplayed(text.slice(0, i))
-      if (i >= text.length) clearInterval(interval)
+      if (i >= text.length) { clearInterval(interval); setDone(true) }
     }, 18)
     return () => clearInterval(interval)
   }, [text])
-  return <>{displayed}<span style={{ opacity: 0.4 }}>|</span></>
+  return <>{displayed}{!done && <span style={{ opacity: 0.4 }}>|</span>}</>
 }
 
 export default function RehearsalRoom({ navigate, session, updateSession }) {
