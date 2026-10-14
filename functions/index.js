@@ -102,6 +102,6 @@ export const sessionEnd = onRequest(opts, async (req, res) => {
     )
   } catch (err) {
     console.error('[sessionEnd] generateReport failed, falling back to demo:', err.message)
-    res.status(200).json(getDemoReport())
+    res.status(200).json({ ...getDemoReport(), demo: true })
   }
 })

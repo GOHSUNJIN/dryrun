@@ -37,7 +37,8 @@ export default function Report({ navigate, session }) {
   const [exporting, setExporting] = useState(false)
   const [docUrl, setDocUrl] = useState(null)
 
-  const hasRealReport = Boolean(session?.reportData?.weak_points?.length)
+  const isDemoReport  = Boolean(session?.reportData?.demo) || !session?.reportData?.weak_points?.length
+  const hasRealReport = !isDemoReport
   const weakPoints    = hasRealReport ? session.reportData.weak_points : FALLBACK_WEAK_POINTS
 
   const conditions   = session?.conditions || {}
@@ -145,6 +146,20 @@ export default function Report({ navigate, session }) {
             </div>
           </div>
         </motion.div>
+
+        {isDemoReport && (
+          <motion.div variants={item}>
+            <div style={{
+              marginBottom: 16, padding: '10px 16px', borderRadius: 8,
+              background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+              fontSize: '0.8125rem', color: '#D97706',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span style={{ fontWeight: 600 }}>AI report unavailable</span>
+              &nbsp;— showing sample coaching based on common presentation gaps.
+            </div>
+          </motion.div>
+        )}
 
         <motion.div variants={item}>
           <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>

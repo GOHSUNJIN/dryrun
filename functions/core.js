@@ -52,11 +52,12 @@ function allDefs(customDefs = {}) {
   return { ...PERSONA_DEFS, ...customDefs }
 }
 
-async function withRetry(fn, retries = 2, delayMs = 1500) {
+async function withRetry(fn, retries = 1, delayMs = 600) {
   try {
     return await fn()
   } catch (err) {
-    const isRetryable = err.status === 503 || err.status === 429 ||
+    // Only retry transient server errors — 429 quota exhausted won't recover in seconds
+    const isRetryable = err.status === 503 ||
       (err.message || '').toLowerCase().includes('overload') ||
       (err.message || '').includes('503') ||
       (err.message || '').includes('UNAVAILABLE')

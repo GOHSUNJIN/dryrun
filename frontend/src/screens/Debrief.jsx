@@ -51,6 +51,7 @@ export default function Debrief({ navigate, session }) {
   const [selected, setSelected] = useState(1)
   const [filter, setFilter]     = useState('All personas')
 
+  const isDemoReport = Boolean(session?.reportData?.demo) || !session?.reportData?.moments?.length
   const moments = session?.reportData?.moments?.length
     ? session.reportData.moments
     : DEBRIEF_MOMENTS
@@ -103,6 +104,15 @@ export default function Debrief({ navigate, session }) {
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
           Session debrief: {session?.proposalName || 'Data Engineering Hires'}
         </div>
+        {isDemoReport && (
+          <div style={{
+            marginLeft: 12, padding: '4px 10px', borderRadius: 6,
+            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+            fontSize: '0.75rem', color: '#D97706', fontWeight: 500, whiteSpace: 'nowrap',
+          }}>
+            Sample data — AI report unavailable
+          </div>
+        )}
         <div style={{ marginLeft: 'auto' }}>
           <button className="btn btn-secondary btn-sm" onClick={() => navigate('room')}>
             <RotateCcw size={12} /> Rehearse again
