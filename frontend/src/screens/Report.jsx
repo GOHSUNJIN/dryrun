@@ -27,8 +27,8 @@ export default function Report({ navigate, session }) {
 
   const conditions   = session?.conditions || {}
   const condMet      = Object.values(conditions).filter(Boolean).length
-  const condTotal    = Object.keys(conditions).length || 11
-  const turns        = session?.transcript?.filter(m => m.speaker === 'presenter').length || 6
+  const condTotal    = Object.keys(conditions).length
+  const turns        = session?.transcript?.filter(m => m.speaker === 'presenter').length ?? 0
   const proposalName = session?.proposalName || 'Untitled proposal'
 
   // Snapshot both values once on mount so they don't drift if the page stays open

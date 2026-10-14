@@ -564,7 +564,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         reportData,
         linkedMeeting: session.linkedMeeting || '',
       })
-      updateSession({ reportData, conditions: localConditions, duration: sessionDuration })
+      updateSession({ reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
       navigate('report')
       return
     }
@@ -599,11 +599,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         linkedMeeting: session.linkedMeeting || '',
       })
 
-      updateSession({ reportData, conditions: localConditions, duration: sessionDuration })
+      updateSession({ reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
       navigate('report')
     } catch (err) {
       console.error('[RehearsalRoom] session/end failed:', err)
-      updateSession({ conditions: localConditions })
+      updateSession({ conditions: localConditions, transcript: localTranscript })
       navigate('report')
     } finally {
       setGeneratingReport(false)
