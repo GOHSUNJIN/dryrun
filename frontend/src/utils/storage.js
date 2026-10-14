@@ -175,8 +175,8 @@ export function dismissWeakSpot(text) {
 export function groupSessionsByProposal(sessions) {
   const groups = {}
   for (const s of sessions) {
-    const key = s.proposal || 'Untitled proposal'
-    if (!groups[key]) groups[key] = { proposal: key, sessions: [] }
+    const key = s.linkedMeeting || s.proposal || 'Untitled proposal'
+    if (!groups[key]) groups[key] = { proposal: key, linkedMeeting: s.linkedMeeting || '', sessions: [] }
     groups[key].sessions.push(s)
   }
   return Object.values(groups)

@@ -557,7 +557,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       saveSession({
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Singapore' }),
         condMet,
         condTotal,
         duration: sessionDuration,
@@ -590,7 +590,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       saveSession({
         id: Date.now(),
         proposal: session.proposalName || 'Untitled proposal',
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        date: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Singapore' }),
         condMet,
         condTotal,
         duration: sessionDuration,

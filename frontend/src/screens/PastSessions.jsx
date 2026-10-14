@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2 } from 'lucide-react'
+import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadSessions, deleteSession, groupSessionsByProposal, renameProposal } from '../utils/storage.js'
 
@@ -60,7 +60,7 @@ export default function PastSessions({ navigate }) {
     <div className="page">
       <div className="page-header">
         <div className="page-title">Past Sessions</div>
-        <div className="page-subtitle">Every rehearsal grouped by proposal. Track how you improve across attempts.</div>
+        <div className="page-subtitle">Rehearsals grouped by meeting or proposal. Track how you improve across attempts.</div>
       </div>
 
       {groups.length === 0 ? (
@@ -134,7 +134,12 @@ export default function PastSessions({ navigate }) {
                       }}
                     />
                   ) : (
-                    <span className="proposal-group-name">{group.proposal}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {group.linkedMeeting && (
+                        <Calendar size={13} style={{ color: 'var(--app-accent)', flexShrink: 0 }} />
+                      )}
+                      <span className="proposal-group-name">{group.proposal}</span>
+                    </div>
                   )}
                   <button
                     onClick={e => startRename(e, group.proposal)}
@@ -172,24 +177,6 @@ export default function PastSessions({ navigate }) {
                 return (
                   <div key={s.id || si} className="session-row" onClick={() => navigate('report', { savedSession: s })}>
                     <div>
-                      {s.linkedMeeting ? (
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          fontSize: '0.6875rem', fontWeight: 600, color: 'var(--app-accent)',
-                          background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.18)',
-                          borderRadius: 4, padding: '1px 6px', marginBottom: 4,
-                        }}>
-                          {s.linkedMeeting}
-                        </div>
-                      ) : (
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          fontSize: '0.6875rem', color: 'var(--text-muted)',
-                          marginBottom: 4,
-                        }}>
-                          No meeting
-                        </div>
-                      )}
                       <div className="session-row-name">{s.proposal || group.proposal}</div>
                       <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                         <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
