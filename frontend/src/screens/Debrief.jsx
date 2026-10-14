@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingDown, TrendingUp, Award, Zap, Minus, RotateCcw, ArrowLeft, ChevronRight } from 'lucide-react'
-import { DEBRIEF_MOMENTS } from '../data.js'
 
 const MARKER_ICONS = {
   strong:  TrendingUp,
@@ -19,24 +18,6 @@ const MARKER_COLORS = {
   neutral: '#9B9BAB',
 }
 
-const FALLBACK_COACHING = {
-  1: {
-    momentType:  'weak',
-    momentLabel: 'Weak answer',
-    asked:       'Morgan (Finance) challenged the payback claim',
-    yourAnswer:  '"This pays for itself within a year."',
-    whyShort:    'The answer restated the conclusion rather than showing the workings. Finance needs a line-by-line model, not an assertion.',
-    betterAnswer: 'Acknowledge the gap directly: "You are right. I cited base salary only. The full year-one cost including benefits at 25% load, $18k in tooling and estimated $30k AWS infrastructure is $336k. Against $200k in saved labour and $140k in avoided re-reporting risk, the payback is 18 months. I will have a three-year TCO model before the meeting."',
-  },
-  2: {
-    momentType:  'strong',
-    momentLabel: 'Strong answer',
-    asked:       'Jordan (Ops) asked about the existing manual process owner',
-    yourAnswer:  '"We ran a pilot last quarter with Ops. The analyst who owns the process helped scope it."',
-    whyShort:    'Named a real pilot, cited a specific stakeholder and turned a potential HR concern into a positive story.',
-    betterAnswer: 'This answer was effective. Reinforce it in the real meeting by having the analyst name and a one-line quote ready in case Legal asks about data consent.',
-  },
-}
 
 const PERSONA_FILTER_OPTIONS = ['All personas', 'Finance', 'Legal', 'Operations', 'Fact-Checker']
 
@@ -52,9 +33,7 @@ export default function Debrief({ navigate, session }) {
   const [filter, setFilter]     = useState('All personas')
 
   const isDemoReport = Boolean(session?.reportData?.demo) || !session?.reportData?.moments?.length
-  const moments = session?.reportData?.moments?.length
-    ? session.reportData.moments
-    : DEBRIEF_MOMENTS
+  const moments = session?.reportData?.moments || []
 
   const filteredMoments = filter === 'All personas'
     ? moments
@@ -68,11 +47,9 @@ export default function Debrief({ navigate, session }) {
   const effectiveSelected  = selectedInFiltered ? selected : (filteredMoments[0]?.id ?? 1)
 
   const getCoaching = (momentId) => {
-    if (session?.reportData?.moments?.length) {
-      const m = session.reportData.moments.find(m => m.id === momentId)
-      if (m) return { momentType: m.type, momentLabel: m.tag, asked: m.asked, yourAnswer: m.your_answer, whyShort: m.why, betterAnswer: m.better }
-    }
-    return FALLBACK_COACHING[momentId] || FALLBACK_COACHING[1]
+    const m = moments.find(m => m.id === momentId)
+    if (m) return { momentType: m.type, momentLabel: m.tag, asked: m.asked, yourAnswer: m.your_answer, whyShort: m.why, betterAnswer: m.better }
+    return null
   }
 
   const nextWeakPoint = () => {
@@ -84,8 +61,8 @@ export default function Debrief({ navigate, session }) {
   }
 
   const coaching    = getCoaching(effectiveSelected)
-  const MomentIcon  = MARKER_ICONS[coaching.momentType] || Minus
-  const momentColor = MARKER_COLORS[coaching.momentType] || '#9B9BAB'
+  const MomentIcon  = MARKER_ICONS[coaching?.momentType] || Minus
+  const momentColor = MARKER_COLORS[coaching?.momentType] || '#9B9BAB'
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -110,7 +87,7 @@ export default function Debrief({ navigate, session }) {
             background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
             fontSize: '0.75rem', color: '#D97706', fontWeight: 500, whiteSpace: 'nowrap',
           }}>
-            Sample data — AI report unavailable
+            AI analysis not generated
           </div>
         )}
         <div style={{ marginLeft: 'auto' }}>
@@ -166,6 +143,18 @@ export default function Debrief({ navigate, session }) {
 
         {/* Right: Coaching */}
         <div className="debrief-coaching">
+          {!coaching ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              height: '100%', textAlign: 'center', padding: '48px 32px',
+              color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.6,
+            }}>
+              Session debrief not available. AI was not able to generate analysis for this session.<br />
+              <button className="btn btn-secondary" style={{ marginTop: 24 }} onClick={() => navigate('room')}>
+                <RotateCcw size={14} /> Rehearse again
+              </button>
+            </div>
+          ) : (
           <motion.div
             key={effectiveSelected}
             initial={{ opacity: 0, y: 8 }}
@@ -224,6 +213,7 @@ export default function Debrief({ navigate, session }) {
               </button>
             </div>
           </motion.div>
+          )}
         </div>
       </div>
     </div>

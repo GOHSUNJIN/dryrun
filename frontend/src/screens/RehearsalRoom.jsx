@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check } from 'lucide-react'
-import { PERSONAS, DEMO_TRANSCRIPT, SCRIPTED_RESPONSES } from '../data.js'
+import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
 import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
 
 const PERSONA_VOICE = {
@@ -178,7 +178,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [appearingMsgId, setAppearingMsgId]         = useState(null)
   const [typingPersonaId, setTypingPersonaId]       = useState(null)
   const [generatingReport, setGeneratingReport]     = useState(false)
-  const [responseIdx, setResponseIdx]               = useState(0)
   const [apiError, setApiError]                     = useState(false)
   const [listening, setListening]                   = useState(false)
   const [speechOn, setSpeechOn]                     = useState(() => loadVoiceSettings().enabled)
@@ -421,83 +420,24 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   }
 
   const fallbackResponse = () => {
-    setResponseIdx(r => {
-      const scripted   = SCRIPTED_RESPONSES[r % SCRIPTED_RESPONSES.length]
-      const speakerId  = visiblePersonas.find(p => p.id === scripted.speaker)?.id
-        || visiblePersonas[r % visiblePersonas.length]?.id
-
-      if (!speakerId) return r + 1
-
+    const speakerId = visiblePersonas[0]?.id
+    if (!speakerId) return
+    setActiveSpeaker(speakerId)
+    setTypingPersonaId(speakerId)
+    setTimeout(() => {
+      const replyMsg = {
+        id: Date.now() + 1,
+        speaker: speakerId,
+        text: '[AI unavailable: response not generated]',
+        time: getCurrentTime(),
+      }
+      setTypingPersonaId(null)
+      setRoomState('speaking')
+      setLocalTranscript(prev => [...prev, replyMsg])
       setActiveSpeaker(speakerId)
-      setTypingPersonaId(speakerId)
-
-      setTimeout(() => {
-        const replyMsg = {
-          id: Date.now() + 1,
-          speaker: speakerId,
-          text: scripted.text,
-          ...(scripted.source ? { source: scripted.source } : {}),
-          time: getCurrentTime(),
-        }
-        setTypingPersonaId(null)
-        setRoomState('speaking')
-        setLocalTranscript(prev => [...prev, replyMsg])
-        setActiveSpeaker(speakerId)
-        setAppearingMsgId(replyMsg.id)
-        enqueueSpeak(replyMsg.text, speakerId)
-
-        const tickCondition = r % 3 === 2
-        const fuDef         = scripted.follow_up
-        const fuSpeakerId   = fuDef ? (visiblePersonas.find(p => p.id === fuDef.speaker)?.id || null) : null
-
-        if (fuSpeakerId) {
-          setTimeout(() => {
-            setTypingPersonaId(fuSpeakerId)
-            setRoomState('thinking')
-          }, 2500)
-
-          setTimeout(() => {
-            const fuMsg = {
-              id: Date.now() + 2,
-              speaker: fuSpeakerId,
-              text: fuDef.text,
-              ...(fuDef.source ? { source: fuDef.source } : {}),
-              time: getCurrentTime(),
-            }
-            setTypingPersonaId(null)
-            setLocalTranscript(prev => [...prev, fuMsg])
-            setActiveSpeaker(fuSpeakerId)
-            setAppearingMsgId(fuMsg.id)
-            enqueueSpeak(fuMsg.text, fuSpeakerId)
-
-            if (tickCondition) {
-              setLocalConditions(prev => {
-                const unmet = Object.keys(prev).find(k => !prev[k])
-                return unmet ? { ...prev, [unmet]: true } : prev
-              })
-              setTimeout(() => setRoomState('condition-met'), 600)
-              setTimeout(() => setRoomState('idle'), 2800)
-            } else {
-              setRoomState('speaking')
-              setTimeout(() => setRoomState('idle'), 3500)
-            }
-          }, 4500)
-        } else {
-          if (tickCondition) {
-            setLocalConditions(prev => {
-              const unmet = Object.keys(prev).find(k => !prev[k])
-              return unmet ? { ...prev, [unmet]: true } : prev
-            })
-            setTimeout(() => setRoomState('condition-met'), 600)
-            setTimeout(() => setRoomState('idle'), 2200)
-          } else {
-            setTimeout(() => setRoomState('idle'), 3500)
-          }
-        }
-      }, 1600)
-
-      return r + 1
-    })
+      setAppearingMsgId(replyMsg.id)
+      setTimeout(() => setRoomState('idle'), 1200)
+    }, 800)
   }
 
   const speechSupported = typeof window !== 'undefined' &&

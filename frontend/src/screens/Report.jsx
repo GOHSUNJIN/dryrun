@@ -4,23 +4,6 @@ import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader } from 'lucid
 import { PERSONAS } from '../data.js'
 import { exportToGoogleDoc } from '../utils/google.js'
 
-const FALLBACK_WEAK_POINTS = [
-  {
-    label: 'Finance',
-    issue: 'Payback period cited without full TCO',
-    fix: 'Prepare a three-year total cost of ownership model that includes benefits, tooling, infrastructure and a 15% contingency. Present year-by-year cash flow rather than just year one.',
-  },
-  {
-    label: 'Legal',
-    issue: 'No data privacy or compliance plan',
-    fix: 'Identify whether personal employee data will be accessed, confirm GDPR/CCPA scope with your DPO and include a vendor DPA checklist in the proposal appendix.',
-  },
-  {
-    label: 'Operations',
-    issue: 'Transition ownership gap unaddressed',
-    fix: 'Name the person currently responsible for the manual reporting process and document a handoff plan with a 30-day parallel-run period before decommissioning the old workflow.',
-  },
-]
 
 const container = {
   hidden: {},
@@ -39,7 +22,7 @@ export default function Report({ navigate, session }) {
 
   const isDemoReport  = Boolean(session?.reportData?.demo) || !session?.reportData?.weak_points?.length
   const hasRealReport = !isDemoReport
-  const weakPoints    = hasRealReport ? session.reportData.weak_points : FALLBACK_WEAK_POINTS
+  const weakPoints    = hasRealReport ? session.reportData.weak_points : []
 
   const conditions   = session?.conditions || {}
   const condMet      = Object.values(conditions).filter(Boolean).length
@@ -156,7 +139,7 @@ export default function Report({ navigate, session }) {
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
               <span style={{ fontWeight: 600 }}>AI report unavailable</span>
-              &nbsp;— showing sample coaching based on common presentation gaps.
+. Coaching was not generated for this session.
             </div>
           </motion.div>
         )}
@@ -215,19 +198,17 @@ export default function Report({ navigate, session }) {
 
           {activeTab === 'coaching' && (
             <div className="weak-points-section">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <div className="section-label" style={{ marginBottom: 0 }}>Top weak points to address</div>
-                {!hasRealReport && (
-                  <span style={{
-                    fontSize: '0.6875rem', fontWeight: 600, padding: '3px 8px', borderRadius: 99,
-                    background: 'rgba(245,158,11,0.1)', color: '#D97706',
-                    textTransform: 'uppercase', letterSpacing: '0.05em',
-                  }}>
-                    Sample data
-                  </span>
-                )}
-              </div>
-              {weakPoints.map((w, i) => (
+              <div className="section-label" style={{ marginBottom: 16 }}>Top weak points to address</div>
+              {weakPoints.length === 0 ? (
+                <div style={{
+                  padding: '32px 24px', borderRadius: 10, textAlign: 'center',
+                  background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                  color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.6,
+                }}>
+                  AI coaching was not generated for this session.<br />
+                  Start a new rehearsal with the AI service available to receive personalised coaching.
+                </div>
+              ) : weakPoints.map((w, i) => (
                 <div key={i} className="weak-point-card">
                   <div className="weak-point-label">{w.label}</div>
                   <div className="weak-point-issue">{w.issue}</div>
