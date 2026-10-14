@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, Fragment } from 'react'
+import { useState, useRef, useEffect, Fragment, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight, ChevronLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
@@ -119,15 +119,50 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
   }
 
-  const readFile = (file) => {
+  const [fileError, setFileError] = useState('')
+
+  const readFile = useCallback(async (file) => {
+    setFileError('')
+    const ext = file.name.split('.').pop().toLowerCase()
     setDocumentName(file.name.replace(/\.[^/.]+$/, ''))
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setProposalText(e.target.result)
+
+    try {
+      let text = ''
+
+      if (ext === 'pdf') {
+        const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist')
+        GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
+        const arrayBuffer = await file.arrayBuffer()
+        const pdf = await getDocument({ data: arrayBuffer }).promise
+        const pages = []
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i)
+          const content = await page.getTextContent()
+          pages.push(content.items.map(item => item.str).join(' '))
+        }
+        text = pages.join('\n\n')
+      } else if (ext === 'docx') {
+        const mammoth = await import('mammoth')
+        const arrayBuffer = await file.arrayBuffer()
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        text = result.value
+      } else {
+        // txt, md, and anything else treated as plain text
+        text = await file.text()
+      }
+
+      if (!text.trim()) {
+        setFileError('Could not extract text from this file. Try copying the content into a .txt file.')
+        return
+      }
+
+      setProposalText(text)
       setUploaded(true)
+    } catch (err) {
+      console.error('[readFile] extraction failed:', err)
+      setFileError('Failed to read the file. Make sure it is not password-protected or corrupted.')
     }
-    reader.readAsText(file)
-  }
+  }, [])
 
   const openDrivePicker = async () => {
     setDriveLoading(true)
@@ -464,8 +499,13 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       />
                       <div className="upload-icon"><Upload size={22} /></div>
                       <div className="upload-primary">Drop your file here, or click to browse</div>
-                      <div className="upload-secondary">TXT, Markdown, Word or PDF</div>
+                      <div className="upload-secondary">TXT, Markdown, DOCX or PDF</div>
                     </div>
+                    {fileError && (
+                      <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, fontSize: '0.8125rem', color: '#DC2626' }}>
+                        {fileError}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 16 }}>
                       <button
                         className="btn btn-secondary btn-sm"
