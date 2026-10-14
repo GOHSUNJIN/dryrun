@@ -699,32 +699,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         </div>
       </div>
 
-      {session.demoMode && (
-        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
-          <div style={{
-            padding: '9px 16px',
-            background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)',
-            borderRadius: 8, color: '#D97706', fontSize: '0.8125rem',
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <span>AI unavailable. Running on scripted demo responses. Add a Gemini API key to Firebase to enable live AI.</span>
-          </div>
-        </div>
-      )}
-
-      {apiError && hasRealSession && (
-        <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
-        <div style={{
-          padding: '9px 16px',
-          background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)',
-          borderRadius: 8, color: '#FCA5A5', fontSize: '0.8125rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-        }}>
-          <span>AI unavailable. Using scripted responses. Check Firebase logs for details.</span>
-          <button onClick={() => setApiError(false)} style={{ background: 'none', border: 'none', color: '#FCA5A5', cursor: 'pointer', padding: 0, fontSize: '1rem', lineHeight: 1 }}>×</button>
-        </div>
-        </div>
-      )}
 
       {showExitOffer && (
         <div style={{ maxWidth: 880, margin: '0 auto', width: '100%', padding: '0 32px 8px' }}>
