@@ -259,7 +259,7 @@ const canContinue = () => {
 
                       {driveOpen && (
                         <div style={{
-                          width: '100%', maxWidth: 420,
+                          width: '100%',
                           border: '1px solid var(--border)', borderRadius: 10,
                           background: 'var(--bg-surface)',
                           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
