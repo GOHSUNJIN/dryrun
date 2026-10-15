@@ -396,12 +396,9 @@ The values inside persona_ids must be chosen from this exact list: ${validIds.jo
       }),
     }))
     const raw = (response.text || '').replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim()
-    console.log('[detectPanel] raw response:', raw)
     const data = JSON.parse(raw)
-    // Handle case where model returns a bare array instead of the wrapper object
     const rawIds = Array.isArray(data) ? data : (data.persona_ids || [])
     const ids = rawIds.filter(id => availableIds.includes(id))
-    console.log('[detectPanel] model returned:', rawIds, '→ valid:', ids)
     return ids
   } catch (err) {
     console.error('[detectPanel] failed:', err?.message || err)
@@ -499,7 +496,6 @@ Return a JSON object with an "openings" array. Each item has "persona_id" and "t
   }
 
   const rawText = (response.text || '').trim()
-  console.log('[generateOpenings] raw length:', rawText.length, 'preview:', rawText.slice(0, 100))
   if (!rawText) {
     throw new Error(`Gemini returned empty text in generateOpenings`)
   }

@@ -181,7 +181,7 @@ Session state lives in `App.jsx` and is passed down as props. Never stored on a 
   },
   transcript: [],             // full message history
   conditions: {},             // { f1: false, f2: true, ... }
-  factCheckNotes: '',         // Jun's verified research briefing
+  factCheckNotes: '',         // Ritish's verified research briefing
   customPersonaDefs: {},      // serialised custom personas for API calls
   reportData: null,           // weak_points + moments from generateReport
   startTime: null,            // Date.now() at session start

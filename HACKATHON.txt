@@ -52,7 +52,7 @@ Innovation & Creativity                   25%
 
 User Experience & Solution Design         10%
   - Usability & accessibility for intended users
-  - Cohesive experience — all components including AI work together smoothly
+  - Cohesive experience; all components including AI work together smoothly
 
 
 DRYRUN SUBMISSION CHECKLIST
@@ -66,21 +66,21 @@ DRYRUN SUBMISSION CHECKLIST
 
 KEY DIFFERENTIATORS TO HIGHLIGHT IN DECK
 -----------------------------------------
-- Multi-persona AI panel (not a single chatbot) — each persona has distinct goals
+- Multi-persona AI panel (not a single chatbot); each persona has distinct goals
 - Fact-Checker uses Google Search grounding (live web search during session)
 - Condition tracking as a structured progress metric across the session
 - Gemini vision API for scanned PDF extraction
 - Coaching report quotes specific turns and suggests better answers
 - Multiple industry verticals: Business, Event, Academic, Startup, Policy
-- Google Calendar sync + "link to meeting" — rehearsal tied to a real upcoming meeting
+- Google Calendar sync + "link to meeting"; rehearsal tied to a real upcoming meeting
 
 
 NOTES FROM ANALYSIS (2026-10-15)
 ----------------------------------
-- Deployment is the only hard disqualification risk — resolve before anything else
+- Deployment is the only hard disqualification risk; resolve before anything else
 - In the deck: name every Gemini capability explicitly (Search grounding, vision,
   structured output, multi-turn agentic conversation)
 - Add one concrete stat to establish problem size (e.g. hours wasted in unprepared meetings)
-- Add a "vs existing tools" slide — most AI prep tools are single-turn, post-hoc feedback
+- Add a "vs existing tools" slide; most AI prep tools are single-turn, post-hoc feedback
 - The video should show the fact-checker citing a real source, the coaching report with
   a specific excerpt, and the document upload with a real PDF

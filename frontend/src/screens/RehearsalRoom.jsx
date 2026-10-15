@@ -224,18 +224,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
   const { enqueueSpeak, cancelTTS } = useTTS(speechOnRef)
 
-  // Log opening message source once on mount so it's visible in DevTools
-  useEffect(() => {
-    const source = !hasRealSession
-      ? 'DEMO_TRANSCRIPT (no proposal uploaded)'
-      : realOpenings.length > 0
-        ? `API (${realOpenings.length} opening${realOpenings.length !== 1 ? 's' : ''} from session/start)`
-        : 'DEMO_TRANSCRIPT fallback (session/start returned 0 openings  -  check the [session/start] log above)'
-    console.log('[RehearsalRoom] opening source:', source)
-    if (!hasRealSession || realOpenings.length === 0) {
-      console.log('[RehearsalRoom] demo transcript entries for selected personas:', openingMsgs.map(m => ({ speaker: m.speaker, text: m.text?.slice(0, 60) + '...' })))
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
@@ -362,12 +350,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
         if (!res.ok) throw new Error(`API error ${res.status}`)
         const data = await res.json()
-        console.log(`[session/message] turn ${turnCount + 1}:`, {
-          speaker:        data.speaker,
-          conditions_met: data.conditions_met,
-          has_follow_up:  Boolean(data.follow_up),
-          text_preview:   data.text?.slice(0, 80) + '...',
-        })
 
         if (!data.text?.trim()) {
           console.warn('[session/message] empty response  -  using fallback to keep conversation moving')
@@ -525,11 +507,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       })
       if (!res.ok) throw new Error(`API error ${res.status}`)
       const reportData = await res.json()
-      console.log('[session/end] report:', {
-        weak_points_count: reportData.weak_points?.length,
-        moments_count:     reportData.moments?.length,
-        is_demo:           Boolean(reportData.demo),
-      })
       saveSession(buildRecord(reportData))
       updateSession({ reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
       navigate('report')

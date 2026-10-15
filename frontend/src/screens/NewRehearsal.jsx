@@ -325,7 +325,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setDetectingPanel(true)
       try {
         const allIds = PERSONAS.map(p => p.id)
-        console.log('[detect-panel] sending request with available_ids:', allIds)
         const res = await fetch('/api/session/detect-panel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -333,7 +332,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         })
         if (res.ok) {
           const data = await res.json()
-          console.log('[detect-panel] AI suggested:', data.persona_ids)
           if (data.persona_ids?.length) {
             setSelected(data.persona_ids)
             setRecommended(data.persona_ids)
@@ -341,7 +339,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             setPanelPage(0)
           } else {
             const fallback = keywordDetectPanel(proposalText)
-            console.log('[detect-panel] AI returned empty  -  keyword fallback:', fallback)
             if (fallback.length) {
               setSelected(fallback)
               setRecommended(fallback)
@@ -412,7 +409,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
     saveLastPanel(selected)
     const cachedFactCheck = selected.includes('factcheck') ? loadFactCheckCache(proposalText) : ''
-    if (cachedFactCheck) console.log('[session/start] using cached fact_check, skipping server call')
     try {
       const res = await fetch('/api/session/start', {
         method: 'POST',
@@ -433,17 +429,6 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
       const data = await res.json()
       if (data.fact_check) saveFactCheckCache(proposalText, data.fact_check)
-      console.log('[session/start] response:', {
-        demo:             data.demo || false,
-        demo_reason:      data.demo_reason || null,
-        openings_count:   (data.messages || []).length,
-        conditions_count: Object.keys(data.conditions || {}).length,
-        has_fact_check:   Boolean(data.fact_check),
-        fact_check_cached: Boolean(cachedFactCheck),
-        openings:         (data.messages || []).map(m => ({ speaker: m.speaker, text: m.text?.slice(0, 60) + '...' })),
-      })
-      if (data.demo) console.warn('[session/start] AI unavailable, running in demo mode. Reason:', data.demo_reason || 'unknown')
-      if (!data.messages?.length) console.warn('[session/start] No opening messages returned  -  room will fall back to demo transcript for matching persona IDs')
       resetSession()
       updateSession({ ...sessionBase, transcript: data.messages || [], conditions: data.conditions || {}, factCheckNotes: data.fact_check || '', demoMode: !!data.demo, demoReason: data.demo_reason || '' })
       navigate('room')

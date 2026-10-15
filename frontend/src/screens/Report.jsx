@@ -3,8 +3,7 @@ import { motion } from 'framer-motion'
 import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader, ArrowLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { exportToGoogleDoc } from '../utils/google.js'
-import { useToast } from '../components/Toast.jsx'
-import ToastStack from '../components/Toast.jsx'
+import ToastStack, { useToast } from '../components/Toast.jsx'
 
 
 const container = {

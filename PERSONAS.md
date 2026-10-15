@@ -52,9 +52,5 @@
 |---|---|---|
 | general | Usagi | General Reviewer |
 
-## Backend mapping (built-in personas only)
-Backend files use these 4 built-in personas:
-- finance: Alan (functions/core.js + backend/agents/core.py)
-- legal: Alex
-- ops: Renes
-- factcheck: Ritish
+## Default panel
+The default panel used on first load: finance (Alan), legal (Alex), ops (Renes), factcheck (Ritish).
