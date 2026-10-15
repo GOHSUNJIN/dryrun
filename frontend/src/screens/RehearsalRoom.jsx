@@ -350,12 +350,13 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            proposal_text: session.proposalText,
-            persona_ids: session.personaIds,
-            transcript: nextTranscript,
-            conditions: localConditions,
-            config: { ...session.config, turns_remaining: turnsLeft - 1 },
-            fact_check: session.factCheckNotes || '',
+            proposal_text:   session.proposalText,
+            persona_ids:     session.personaIds,
+            transcript:      nextTranscript,
+            conditions:      localConditions,
+            config:          { ...session.config, turns_remaining: turnsLeft - 1 },
+            fact_check:      session.factCheckNotes || '',
+            custom_personas: session.customPersonaDefs || {},
           }),
         })
 
@@ -515,10 +516,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          proposal_text: session.proposalText,
-          persona_ids: session.personaIds,
-          transcript: localTranscript,
-          conditions: localConditions,
+          proposal_text:   session.proposalText,
+          persona_ids:     session.personaIds,
+          transcript:      localTranscript,
+          conditions:      localConditions,
+          custom_personas: session.customPersonaDefs || {},
         }),
       })
       if (!res.ok) throw new Error(`API error ${res.status}`)

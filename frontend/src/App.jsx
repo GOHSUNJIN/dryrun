@@ -20,6 +20,7 @@ const DEFAULT_SESSION = {
   transcript: [],
   conditions: {},
   factCheckNotes: '',
+  customPersonaDefs: {},
   reportData: null,
   startTime: null,
   duration: '',

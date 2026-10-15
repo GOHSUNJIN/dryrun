@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, Fragment, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight, ChevronLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel } from '../utils/storage.js'
+import { loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel, loadCustomPersonas } from '../utils/storage.js'
 import { listDriveItems, listDriveDocs, fetchDocText, isSignedIn } from '../utils/google.js'
 
 const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
@@ -109,6 +109,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [driveStack, setDriveStack]     = useState([])
   const [recentDocs, setRecentDocs]     = useState([])
   const fileInputRef = useRef(null)
+  const [customPersonas] = useState(() => loadCustomPersonas())
 
   useEffect(() => {
     if (!isSignedIn()) return
@@ -387,13 +388,26 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     setLaunching(true)
 
     const config      = { toughness, turnLimit }
+    const customPersonaDefs = {}
+    for (const p of customPersonas) {
+      if (selected.includes(p.id)) {
+        customPersonaDefs[p.id] = {
+          name:           p.name,
+          role:           p.role,
+          speaking_style: p.speaking_style || '',
+          cares:          Array.isArray(p.cares) ? p.cares.join(', ') : (p.cares || ''),
+          conditions:     p.conditions || [],
+        }
+      }
+    }
     const sessionBase = {
-      proposalText:  proposalText,
-      proposalName:  proposalName || 'Untitled proposal',
-      personaIds:    selected,
+      proposalText:      proposalText,
+      proposalName:      proposalName || 'Untitled proposal',
+      personaIds:        selected,
       config,
-      startTime:     Date.now(),
+      startTime:         Date.now(),
       linkedMeeting,
+      customPersonaDefs,
     }
 
     saveLastPanel(selected)
@@ -404,10 +418,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          proposal_text: proposalText,
-          persona_ids:   selected,
+          proposal_text:   proposalText,
+          persona_ids:     selected,
           config,
-          fact_check:    cachedFactCheck,
+          fact_check:      cachedFactCheck,
+          custom_personas: customPersonaDefs,
         }),
       })
 
@@ -751,6 +766,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                     { key: 'event',    label: 'Event Planning' },
                     { key: 'academic', label: 'Academic' },
                     { key: 'policy',   label: 'Policy' },
+                    ...(customPersonas.length > 0 ? [{ key: 'custom', label: 'Custom' }] : []),
                   ].map(({ key, label }) => (
                     <button
                       key={key}
@@ -791,7 +807,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
                 {(() => {
                   const PANEL_PAGE_SIZE = 6
-                  const filtered = PERSONAS
+                  const allPersonas = [
+                    ...PERSONAS,
+                    ...customPersonas.map(p => ({ ...p, category: 'custom' })),
+                  ]
+                  const filtered = allPersonas
                     .filter(p => panelCategory === 'all' || p.category === panelCategory || p.id === 'general')
                     .sort((a, b) => {
                       const as = selected.includes(a.id), bs = selected.includes(b.id)
