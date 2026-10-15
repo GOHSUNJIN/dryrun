@@ -61,7 +61,7 @@ export const PERSONAS = [
     dimColor: 'rgba(167,139,250,0.35)',
     panelPct: 87.5,
     category: 'business',
-    cares: ['Strategic alignment with company priorities', 'ROI and payback at board level', 'What competing initiative is being deprioritised'],
+    cares: ['ROI, payback and strategic fit', 'ROI and payback at board level', 'What competing initiative is being deprioritised'],
     conditions: [
       { id: 'b1', text: 'Strategic alignment with company priorities confirmed', met: false },
       { id: 'b2', text: 'ROI and payback timeline presented at board level',    met: false },
@@ -95,7 +95,7 @@ export const PERSONAS = [
     dimColor: 'rgba(96,165,250,0.35)',
     panelPct: 37.5,
     category: 'business',
-    cares: ['Technical feasibility and architecture dependencies', 'Integration effort and security risks', 'Maintenance responsibility post-launch'],
+    cares: ['Feasibility and tech dependencies', 'Integration effort and security risks', 'Maintenance responsibility post-launch'],
     conditions: [
       { id: 't1', text: 'Technical feasibility confirmed with supporting detail', met: false },
       { id: 't2', text: 'Integration dependencies and risks mapped',              met: false },
@@ -145,7 +145,7 @@ export const PERSONAS = [
     dimColor: 'rgba(16,185,129,0.35)',
     panelPct: 12.5,
     category: 'business',
-    cares: ['Environmental impact and carbon footprint', 'ESG commitments and reporting obligations', 'Supply chain and lifecycle sustainability'],
+    cares: ['Carbon footprint and ESG impact', 'ESG commitments and reporting obligations', 'Supply chain and lifecycle sustainability'],
     conditions: [
       { id: 'sus1', text: 'Environmental and carbon impact assessed',               met: false },
       { id: 'sus2', text: 'ESG alignment with reporting obligations confirmed',     met: false },
@@ -162,7 +162,7 @@ export const PERSONAS = [
     dimColor: 'rgba(251,191,36,0.35)',
     panelPct: 37.5,
     category: 'business',
-    cares: ['Customer experience disruption during transition', 'Onboarding and adoption plan', 'Churn risk and retention impact'],
+    cares: ['Customer impact and churn risk', 'Onboarding and adoption plan', 'Churn risk and retention impact'],
     conditions: [
       { id: 'cx1', text: 'Customer experience impact assessed',        met: false },
       { id: 'cx2', text: 'Onboarding and adoption plan defined',       met: false },
@@ -179,7 +179,7 @@ export const PERSONAS = [
     dimColor: 'rgba(125,211,252,0.35)',
     panelPct: 62.5,
     category: 'business',
-    cares: ['Legal basis for processing personal data', 'Data minimisation and retention policy', 'Third-party sharing and DPA obligations'],
+    cares: ['Legal basis for data processing', 'Data minimisation and retention policy', 'Third-party sharing and DPA obligations'],
     conditions: [
       { id: 'dpo1', text: 'Legal basis for data processing confirmed',       met: false },
       { id: 'dpo2', text: 'Retention and deletion policy defined',           met: false },
@@ -198,7 +198,7 @@ export const PERSONAS = [
     dimColor: 'rgba(248,113,113,0.35)',
     panelPct: 12.5,
     category: 'event',
-    cares: ['Event purpose and organisational value', 'Success criteria and outcomes', 'Approval chain and accountability'],
+    cares: ['Event purpose and expected value', 'Success criteria and outcomes', 'Approval chain and accountability'],
     conditions: [
       { id: 'ed1', text: 'Event purpose and expected outcomes clearly stated', met: false },
       { id: 'ed2', text: 'Success criteria defined',                            met: false },
@@ -232,7 +232,7 @@ export const PERSONAS = [
     dimColor: 'rgba(74,222,128,0.35)',
     panelPct: 62.5,
     category: 'event',
-    cares: ['Venue safety and capacity compliance', 'Emergency and first aid procedures', 'Dietary and allergy management'],
+    cares: ['Venue safety and capacity', 'Emergency and first aid procedures', 'Dietary and allergy management'],
     conditions: [
       { id: 'es1', text: 'Venue capacity and safety compliance confirmed',        met: false },
       { id: 'es2', text: 'Emergency response and first aid plan in place',        met: false },
@@ -249,7 +249,7 @@ export const PERSONAS = [
     dimColor: 'rgba(192,132,252,0.35)',
     panelPct: 87.5,
     category: 'event',
-    cares: ['Detailed run-of-show with timings', 'Dry run schedule and rehearsal plan', 'Backup plans for no-shows'],
+    cares: ['Run-of-show and timing plan', 'Dry run schedule and rehearsal plan', 'Backup plans for no-shows'],
     conditions: [
       { id: 'ep1', text: 'Full programme rundown with timings provided',            met: false },
       { id: 'ep2', text: 'Dry run dates confirmed',                                 met: false },
@@ -268,7 +268,7 @@ export const PERSONAS = [
     dimColor: 'rgba(129,140,248,0.35)',
     panelPct: 12.5,
     category: 'academic',
-    cares: ['Research methodology and justification', 'Literature review coverage', 'Feasibility of scope and timeline'],
+    cares: ['Research methodology and rationale', 'Literature review coverage', 'Feasibility of scope and timeline'],
     conditions: [
       { id: 'sup1', text: 'Research methodology justified with supporting rationale', met: false },
       { id: 'sup2', text: 'Literature review covers key sources',                     met: false },
@@ -285,7 +285,7 @@ export const PERSONAS = [
     dimColor: 'rgba(248,113,113,0.35)',
     panelPct: 37.5,
     category: 'academic',
-    cares: ['Originality and contribution to knowledge', 'Validity of conclusions drawn from the data', 'Limitations the author has not acknowledged'],
+    cares: ['Original knowledge contribution', 'Validity of conclusions drawn from the data', 'Limitations the author has not acknowledged'],
     conditions: [
       { id: 'ex1', text: 'Original contribution to the field stated',    met: false },
       { id: 'ex2', text: 'Conclusions supported by the data presented',  met: false },
@@ -302,7 +302,7 @@ export const PERSONAS = [
     dimColor: 'rgba(252,211,77,0.35)',
     panelPct: 62.5,
     category: 'academic',
-    cares: ['Consistency with departmental research standards', 'Alignment between methodology and institutional guidelines', 'Coherence of abstract and conclusion'],
+    cares: ['Departmental research standards', 'Alignment between methodology and institutional guidelines', 'Coherence of abstract and conclusion'],
     conditions: [
       { id: 'ie1', text: 'Research aligns with departmental standards',           met: false },
       { id: 'ie2', text: 'Methodology consistent with institutional guidelines',  met: false },
@@ -319,7 +319,7 @@ export const PERSONAS = [
     dimColor: 'rgba(232,121,249,0.35)',
     panelPct: 87.5,
     category: 'academic',
-    cares: ['Ethical implications of the research or design', 'Data privacy and informed consent procedures', 'Potential for bias or unintended harm'],
+    cares: ['Ethics, consent and bias risk', 'Data privacy and informed consent procedures', 'Potential for bias or unintended harm'],
     conditions: [
       { id: 'eth1', text: 'Ethical implications considered and addressed',    met: false },
       { id: 'eth2', text: 'Data privacy and consent procedures described',    met: false },
@@ -336,7 +336,7 @@ export const PERSONAS = [
     dimColor: 'rgba(34,211,238,0.35)',
     panelPct: 12.5,
     category: 'academic',
-    cares: ['Real-world applicability beyond the lab', 'Whether target users would actually adopt it', 'Practical constraints academic projects often miss'],
+    cares: ['Real-world adoption barriers', 'Whether target users would actually adopt it', 'Practical constraints academic projects often miss'],
     conditions: [
       { id: 'im1', text: 'Real-world applicability addressed',                          met: false },
       { id: 'im2', text: 'Target user adoption considered',                             met: false },
@@ -353,7 +353,7 @@ export const PERSONAS = [
     dimColor: 'rgba(163,230,53,0.35)',
     panelPct: 37.5,
     category: 'academic',
-    cares: ['Alignment with funding objectives and call criteria', 'Value for money and resource justification', 'Impact pathway and dissemination plan'],
+    cares: ['Alignment with funding criteria', 'Value for money and resource justification', 'Impact pathway and dissemination plan'],
     conditions: [
       { id: 'rf1', text: 'Alignment with funding criteria confirmed',          met: false },
       { id: 'rf2', text: 'Resource allocation justified for the scope',        met: false },
@@ -372,7 +372,7 @@ export const PERSONAS = [
     dimColor: 'rgba(249,168,212,0.35)',
     panelPct: 12.5,
     category: 'startup',
-    cares: ['Market size and growth trajectory', 'Unit economics and path to profitability', 'Competitive moat and defensibility'],
+    cares: ['Market size and unit economics', 'Unit economics and path to profitability', 'Competitive moat and defensibility'],
     conditions: [
       { id: 'vc1', text: 'Total addressable market sized with supporting evidence', met: false },
       { id: 'vc2', text: 'Unit economics and profitability path modelled',          met: false },
@@ -389,7 +389,7 @@ export const PERSONAS = [
     dimColor: 'rgba(134,239,172,0.35)',
     panelPct: 37.5,
     category: 'startup',
-    cares: ['Validated user problem and evidence', 'MVP scope with clear deferrals', 'Success metrics and how they are measured'],
+    cares: ['Validated user problem and MVP scope', 'MVP scope with clear deferrals', 'Success metrics and how they are measured'],
     conditions: [
       { id: 'pm1', text: 'Core user problem validated with user research',      met: false },
       { id: 'pm2', text: 'MVP scope defined with explicit deferrals listed',    met: false },
@@ -406,7 +406,7 @@ export const PERSONAS = [
     dimColor: 'rgba(252,165,165,0.35)',
     panelPct: 62.5,
     category: 'startup',
-    cares: ['Acquisition channels and cost per customer', 'Retention and engagement baseline', 'Viral or referral loops in the product'],
+    cares: ['Acquisition channels and CAC', 'Retention and engagement baseline', 'Viral or referral loops in the product'],
     conditions: [
       { id: 'gr1', text: 'Acquisition strategy with cost projections provided',      met: false },
       { id: 'gr2', text: 'Retention and engagement baseline defined',                met: false },
@@ -425,7 +425,7 @@ export const PERSONAS = [
     dimColor: 'rgba(186,230,253,0.35)',
     panelPct: 12.5,
     category: 'policy',
-    cares: ['Regulatory environment and compliance requirements', 'Policy precedents and government alignment', 'Impact assessment and stakeholder consultation'],
+    cares: ['Compliance and regulatory risk', 'Policy precedents and government alignment', 'Impact assessment and stakeholder consultation'],
     conditions: [
       { id: 'pa1', text: 'Regulatory compliance requirements identified',        met: false },
       { id: 'pa2', text: 'Policy alignment with existing frameworks confirmed',  met: false },
@@ -442,7 +442,7 @@ export const PERSONAS = [
     dimColor: 'rgba(196,181,253,0.35)',
     panelPct: 37.5,
     category: 'policy',
-    cares: ['Regulatory approval timelines and requirements', 'Compliance obligations and enforcement risk', 'Licensing and certification prerequisites'],
+    cares: ['Regulatory approval pathway', 'Compliance obligations and enforcement risk', 'Licensing and certification prerequisites'],
     conditions: [
       { id: 're1', text: 'Regulatory approval pathway identified',               met: false },
       { id: 're2', text: 'Compliance obligations and timeline mapped',           met: false },
@@ -459,7 +459,7 @@ export const PERSONAS = [
     dimColor: 'rgba(103,232,249,0.35)',
     panelPct: 62.5,
     category: 'policy',
-    cares: ['Community impact and equitable access', 'Whether affected groups were consulted', 'Unintended consequences for vulnerable populations'],
+    cares: ['Community impact and inclusion', 'Whether affected groups were consulted', 'Unintended consequences for vulnerable populations'],
     conditions: [
       { id: 'cr1', text: 'Community impact assessment completed',                      met: false },
       { id: 'cr2', text: 'Consultation with affected groups documented',               met: false },
@@ -478,7 +478,7 @@ export const PERSONAS = [
     dimColor: 'rgba(217,119,6,0.35)',
     panelPct: 50,
     category: 'general',
-    cares: ['Clear purpose and expected outcomes', 'Evidence behind key claims', 'Main risks and how they are addressed'],
+    cares: ['Proposal purpose and outcomes', 'Evidence behind key claims', 'Main risks and how they are addressed'],
     conditions: [
       { id: 'gen1', text: 'Proposal purpose and expected outcomes clearly stated', met: false },
       { id: 'gen2', text: 'Key claims supported with evidence or data',            met: false },
