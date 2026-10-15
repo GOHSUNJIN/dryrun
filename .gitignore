@@ -17,3 +17,9 @@ Thumbs.db
 # Frontend build (managed by frontend/.gitignore but excluded here too)
 frontend/node_modules/
 frontend/dist/
+
+# Local tooling
+.claude/
+.firebase/
+*.png
+*.jpg
