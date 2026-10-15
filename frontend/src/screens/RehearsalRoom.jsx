@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon, RefreshCw } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
 import { saveSession, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
 import { getCurrentTime, formatSessionDate } from '../utils/time.js'
@@ -64,7 +64,7 @@ function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
   )
 }
 
-function TranscriptMsg({ msg, personas, appearing }) {
+function TranscriptMsg({ msg, personas, appearing, onRegenerate }) {
   const isPresenter  = msg.speaker === 'presenter'
   const persona      = personas.find(p => p.id === msg.speaker)
   const replyPersona = msg.replyTo ? personas.find(p => p.id === msg.replyTo) : null
@@ -120,21 +120,38 @@ function TranscriptMsg({ msg, personas, appearing }) {
       )}
 
       {hovered && !appearing && (
-        <button
-          onClick={handleCopy}
-          style={{
-            position: 'absolute', top: 6, right: 6,
-            background: copied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 5, cursor: 'pointer',
-            padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: '0.6875rem', color: copied ? '#34D399' : 'var(--room-text-2)',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          {copied ? <Check size={10} /> : <Copy size={10} />}
-          {copied ? 'Copied' : 'Copy'}
-        </button>
+        <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4 }}>
+          {onRegenerate && (
+            <button
+              onClick={onRegenerate}
+              title="Regenerate this response"
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 5, cursor: 'pointer',
+                padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: '0.6875rem', color: 'var(--room-text-2)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <RefreshCw size={10} /> Retry
+            </button>
+          )}
+          <button
+            onClick={handleCopy}
+            style={{
+              background: copied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 5, cursor: 'pointer',
+              padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: '0.6875rem', color: copied ? '#34D399' : 'var(--room-text-2)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {copied ? <Check size={10} /> : <Copy size={10} />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
       )}
     </motion.div>
   )
@@ -211,6 +228,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [openingsDone, setOpeningsDone]             = useState(openingMsgs.length === 0)
   const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
   const [showProposal, setShowProposal]             = useState(false)
+  const [preRegenState, setPreRegenState]           = useState(null)
 
   const { elapsed, getElapsedMinutes } = useElapsedTimer()
 
@@ -322,6 +340,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     if (listening) stopListening()
     cancelTTS()
 
+    const conditionsBeforeThisTurn = { ...localConditions }
+    setPreRegenState(null)
+
     const userMsg = { id: Date.now(), speaker: 'presenter', text, time: getCurrentTime() }
     const nextTranscript = [...localTranscript, userMsg]
     setLocalTranscript(nextTranscript)
@@ -410,6 +431,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             setAppearingMsgId(fuMsg.id)
             enqueueSpeak(fuMsg.text, followUp.speaker)
             updateSession({ transcript: finalTranscript, conditions: finalConditions })
+            setPreRegenState({ transcriptBeforeAi: nextTranscript, conditionsBeforeAi: conditionsBeforeThisTurn })
 
             if (hasCondMet || fuCondsMet.length > 0) {
               setRoomState('condition-met')
@@ -421,6 +443,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           }, 4500)
         } else {
           updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+          setPreRegenState({ transcriptBeforeAi: nextTranscript, conditionsBeforeAi: conditionsBeforeThisTurn })
           if (hasCondMet) {
             setRoomState('condition-met')
             setTimeout(() => setRoomState('idle'), 2200)
@@ -459,6 +482,125 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       setAppearingMsgId(replyMsg.id)
       setTimeout(() => setRoomState('idle'), 1200)
     }, 800)
+  }
+
+  const handleRegenerate = async () => {
+    if (!preRegenState || roomState === 'thinking') return
+    const { transcriptBeforeAi, conditionsBeforeAi } = preRegenState
+
+    cancelTTS()
+    setPreRegenState(null)
+    setLocalTranscript(transcriptBeforeAi)
+    setLocalConditions(conditionsBeforeAi)
+    setRoomState('thinking')
+
+    const nextPersona = visiblePersonas[0]
+    if (!nextPersona) { setRoomState('idle'); return }
+    setTypingPersonaId(nextPersona.id)
+
+    const regenTurnsLeft = turnLimit - transcriptBeforeAi.filter(m => m.speaker === 'presenter').length
+
+    try {
+      const res = await fetch('/api/session/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proposal_text:   session.proposalText,
+          persona_ids:     session.personaIds,
+          transcript:      transcriptBeforeAi,
+          conditions:      conditionsBeforeAi,
+          config:          { ...session.config, turns_remaining: regenTurnsLeft },
+          fact_check:      session.factCheckNotes || '',
+          custom_personas: session.customPersonaDefs || {},
+        }),
+      })
+
+      if (!res.ok) throw new Error(`API error ${res.status}`)
+      const data = await res.json()
+
+      if (!data.text?.trim()) {
+        setTypingPersonaId(null)
+        setRoomState('idle')
+        return
+      }
+
+      const replyMsg = {
+        id: Date.now() + 1,
+        speaker: data.speaker,
+        text: data.text,
+        time: getCurrentTime(),
+        ...(data.source ? { source: data.source } : {}),
+      }
+      const updatedTranscript = [...transcriptBeforeAi, replyMsg]
+      const updatedConditions = { ...conditionsBeforeAi }
+      for (const cid of (data.conditions_met || [])) updatedConditions[cid] = true
+
+      const hasCondMet = (data.conditions_met || []).length > 0
+      const followUp   = data.follow_up || null
+
+      setTypingPersonaId(null)
+      setLocalTranscript(updatedTranscript)
+      setLocalConditions(updatedConditions)
+      setActiveSpeaker(data.speaker)
+      setAppearingMsgId(replyMsg.id)
+      enqueueSpeak(replyMsg.text, replyMsg.speaker)
+
+      if (followUp) {
+        setRoomState('speaking')
+        updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+
+        setTimeout(() => {
+          setTypingPersonaId(followUp.speaker)
+          setRoomState('thinking')
+        }, 2500)
+
+        setTimeout(() => {
+          const fuCondsMet      = followUp.conditions_met || []
+          const finalConditions = { ...updatedConditions }
+          for (const cid of fuCondsMet) finalConditions[cid] = true
+
+          const fuMsg = {
+            id: Date.now() + 2,
+            speaker: followUp.speaker,
+            text: followUp.text,
+            time: getCurrentTime(),
+            ...(followUp.source ? { source: followUp.source } : {}),
+          }
+          const finalTranscript = [...updatedTranscript, fuMsg]
+
+          setTypingPersonaId(null)
+          setLocalTranscript(finalTranscript)
+          setLocalConditions(finalConditions)
+          setActiveSpeaker(followUp.speaker)
+          setAppearingMsgId(fuMsg.id)
+          enqueueSpeak(fuMsg.text, followUp.speaker)
+          updateSession({ transcript: finalTranscript, conditions: finalConditions })
+          setPreRegenState({ transcriptBeforeAi, conditionsBeforeAi })
+
+          if (hasCondMet || fuCondsMet.length > 0) {
+            setRoomState('condition-met')
+            setTimeout(() => setRoomState('idle'), 2200)
+          } else {
+            setRoomState('speaking')
+            setTimeout(() => setRoomState('idle'), 3500)
+          }
+        }, 4500)
+      } else {
+        updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+        setPreRegenState({ transcriptBeforeAi, conditionsBeforeAi })
+        if (hasCondMet) {
+          setRoomState('condition-met')
+          setTimeout(() => setRoomState('idle'), 2200)
+        } else {
+          setRoomState('speaking')
+          setTimeout(() => setRoomState('idle'), 3500)
+        }
+      }
+    } catch (err) {
+      console.error('[regenerate] failed:', err.message)
+      setTypingPersonaId(null)
+      setRoomState('idle')
+    }
   }
 
   const handleEndSession = async () => {
@@ -665,14 +807,21 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       <div className="room-transcript" ref={transcriptRef} onScroll={handleTranscriptScroll}>
         <div className="room-transcript-inner">
-          {localTranscript.map(msg => (
-            <TranscriptMsg
-              key={msg.id}
-              msg={msg}
-              personas={visiblePersonas}
-              appearing={msg.id === appearingMsgId}
-            />
-          ))}
+          {localTranscript.map((msg, idx) => {
+            const isLastMsg   = idx === localTranscript.length - 1
+            const isAiMsg     = msg.speaker !== 'presenter'
+            const canRegen    = isLastMsg && isAiMsg && preRegenState && hasRealSession && !session.demoMode
+              && (roomState === 'idle' || roomState === 'condition-met')
+            return (
+              <TranscriptMsg
+                key={msg.id}
+                msg={msg}
+                personas={visiblePersonas}
+                appearing={msg.id === appearingMsgId}
+                onRegenerate={canRegen ? handleRegenerate : undefined}
+              />
+            )
+          })}
           <AnimatePresence>
             {typingPersona && <TypingIndicator key="typing" persona={typingPersona} />}
           </AnimatePresence>
