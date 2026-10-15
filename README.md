@@ -11,6 +11,17 @@ Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has 
 
 ---
 
+## The Team
+
+**A.L.A.N** -- Always Learning, Always New
+
+| Role | Name | LinkedIn |
+|---|---|---|
+| Developer | Goh Sun Jin | [linkedin.com/in/gohsunjin](https://www.linkedin.com/in/gohsunjin) |
+| Support | Prabhakaran Ritish | [linkedin.com/in/prabhakaran-ritish-45286921a](https://linkedin.com/in/prabhakaran-ritish-45286921a) |
+
+---
+
 ## The Problem
 
 Most proposals fail not because the idea is bad but because the presenter walked in unprepared. Finance wants a three-year cost model. Legal needs a data privacy answer. Operations asks who owns the transition. These objections are entirely predictable yet people face them for the first time in the actual room.
