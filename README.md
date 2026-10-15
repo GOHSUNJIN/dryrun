@@ -5,7 +5,6 @@
 Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal, they push back with hard questions, pile on when your answers contradict each other and only back down when you address their specific concerns with real data. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix.
 
 **Live (Firebase):** https://dry-run-1608.web.app
-**Live (Vercel):** https://dryrun-swart.vercel.app
 
 ---
 
@@ -42,8 +41,7 @@ The primary users are professionals who present proposals to approval committees
 | Icons | Lucide React |
 | AI model | Gemini 3.8 Flash via `@google/genai` JS SDK |
 | Fact-checking | Gemini 3.8 Flash with Google Search grounding |
-| API layer (primary) | Firebase Cloud Functions v2 (Node 22, ES modules) |
-| API layer (secondary) | JavaScript serverless functions on Vercel |
+| API layer | Firebase Cloud Functions v2 (Node 22, ES modules) |
 | Hosting | Firebase Hosting (SPA with function rewrites) |
 | Secrets | Firebase Secret Manager (`GEMINI_API_KEY`) |
 | State management | React `useState` with session lifted to `App.jsx` |
@@ -90,12 +88,12 @@ The API is fully stateless. Every request includes the full proposal text, the a
 frontend/
   api/
     _lib/
-      core.js            Gemini logic (Vercel deployment path)
-      fallback.js        scripted demo data (Vercel deployment path)
+      core.js            Gemini logic (local dev path)
+      fallback.js        scripted demo data (local dev path)
     session/
-      start.js           POST /api/session/start  (Vercel)
-      message.js         POST /api/session/message  (Vercel)
-      end.js             POST /api/session/end  (Vercel)
+      start.js           POST /api/session/start
+      message.js         POST /api/session/message
+      end.js             POST /api/session/end
   src/
     App.jsx              root: screen routing and session state
     components/
@@ -119,7 +117,6 @@ frontend/
       time.js            shared time helpers: getCurrentTime, formatDate, daysFromNow, formatSessionDate
     data.js              28 persona definitions across 5 categories plus General Reviewer; demo openings
     index.css            design system: tokens, components, room theme
-  vercel.json            function timeout config (maxDuration 60s for session/start)
 functions/
   index.js               Firebase Cloud Functions v2: sessionStart, sessionMessage, sessionEnd
   core.js                Gemini logic: factCheckProposal, generateOpenings, generateReply, generateReport
@@ -319,7 +316,7 @@ Set `GEMINI_API_KEY` in `frontend/.env`:
 GEMINI_API_KEY=your_google_ai_studio_key_here
 ```
 
-The Vite dev server proxies `/api/*` to the local Vercel functions in `frontend/api/`. Gemini calls go directly from the function.
+The Vite dev server proxies `/api/*` to the local functions in `frontend/api/`. Gemini calls go directly from the function.
 
 ### Web app without AI (demo mode)
 
@@ -360,15 +357,6 @@ firebase functions:secrets:set GEMINI_API_KEY
 
 Firebase Hosting rewrites `/api/*` paths to the corresponding Cloud Function. Everything else serves `index.html` for client-side routing.
 
-### Vercel (secondary)
-
-```bash
-cd frontend
-vercel --prod
-```
-
-Set `GEMINI_API_KEY` as a Vercel environment variable in the dashboard. The JS functions in `frontend/api/` are picked up automatically.
-
 ### Cloud Run (optional)
 
 ```bash
@@ -391,7 +379,6 @@ The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then P
 | Variable | Where | Description |
 |----------|-------|-------------|
 | `GEMINI_API_KEY` | Firebase Secret Manager | Set with `firebase functions:secrets:set GEMINI_API_KEY`. Required for live AI. |
-| `GEMINI_API_KEY` | Vercel dashboard | Set as an environment variable for the Vercel deployment. |
 | `GEMINI_API_KEY` | `frontend/.env` | For local development with `npm run dev`. |
 
 ---
@@ -500,7 +487,6 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - AI-driven panel with per-persona conditions, speaker rotation and fact-checking
 - Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped with no retry
 - Firebase Cloud Functions v2 deployment with Secret Manager
-- Vercel deployment as a secondary live URL
 - Google Drive, Docs and Calendar integrations
 - Code refactor: TTS and elapsed timer extracted to custom hooks, shared time utilities, deduplicated session save and launch logic, CSS classes for room status banners
 - Multi-panelist pile-on via `follow_up`: second panelist jumps in when presenter contradicts their domain
