@@ -6,7 +6,6 @@ Dry Run puts a panel of AI stakeholders in the room with you. You defend your pr
 
 **Live (Firebase):** https://dry-run-1608.web.app
 **Live (Vercel):** https://dryrun-swart.vercel.app
-**Live (Cloud Run):** https://dryrun-148827357723.us-central1.run.app
 
 ---
 
@@ -45,7 +44,6 @@ The primary users are professionals who present proposals to approval committees
 | Fact-checking | Gemini 3.8 Flash with Google Search grounding |
 | API layer (primary) | Firebase Cloud Functions v2 (Node 22, ES modules) |
 | API layer (secondary) | JavaScript serverless functions on Vercel |
-| API layer (tertiary) | Python FastAPI on Google Cloud Run |
 | Hosting | Firebase Hosting (SPA with function rewrites) |
 | Secrets | Firebase Secret Manager (`GEMINI_API_KEY`) |
 | State management | React `useState` with session lifted to `App.jsx` |
@@ -371,7 +369,7 @@ vercel --prod
 
 Set `GEMINI_API_KEY` as a Vercel environment variable in the dashboard. The JS functions in `frontend/api/` are picked up automatically.
 
-### Cloud Run
+### Cloud Run (optional)
 
 ```bash
 gcloud builds submit --tag gcr.io/dry-run-1608/dryrun
@@ -384,9 +382,7 @@ gcloud run deploy dryrun \
   --project dry-run-1608
 ```
 
-The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then Python 3.12 runs FastAPI and serves the compiled static files from the same container. `GEMINI_API_KEY` is pulled from Firebase Secret Manager at runtime.
-
-**Live URL:** https://dryrun-148827357723.us-central1.run.app
+The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then Python 3.12 runs FastAPI and serves the compiled static files from the same container.
 
 ---
 
@@ -411,7 +407,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - [x] Firebase Hosting (Google Cloud static hosting with rewrite rules)
 - [x] Firebase Secret Manager (Google Cloud secrets for API key)
 - [x] Live deployment: https://dry-run-1608.web.app
-- [x] Google Cloud Run backend (Python FastAPI, deployed at https://dryrun-148827357723.us-central1.run.app)
+- [ ] Google Cloud Run backend (Python FastAPI ready in `server.py` and `Dockerfile`)
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
 
@@ -505,7 +501,6 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped with no retry
 - Firebase Cloud Functions v2 deployment with Secret Manager
 - Vercel deployment as a secondary live URL
-- Google Cloud Run deployment (Python FastAPI, multi-stage Docker build)
 - Google Drive, Docs and Calendar integrations
 - Code refactor: TTS and elapsed timer extracted to custom hooks, shared time utilities, deduplicated session save and launch logic, CSS classes for room status banners
 - Multi-panelist pile-on via `follow_up`: second panelist jumps in when presenter contradicts their domain
@@ -518,6 +513,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - 126 pytest tests covering all Gemini logic including full multi-turn session simulation
 
 ### Still to do
+- Google Cloud Run backend (Dockerfile ready)
 - 3-minute demo video
 - PDF pitch deck
 
