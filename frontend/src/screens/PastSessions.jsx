@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search, BookOpen, RotateCcw, Trash2, Clock, ChevronDown, PlusCircle, X, Edit2, Calendar, FileText, ChevronUp, FolderInput, LayoutList } from 'lucide-react'
 import { PERSONAS } from '../data.js'
-import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, updateSessionMeeting, loadLocalMeetings, deleteLocalMeeting } from '../utils/storage.js'
+import { loadSessions, deleteSession, deleteSessions, groupSessionsByProposal, renameProposal, renameSession, updateSessionMeeting, loadLocalMeetings, deleteLocalMeeting, deleteCalEvent, loadCustomPersonas, nextSessionName } from '../utils/storage.js'
 
 function loadGroups() {
   return groupSessionsByProposal(loadSessions())
@@ -18,6 +18,8 @@ export default function PastSessions({ navigate }) {
   const [editingName, setEditingName]   = useState('')
   const [expandedSession, setExpandedSession] = useState(null)
   const [assigningSession, setAssigningSession] = useState(null)
+  const [editingSessionId, setEditingSessionId] = useState(null)
+  const [editingSessionName, setEditingSessionName] = useState('')
 
   const filtered = groups.filter(g =>
     g.proposal.toLowerCase().includes(query.toLowerCase())
@@ -53,6 +55,7 @@ export default function PastSessions({ navigate }) {
       if (!window.confirm(`Remove "${group.proposal}" from your meetings?`)) return
       const m = loadLocalMeetings().find(lm => lm.name === group.linkedMeeting)
       if (m) deleteLocalMeeting(m.id)
+      else deleteCalEvent(group.linkedMeeting)
       setGroups(loadGroups())
       return
     }
@@ -73,20 +76,42 @@ export default function PastSessions({ navigate }) {
     setEditingName('')
   }
 
+  const commitSessionRename = (sessionId) => {
+    const trimmed = editingSessionName.trim()
+    if (trimmed) {
+      renameSession(sessionId, trimmed)
+      setGroups(loadGroups())
+    }
+    setEditingSessionId(null)
+    setEditingSessionName('')
+  }
+
+  const totalRuns = groups.reduce((acc, g) => acc + g.sessions.length, 0)
+
   return (
     <div className="page">
-      <div className="page-header">
-        <div className="page-title">Past Sessions</div>
-        <div className="page-subtitle">Rehearsals grouped by meeting or proposal. Track how you improve across attempts.</div>
+      <div className="past-page-header">
+        <div>
+          <div className="page-title">Past Sessions</div>
+          <div className="page-subtitle">Rehearsals grouped by meeting or proposal.</div>
+        </div>
+        {totalRuns > 0 && (
+          <div className="past-page-stat">
+            <span className="past-page-stat-num">{totalRuns}</span>
+            <span className="past-page-stat-label">run{totalRuns !== 1 ? 's' : ''}</span>
+          </div>
+        )}
       </div>
 
       {groups.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '64px 0' }}>
-          <div style={{ fontSize: '0.9375rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-            No sessions yet. Start a rehearsal to see your history here.
+        <div className="past-empty-card">
+          <div className="past-empty-icon">
+            <Clock size={28} strokeWidth={1.5} />
           </div>
-          <button className="btn btn-primary btn-sm" style={{ margin: '0 auto' }} onClick={() => navigate('new')}>
-            <PlusCircle size={12} /> Start your first rehearsal
+          <div className="past-empty-title">No runs yet</div>
+          <div className="past-empty-body">Complete a rehearsal and your sessions will appear here.</div>
+          <button className="btn btn-accent btn-sm" onClick={() => navigate('new')}>
+            <PlusCircle size={12} /> Start Your First Rehearsal
           </button>
         </div>
       ) : (
@@ -116,12 +141,12 @@ export default function PastSessions({ navigate }) {
                 onClick={() => setQuery('')}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--app-accent)', fontSize: '0.875rem', fontFamily: 'var(--font-ui)', fontWeight: 500 }}
               >
-                Clear search
+                Clear Search
               </button>
             </div>
           ) : visibleGroups.map((group, gi) => (
             <div key={gi} className="proposal-group">
-              <div className="proposal-group-header" onClick={() => toggleGroup(group.proposal)}>
+              <div className="proposal-group-header" onClick={() => toggleGroup(group.proposal)} style={{ borderRadius: collapsed.has(group.proposal) ? 'var(--r-lg)' : 'var(--r-lg) var(--r-lg) 0 0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <ChevronDown
                     size={16}
@@ -206,18 +231,13 @@ export default function PastSessions({ navigate }) {
                     )
                   })()}
                   <span className="proposal-group-count">
-                    {group.sessions.length === 0 ? 'No rehearsals yet' : `${group.sessions.length} rehearsal${group.sessions.length !== 1 ? 's' : ''}`}
+                    {group.sessions.length === 0 ? 'No Rehearsals Yet' : `${group.sessions.length} rehearsal${group.sessions.length !== 1 ? 's' : ''}`}
                   </span>
                 </div>
               </div>
 
               {!collapsed.has(group.proposal) && group.sessions.length === 0 && (
-                <div style={{
-                  padding: '14px 18px', marginBottom: 8,
-                  borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
-                  background: 'var(--bg-surface)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
+                <div className="proposal-group-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px' }}>
                   <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No rehearsals yet</span>
                   <button
                     onClick={() => navigate('new', { meetingName: group.proposal, linkedMeeting: group.linkedMeeting })}
@@ -229,7 +249,7 @@ export default function PastSessions({ navigate }) {
                       fontFamily: 'var(--font-ui)',
                     }}
                   >
-                    Start one now
+                    Start One Now
                   </button>
                 </div>
               )}
@@ -238,20 +258,42 @@ export default function PastSessions({ navigate }) {
                 const isGood = pct >= 60
                 const sessionKey = s.id || si
                 const isExpanded = expandedSession === sessionKey
+                const isLast = si === group.sessions.length - 1
                 return (
-                  <div key={sessionKey}>
-                    <div className="session-row" onClick={() => navigate('report', { savedSession: s })}>
+                  <div key={sessionKey} className="proposal-group-body" style={{ borderBottom: isLast && !isExpanded ? 'none' : '1px solid var(--border-light)', borderRadius: isLast && !isExpanded ? '0 0 var(--r-lg) var(--r-lg)' : undefined }}>
+                    <div className="session-row" onClick={() => { if (editingSessionId === sessionKey) return; navigate('report', { savedSession: s }) }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <span className="session-row-name">{s.proposal || group.proposal}</span>
-                        {s.reportData?.demo && (
-                          <span style={{
-                            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.06em',
-                            textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
-                            background: 'rgba(245,158,11,0.1)', color: '#D97706', flexShrink: 0,
-                          }}>Demo</span>
-                        )}
-                      </div>
+                          {editingSessionId === sessionKey ? (
+                            <input
+                              autoFocus
+                              value={editingSessionName}
+                              onChange={e => setEditingSessionName(e.target.value)}
+                              onBlur={() => commitSessionRename(s.id)}
+                              onKeyDown={e => { if (e.key === 'Enter') commitSessionRename(s.id); if (e.key === 'Escape') { setEditingSessionId(null); setEditingSessionName('') } }}
+                              onClick={e => e.stopPropagation()}
+                              style={{ fontFamily: 'var(--font-ui)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-hover)', border: '1px solid var(--app-accent)', borderRadius: 5, padding: '2px 7px', width: 200 }}
+                            />
+                          ) : (
+                            <span className="session-row-name">{s.proposal || group.proposal}</span>
+                          )}
+                          {s.reportData?.demo && (
+                            <span style={{
+                              fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.06em',
+                              textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
+                              background: 'rgba(245,158,11,0.1)', color: '#D97706', flexShrink: 0,
+                            }}>Demo</span>
+                          )}
+                          {editingSessionId !== sessionKey && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setEditingSessionId(sessionKey); setEditingSessionName(s.proposal || group.proposal) }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex', opacity: 0, transition: 'opacity 0.15s' }}
+                              className="session-edit-btn"
+                            >
+                              <Edit2 size={11} />
+                            </button>
+                          )}
+                        </div>
                         <div className="session-row-date" style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                           <Clock size={11} /> {s.date}{s.duration ? ` · ${s.duration}` : ''}
                         </div>
@@ -259,7 +301,7 @@ export default function PastSessions({ navigate }) {
 
                       <div style={{ display: 'flex' }}>
                         {(s.personaIds?.length
-                          ? PERSONAS.filter(p => s.personaIds.includes(p.id))
+                          ? [...PERSONAS, ...loadCustomPersonas()].filter(p => s.personaIds.includes(p.id))
                           : PERSONAS
                         ).map((p, j) => (
                           <div
@@ -307,7 +349,7 @@ export default function PastSessions({ navigate }) {
                             <FileText size={12} />
                           </button>
                         )}
-                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { meetingName: s.proposal, linkedMeeting: s.linkedMeeting || '', proposalText: s.proposalText || '' }) }}>
+                        <button className="session-action-btn" onClick={e => { e.stopPropagation(); navigate('new', { proposalText: s.proposalText || '', documentName: s.documentName || s.proposal || '', meetingName: nextSessionName(s.proposal || ''), linkedMeeting: s.linkedMeeting || '', personaIds: s.personaIds || [], toughness: s.config?.toughness || '', turnLimit: s.config?.turnLimit || '' }) }}>
                           <RotateCcw size={12} style={{ display: 'inline', marginRight: 4 }} />
                           Again
                         </button>
@@ -362,13 +404,14 @@ export default function PastSessions({ navigate }) {
                     </div>
                     {isExpanded && s.proposalText && (
                       <div style={{
-                        margin: '0 0 8px', padding: '16px 20px',
-                        background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                        borderTop: 'none', borderRadius: '0 0 10px 10px',
+                        padding: '14px 20px 16px',
+                        borderTop: '1px solid var(--border-light)',
+                        borderRadius: isLast ? '0 0 var(--r-lg) var(--r-lg)' : undefined,
                         whiteSpace: 'pre-wrap', fontSize: '0.8125rem', lineHeight: 1.7,
                         color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)',
-                        maxHeight: 320, overflowY: 'auto',
+                        maxHeight: 280, overflowY: 'auto',
                         userSelect: 'text',
+                        background: 'rgba(0,0,0,0.015)',
                       }}>
                         {s.proposalText}
                       </div>

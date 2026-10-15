@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import Sidebar, { MobileNav } from './components/Sidebar.jsx'
+import Sidebar, { MobileNav, MobileHeader } from './components/Sidebar.jsx'
 import Home from './screens/Home.jsx'
 import NewRehearsal from './screens/NewRehearsal.jsx'
 import RehearsalRoom from './screens/RehearsalRoom.jsx'
@@ -41,6 +41,7 @@ const DEFAULT_SESSION = {
   startTime: null,
   duration: '',
   linkedMeeting: '',
+  documentName: '',
 }
 
 export default function App() {
@@ -57,9 +58,12 @@ export default function App() {
       const sv = payload.savedSession
       setSession({
         ...DEFAULT_SESSION,
+        id:            sv.id || null,
         proposalName:  sv.proposal || '',
         proposalText:  sv.proposalText || '',
+        documentName:  sv.documentName || sv.proposal || '',
         personaIds:    sv.personaIds || [],
+        config:        sv.config || DEFAULT_SESSION.config,
         conditions:    sv.conditions || {},
         reportData:    sv.reportData || null,
         duration:      sv.duration || '',
@@ -99,6 +103,7 @@ export default function App() {
           </Routes>
         </motion.div>
       </AnimatePresence>
+      {showSidebar && <MobileHeader />}
       {showSidebar && <MobileNav current={screen} navigate={navigate} />}
     </div>
   )

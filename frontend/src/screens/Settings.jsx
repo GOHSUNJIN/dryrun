@@ -7,7 +7,7 @@ import { signIn, isSignedIn, signOut } from '../utils/google.js'
 
 const NAV = [
   { id: 'Profile',            label: 'Profile',             icon: User    },
-  { id: 'Rehearsal Defaults', label: 'Rehearsal defaults',  icon: Sliders },
+  { id: 'Rehearsal Defaults', label: 'Rehearsal Defaults',  icon: Sliders },
   { id: 'Voice',              label: 'Voice',               icon: Volume2 },
   { id: 'Integrations',       label: 'Integrations',        icon: Link2   },
   { id: 'Privacy',            label: 'Privacy',             icon: Shield  },
@@ -22,11 +22,7 @@ const INTEGRATIONS = [
 
 function Row({ label, sublabel, children, last }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '16px 0', borderBottom: last ? 'none' : '1px solid var(--border-light)',
-      gap: 24,
-    }}>
+    <div className="settings-row" style={{ borderBottom: last ? 'none' : '1px solid var(--border-light)' }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>{label}</div>
         {sublabel && (
@@ -136,10 +132,10 @@ export default function Settings() {
         <div className="page-title">Settings</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 32, alignItems: 'start' }}>
+      <div className="settings-layout">
 
         {/* Left nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'sticky', top: 24 }}>
+        <div className="settings-nav" style={{ top: 24 }}>
           {NAV.map(n => {
             const Icon = n.icon
             const isActive = activeSection === n.id
@@ -199,7 +195,7 @@ export default function Settings() {
                     <Check size={13} /> Saved
                   </span>
                 )}
-                <button className="btn btn-primary" onClick={handleSaveProfile}>Save profile</button>
+                <button className="btn btn-primary" onClick={handleSaveProfile}>Save Profile</button>
               </div>
             </div>
           )}
@@ -208,7 +204,7 @@ export default function Settings() {
             <div className="settings-section">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
                 <Sliders size={16} style={{ color: 'var(--app-accent)' }} />
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Rehearsal defaults</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Rehearsal Defaults</div>
               </div>
               <Row label="Turn limit" sublabel="Maximum turns before the session auto-ends">
                 <select className="settings-select" value={turnLimit} onChange={e => setTurnLimit(e.target.value)}>
@@ -224,7 +220,7 @@ export default function Settings() {
                     <Check size={13} /> Saved
                   </span>
                 )}
-                <button className="btn btn-primary" onClick={handleSaveDefaults}>Save defaults</button>
+                <button className="btn btn-primary" onClick={handleSaveDefaults}>Save Defaults</button>
               </div>
             </div>
           )}
@@ -336,7 +332,7 @@ export default function Settings() {
               <div className="settings-section" style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
                   <Shield size={16} style={{ color: 'var(--app-accent)' }} />
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Data and privacy</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)' }}>Data and Privacy</div>
                 </div>
                 <Row label="Data storage" sublabel="Session transcripts and reports are stored locally in your browser. No data is sent to external servers unless you connect an integration." />
                 <Row label="Export all session data" sublabel="Download a full JSON archive of your sessions" last>

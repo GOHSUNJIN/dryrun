@@ -1,4 +1,4 @@
-import { Home, PlusCircle, Clock, Users, Settings, ChevronRight } from 'lucide-react'
+import { Home, PlusCircle, Clock, Users, Settings, ChevronRight, UserCircle2 } from 'lucide-react'
 import { loadProfile } from '../utils/storage.js'
 
 const NAV_ITEMS = [
@@ -7,6 +7,22 @@ const NAV_ITEMS = [
   { id: 'library',  label: 'Panel Library', shortLabel: 'Panel',    icon: Users    },
   { id: 'settings', label: 'Settings',      shortLabel: 'Settings', icon: Settings },
 ]
+
+export function MobileHeader() {
+  return (
+    <header className="mobile-header">
+      <div className="mobile-header-logo">
+        <div className="sidebar-logo-mark" style={{ width: 24, height: 24 }}>
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="8" width="6" height="10" rx="1.5" fill="#1C1917" opacity="0.9"/>
+            <rect x="12" y="2" width="6" height="16" rx="1.5" fill="#1C1917"/>
+          </svg>
+        </div>
+        <span className="mobile-header-wordmark">Dry Run</span>
+      </div>
+    </header>
+  )
+}
 
 export function MobileNav({ current, navigate }) {
   const [left, right] = [NAV_ITEMS.slice(0, 2), NAV_ITEMS.slice(2)]
@@ -32,35 +48,29 @@ export function MobileNav({ current, navigate }) {
 }
 
 export default function Sidebar({ current, navigate }) {
-  const profile = loadProfile()
+  const profile    = loadProfile()
+  const hasProfile = Boolean(profile.name)
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">
+      <button
+        className="sidebar-logo"
+        onClick={() => navigate('home')}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
+      >
         <div className="sidebar-logo-mark">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="4" width="5" height="9" rx="1" fill="#1C1917" opacity="0.9"/>
-            <rect x="8" y="1" width="5" height="12" rx="1" fill="#1C1917" opacity="0.9"/>
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="8" width="6" height="10" rx="1.5" fill="#1C1917" opacity="0.9"/>
+            <rect x="12" y="2" width="6" height="16" rx="1.5" fill="#1C1917"/>
           </svg>
         </div>
         <span className="sidebar-logo-text">Dry Run</span>
-      </div>
+      </button>
 
       <div style={{ padding: '14px 12px 6px' }}>
-        <button
-          onClick={() => navigate('new')}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-            padding: '9px 12px', background: 'rgba(242,179,91,0.10)',
-            border: '1px solid rgba(242,179,91,0.22)', borderRadius: 8,
-            color: '#F2B35B', fontSize: '0.8125rem', fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'var(--font-ui)', transition: 'all 0.15s ease',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(242,179,91,0.18)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(242,179,91,0.10)' }}
-        >
+        <button className="sidebar-new-btn" onClick={() => navigate('new')}>
           <PlusCircle size={14} />
-          New rehearsal
+          New Rehearsal
         </button>
       </div>
 
@@ -79,10 +89,25 @@ export default function Sidebar({ current, navigate }) {
         onClick={() => navigate('settings')}
         style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
       >
-        <div className="sidebar-avatar">{profile.initial}</div>
+        {hasProfile ? (
+          <div className="sidebar-avatar">{profile.initial}</div>
+        ) : (
+          <div className="sidebar-avatar sidebar-avatar-empty">
+            <UserCircle2 size={16} />
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="sidebar-user-name">{profile.name}</div>
-          <div className="sidebar-user-role">{profile.role}</div>
+          {hasProfile ? (
+            <>
+              <div className="sidebar-user-name">{profile.name}</div>
+              <div className="sidebar-user-role">{profile.role || 'Settings'}</div>
+            </>
+          ) : (
+            <>
+              <div className="sidebar-user-name">Set up profile</div>
+              <div className="sidebar-user-role">Add your name and role</div>
+            </>
+          )}
         </div>
         <ChevronRight size={13} style={{ color: 'var(--sidebar-icon)', flexShrink: 0 }} />
       </button>

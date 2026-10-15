@@ -84,6 +84,7 @@ export const sessionMessage = onRequest(opts, async (req, res) => {
     config = {},
     fact_check = '',
     custom_personas = {},
+    previous_responses = [],
   } = req.body
 
   if (!process.env.GEMINI_API_KEY) {
@@ -92,7 +93,7 @@ export const sessionMessage = onRequest(opts, async (req, res) => {
 
   try {
     res.status(200).json(
-      await generateReply(proposal_text, persona_ids, transcript, conditions, config, fact_check, custom_personas)
+      await generateReply(proposal_text, persona_ids, transcript, conditions, config, fact_check, custom_personas, previous_responses)
     )
   } catch (err) {
     console.error('[sessionMessage] generateReply failed, falling back to demo:', err.message)

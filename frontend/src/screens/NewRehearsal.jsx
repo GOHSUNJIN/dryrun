@@ -5,7 +5,7 @@ import { PERSONAS } from '../data.js'
 import { loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel, loadCustomPersonas } from '../utils/storage.js'
 import { listDriveItems, listDriveDocs, fetchDocText, isSignedIn } from '../utils/google.js'
 
-const STEPS = ['Upload proposal', 'Choose panel', 'Configure and launch']
+const STEPS = ['Upload Proposal', 'Choose Panel', 'Configure and Launch']
 
 const FC_CACHE_PREFIX = 'dryrun_fc_'
 const FC_CACHE_TTL = 24 * 60 * 60 * 1000
@@ -33,48 +33,90 @@ function saveFactCheckCache(text, value) {
   } catch {}
 }
 
+const MAX_PANEL = 5
+
 function keywordDetectPanel(text) {
   const t = text.toLowerCase()
-  const hits = new Set()
+  const scores = {}
+  const hit = (id, w = 1) => { scores[id] = (scores[id] || 0) + w }
 
-  // Business
-  if (/budget|cost\b|roi\b|payback|salary|spend|opex|capex|financial forecast|revenue/.test(t)) hits.add('finance')
-  if (/legal\b|contract|liability|indemnity|intellectual property|\bip\b|jurisdiction/.test(t)) hits.add('legal')
-  if (/timeline|milestone|rollout|go-live|delivery date|handover|disruption risk|process owner/.test(t)) hits.add('ops')
-  if (/headcount|hiring|staff\b|talent|workforce|change management|redundan|people plan/.test(t)) hits.add('hr')
-  if (/technical|software|api\b|engineer|architecture|integration|infrastructure|security|system/.test(t)) hits.add('tech')
-  if (/marketing|brand|launch|go-to-market|campaign|positioning|audience/.test(t)) hits.add('marketing')
-  if (/board|strategy\b|strategic|shareholder|executive|portfolio|competing initiative/.test(t)) hits.add('board')
-  if (/verified claim|cited source|evidence.based|fact.check|statistic|quantitative claim/.test(t)) hits.add('factcheck')
-  if (/sustainability|carbon|esg|environmental|climate|net.zero|scope [123]/.test(t)) hits.add('sustainability')
-  if (/customer success|churn|onboarding|adoption|customer experience|\bcx\b/.test(t)) hits.add('cx')
-  if (/\bdpo\b|personal data|data subject|gdpr|data minimis|lawful basis|data processing/.test(t)) hits.add('dpo')
+  // Business - Finance
+  if (/\bbudget\b|\bcost\b|\broi\b|\bpayback\b|break.even|return on investment/.test(t)) hit('finance', 2)
+  if (/\brevenue\b|forecast|\bprofit\b|\bopex\b|\bcapex\b|financial model|cash flow|p&l/.test(t)) hit('finance', 1)
+
+  // Business - Legal
+  if (/\blegal\b|contract\b|liability|indemnity|intellectual property|\bip\b|jurisdiction|compliance/.test(t)) hit('legal', 2)
+  if (/\bnda\b|non-disclosure|copyright|trademark|patent|terms of service|regulatory requirement/.test(t)) hit('legal', 1)
+
+  // Business - Ops
+  if (/timeline|milestone|rollout|go-live|delivery date|handover|process owner|operational/.test(t)) hit('ops', 2)
+  if (/implementation|workflow|logistics|resource allocation|capacity plan|supply chain/.test(t)) hit('ops', 1)
+
+  // Business - HR
+  if (/headcount|hiring|\bstaff\b|talent|workforce|change management|redundan|people plan/.test(t)) hit('hr', 2)
+  if (/training|team structure|employee|culture|performance management|onboarding.*staff/.test(t)) hit('hr', 1)
+
+  // Business - Tech
+  if (/technical|software|\bapi\b|engineer|architecture|integration|infrastructure|security|system/.test(t)) hit('tech', 2)
+  if (/database|\bcloud\b|scalability|platform|tech stack|deployment|devops|automation/.test(t)) hit('tech', 1)
+
+  // Business - Marketing
+  if (/marketing|brand|\blaunch\b|go-to-market|campaign|positioning|target audience/.test(t)) hit('marketing', 2)
+  if (/\bseo\b|social media|content strategy|\bpr\b|communications|demand generation/.test(t)) hit('marketing', 1)
+
+  // Business - Board
+  if (/\bboard\b|strategy\b|strategic|shareholder|executive|portfolio|competing initiative/.test(t)) hit('board', 2)
+  if (/vision|long.term|governance|c-suite|\bceo\b|\bcfo\b|\bcto\b|steering committee/.test(t)) hit('board', 1)
+
+  // Fact check
+  if (/cited source|evidence.based|fact.check|statistic|data shows|according to|study found/.test(t)) hit('factcheck', 2)
+  if (/\bsource\b|reference|quantitative|benchmark|verified|research finding/.test(t)) hit('factcheck', 1)
+
+  // Sustainability
+  if (/sustainability|carbon|esg|environmental|climate|net.zero|scope [123]/.test(t)) hit('sustainability', 2)
+  if (/emissions|\bgreen\b|renewable|social impact|responsible|circular economy/.test(t)) hit('sustainability', 1)
+
+  // CX
+  if (/customer success|churn|customer experience|\bcx\b|user adoption/.test(t)) hit('cx', 2)
+  if (/user satisfaction|\bnps\b|customer journey|support ticket|retention|loyalty/.test(t)) hit('cx', 1)
+
+  // DPO
+  if (/\bdpo\b|personal data|data subject|gdpr|lawful basis|data processing/.test(t)) hit('dpo', 2)
+  if (/privacy|data protection|\bcookies\b|\bconsent\b|\bpii\b|data breach/.test(t)) hit('dpo', 1)
 
   // Event
-  if (/\bevent\b|venue|conference|ceremony|attendee|gala|exhibition/.test(t)) hits.add('event_director')
-  if (/event budget|per.pax|per head|event cost|catering cost|event spend/.test(t)) hits.add('event_finance')
-  if (/safety|emergency|first aid|evacuation|health and safety|capacity limit/.test(t)) hits.add('event_safety')
-  if (/programme|run.of.show|speaker|performer|session plan|dry run|agenda/.test(t)) hits.add('event_programme')
+  if (/\bevent\b|venue|conference|ceremony|attendee|gala|exhibition/.test(t)) hit('event_director', 2)
+  if (/event budget|per.pax|per head|event cost|catering|event spend/.test(t)) hit('event_finance', 2)
+  if (/safety|emergency|first aid|evacuation|health and safety|capacity limit/.test(t)) hit('event_safety', 1)
+  if (/programme|run.of.show|speaker|performer|session plan|agenda/.test(t)) hit('event_programme', 1)
 
   // Academic
-  if (/\bresearch\b|thesis|dissertation|methodology|literature review|hypothesis|\bstudy\b/.test(t)) hits.add('supervisor')
-  if (/conclusion|originality|knowledge gap|contribution to.*field|novel finding/.test(t)) hits.add('examiner')
-  if (/departmental standard|institutional guideline|internal examiner|abstract.*conclusion/.test(t)) hits.add('internal_examiner')
-  if (/ethics|informed consent|bias|harm to participants|vulnerable|ethical approval/.test(t)) hits.add('ethicist')
-  if (/real.world application|industry adoption|practitioner|implementation beyond/.test(t)) hits.add('industry_mentor')
-  if (/grant|research funder|funding body|impact pathway|dissemination plan|research council/.test(t)) hits.add('research_funder')
+  if (/\bresearch\b|thesis|dissertation|methodology|literature review|hypothesis|\bstudy\b/.test(t)) hit('supervisor', 2)
+  if (/research question|data collection|qualitative|quantitative study|\bsurvey\b|interview method/.test(t)) hit('supervisor', 1)
+  if (/originality|knowledge gap|contribution to.*field|novel finding/.test(t)) hit('examiner', 2)
+  if (/departmental standard|institutional guideline|internal examiner/.test(t)) hit('internal_examiner', 2)
+  if (/ethics|informed consent|\bbias\b|harm to participants|ethical approval/.test(t)) hit('ethicist', 2)
+  if (/real.world application|industry adoption|practitioner|implementation beyond/.test(t)) hit('industry_mentor', 1)
+  if (/grant|research funder|funding body|impact pathway|dissemination|research council/.test(t)) hit('research_funder', 2)
 
   // Startup
-  if (/\bstartup\b|pitch deck|seed round|series [abc]|unit economics|\brunway\b|\bvaluation\b|addressable market|\btam\b|venture capital/.test(t)) hits.add('vc')
-  if (/\bmvp\b|product roadmap|feature priorit|backlog|user stor|product.market fit/.test(t)) hits.add('product_manager')
-  if (/acquisition cost|\bcac\b|\bltv\b|retention rate|growth model|conversion funnel|viral/.test(t)) hits.add('growth')
+  if (/\bstartup\b|pitch deck|seed round|series [abc]|unit economics|\brunway\b|\bvaluation\b|venture capital/.test(t)) hit('vc', 2)
+  if (/addressable market|\btam\b|\bsam\b|\bsom\b|investor|raise funding|term sheet/.test(t)) hit('vc', 1)
+  if (/\bmvp\b|product roadmap|feature priorit|backlog|user stor|product.market fit/.test(t)) hit('product_manager', 2)
+  if (/user research|prototype|iteration|\bsprint\b|agile|product vision|use case/.test(t)) hit('product_manager', 1)
+  if (/acquisition cost|\bcac\b|\bltv\b|retention rate|growth model|conversion funnel|viral/.test(t)) hit('growth', 2)
+  if (/growth rate|user growth|\btraffic\b|paid acquisition|organic growth/.test(t)) hit('growth', 1)
 
   // Policy
-  if (/public policy|legislation|\bgovernment\b|public sector|policy brief|regulatory framework|policy consultation/.test(t)) hits.add('policy_analyst')
-  if (/regulatory approval|licensing requirement|certification|enforcement|regulator\b|compliance timeline/.test(t)) hits.add('regulator')
-  if (/community impact|stakeholder consultation|vulnerable group|equitable access|affected community/.test(t)) hits.add('community_rep')
+  if (/public policy|legislation|\bgovernment\b|public sector|policy brief|regulatory framework/.test(t)) hit('policy_analyst', 2)
+  if (/policy consultation|public interest|\bminister\b|parliament|civil service/.test(t)) hit('policy_analyst', 1)
+  if (/regulatory approval|licensing requirement|certification|enforcement|regulator\b|compliance timeline/.test(t)) hit('regulator', 2)
+  if (/community impact|stakeholder consultation|vulnerable group|equitable access|affected community/.test(t)) hit('community_rep', 2)
 
-  return [...hits].slice(0, 4)
+  return Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_PANEL)
+    .map(([id]) => id)
 }
 
 function categoryOfPersona(id) {
@@ -91,15 +133,15 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   const [proposalText, setProposalText] = useState(navPayload.proposalText || '')
   const [uploaded, setUploaded]   = useState(Boolean(navPayload.proposalText))
   const [proposalName, setProposalName] = useState(navPayload.meetingName || '')
-  const [documentName, setDocumentName] = useState('')
+  const [documentName, setDocumentName] = useState(navPayload.documentName || '')
   const [drag, setDrag]           = useState(false)
-  const [selected, setSelected]   = useState(() => loadLastPanel() || ['general'])
+  const [selected, setSelected]   = useState(() => (navPayload.personaIds?.length ? navPayload.personaIds : null) || loadLastPanel() || ['general'])
   const [panelCategory, setPanelCategory] = useState('all')
   const [panelPage, setPanelPage] = useState(0)
   const [recommended, setRecommended] = useState([])
-  const [toughness, setToughness] = useState(defaults.toughness)
-  const [turnLimit, setTurnLimit] = useState(parseInt(defaults.turnLimit) || 15)
-  const [linkedMeeting, setLinkedMeeting] = useState(navPayload.meetingName || navPayload.linkedMeeting || '')
+  const [toughness, setToughness] = useState(navPayload.toughness || defaults.toughness)
+  const [turnLimit, setTurnLimit] = useState(parseInt(navPayload.turnLimit) || parseInt(defaults.turnLimit) || 15)
+  const [linkedMeeting, setLinkedMeeting] = useState(navPayload.linkedMeeting || '')
   const [launching, setLaunching]     = useState(false)
   const [detectingPanel, setDetectingPanel] = useState(false)
   const [driveOpen, setDriveOpen]       = useState(false)
@@ -117,7 +159,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
   }, [])
 
   const togglePersona = (id) => {
-    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+    setSelected(s => {
+      if (s.includes(id)) return s.filter(x => x !== id)
+      if (s.length >= MAX_PANEL) return s
+      return [...s, id]
+    })
   }
 
   const [fileError, setFileError] = useState('')
@@ -128,14 +174,15 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     const freq = {}
     for (const line of lines) {
       const t = line.trim()
-      if (t.length > 0 && t.length < 80) freq[t] = (freq[t] || 0) + 1
+      if (t.length > 0 && t.length < 60) freq[t] = (freq[t] || 0) + 1
     }
     return lines
       .filter(line => {
         const t = line.trim()
         if (!t) return true
-        if (/^\d{1,4}$/.test(t)) return false        // bare page numbers
-        if (freq[t] >= 3) return false               // repeated header/footer
+        if (/^\d{1,4}$/.test(t)) return false
+        // Only strip short lines that repeat 5+ times (true headers/footers, not content)
+        if (t.length < 60 && freq[t] >= 5) return false
         return true
       })
       .join('\n')
@@ -164,7 +211,9 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         for (let i = 1; i <= pageCount; i++) {
           const page = await pdf.getPage(i)
           const content = await page.getTextContent()
-          pageTexts.push(content.items.map(item => item.str).join(' '))
+          pageTexts.push(
+            content.items.map(item => item.str + (item.hasEOL ? '\n' : '')).join('')
+          )
         }
         const rawText = pageTexts.join('\n\n')
         const wordsPerPage = rawText.trim().split(/\s+/).filter(Boolean).length / pageCount
@@ -400,6 +449,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     const sessionBase = {
       proposalText:      proposalText,
       proposalName:      proposalName || 'Untitled proposal',
+      documentName:      documentName || '',
       personaIds:        selected,
       config,
       startTime:         Date.now(),
@@ -446,7 +496,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         onClick={() => navigate('home')}
         style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 28, fontFamily: 'var(--font-ui)' }}
       >
-        <ArrowLeft size={14} /> Back to home
+        <ArrowLeft size={14} /> Back to Home
       </button>
 
       {/* Step indicators */}
@@ -478,7 +528,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             {/* Step 0: Upload */}
             {step === 0 && (
               <>
-                <div className="step-title">Upload your proposal</div>
+                <div className="step-title">Upload Your Proposal</div>
                 <div className="step-desc">Drag in a PDF or text file, or import directly from Google Drive.</div>
 
                 <div style={{ marginBottom: 24 }}>
@@ -730,8 +780,18 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             {/* Step 1: Panel */}
             {step === 1 && (
               <>
-                <div className="step-title">Choose your panel</div>
-                <div className="step-desc">Select the roles who will challenge you. Minimum 1.</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+                  <div className="step-title" style={{ margin: 0 }}>Choose Your Panel</div>
+                  <div style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', fontWeight: 600,
+                    color: selected.length >= MAX_PANEL ? 'var(--app-accent)' : 'var(--text-muted)',
+                  }}>
+                    {selected.length}/{MAX_PANEL}
+                  </div>
+                </div>
+                <div className="step-desc">
+                  Select up to {MAX_PANEL} roles.{selected.length >= MAX_PANEL ? ' Deselect one to swap.' : ''}
+                </div>
 
                 {documentName && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, marginTop: 2 }}>
@@ -782,9 +842,9 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       background: 'var(--app-accent)', flexShrink: 0,
                     }} />
                     <span style={{ fontSize: '0.8125rem', color: 'var(--app-accent)', fontWeight: 600 }}>
-                      We recommend these panelists for your proposal
+                      We Recommend These Panelists for Your Proposal
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 'auto', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {recommended.length} selected
                     </span>
                   </div>
@@ -811,6 +871,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                           const isSelected = selected.includes(p.id)
                           const caresText = Array.isArray(p.cares) ? p.cares[0] : (p.cares || '')
                           const isRecommended = recommended.includes(p.id)
+                          const isDisabled = !isSelected && selected.length >= MAX_PANEL
                           return (
                             <div
                               key={p.id}
@@ -818,6 +879,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                               style={{
                                 color: p.color,
                                 background: isSelected ? `${p.color}0d` : undefined,
+                                opacity: isDisabled ? 0.38 : 1,
+                                cursor: isDisabled ? 'not-allowed' : 'pointer',
                               }}
                               onClick={() => togglePersona(p.id)}
                             >
@@ -877,13 +940,13 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             {/* Step 2: Configure */}
             {step === 2 && (
               <>
-                <div className="step-title">Configure your session</div>
+                <div className="step-title">Configure Your Session</div>
                 <div className="step-desc">Set how hard the panel pushes and how long your session runs.</div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 28, marginTop: 8 }}>
                   <div>
                     <div className="question-label">Panel toughness</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <div className="toughness-cards">
                       {[
                         { value: 'Supportive', desc: 'Constructive and encouraging' },
                         { value: 'Balanced',   desc: 'Firm but fair' },
@@ -891,18 +954,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       ].map(({ value, desc }) => (
                         <button
                           key={value}
+                          className={`toughness-card${toughness === value ? ' selected' : ''}`}
                           onClick={() => setToughness(value)}
-                          style={{
-                            flex: 1, padding: '12px 14px', borderRadius: 8, textAlign: 'left',
-                            cursor: 'pointer', fontFamily: 'var(--font-ui)', border: '1.5px solid',
-                            borderColor: toughness === value ? 'var(--text-primary)' : 'var(--border)',
-                            background: toughness === value ? 'var(--text-primary)' : 'transparent',
-                            color: toughness === value ? 'white' : 'var(--text-secondary)',
-                            transition: 'all 0.15s ease',
-                          }}
                         >
-                          <div style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: 3 }}>{value}</div>
-                          <div style={{ fontSize: '0.6875rem', opacity: 0.7, lineHeight: 1.3 }}>{desc}</div>
+                          <div className="toughness-card-name">{value}</div>
+                          <div className="toughness-card-desc">{desc}</div>
                         </button>
                       ))}
                     </div>

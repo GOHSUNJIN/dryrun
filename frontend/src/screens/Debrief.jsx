@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingDown, TrendingUp, Award, Zap, Minus, RotateCcw, ArrowLeft, ChevronRight } from 'lucide-react'
+import { TrendingDown, TrendingUp, Award, Zap, Minus, RotateCcw, ArrowLeft, ChevronRight, Home } from 'lucide-react'
 import { PERSONAS } from '../data.js'
+import { nextSessionName } from '../utils/storage.js'
 
 const MARKER_ICONS = {
   strong:  TrendingUp,
@@ -35,8 +36,19 @@ export default function Debrief({ navigate, session }) {
     return keywords.some(k => text.includes(k))
   }
 
-  const isDemoReport = Boolean(session?.reportData?.demo) || !session?.reportData?.moments?.length
-  const moments = session?.reportData?.moments || []
+  const rehearseAgain = () => navigate('new', {
+    proposalText:  session?.proposalText || '',
+    documentName:  session?.documentName || session?.proposalName || '',
+    meetingName:   nextSessionName(session?.proposalName || ''),
+    linkedMeeting: session?.linkedMeeting || '',
+    personaIds:    session?.personaIds || [],
+    toughness:     session?.config?.toughness || '',
+    turnLimit:     session?.config?.turnLimit || '',
+  })
+
+  const isDemoReport    = Boolean(session?.reportData?.demo) || !session?.reportData?.moments?.length
+  const presenterTurns  = (session?.transcript || []).filter(m => m.speaker === 'presenter').length
+  const moments         = session?.reportData?.moments || []
 
   const filteredMoments = filterPersonaId === null
     ? moments
@@ -63,48 +75,67 @@ export default function Debrief({ navigate, session }) {
   const MomentIcon  = MARKER_ICONS[coaching?.momentType] || Minus
   const momentColor = MARKER_COLORS[coaching?.momentType] || '#9B9BAB'
 
-  return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{
-        padding: '16px 28px', borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: 16,
-        background: 'var(--bg-surface)', flexShrink: 0,
-      }}>
-        <button
-          onClick={() => navigate('report')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)' }}
-        >
-          <ArrowLeft size={14} /> Report
-        </button>
-        <div style={{ width: 1, height: 16, background: 'var(--border)' }} />
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Session debrief: {session?.proposalName || 'Untitled proposal'}
+  const debriefHeader = (
+    <div className="debrief-header">
+      <button className="debrief-back-btn" onClick={() => navigate('report')}>
+        <ArrowLeft size={14} /> Report
+      </button>
+      <div className="debrief-header-divider" />
+      <div className="debrief-header-title">
+        Session Debrief: {session?.proposalName || 'Untitled proposal'}
+      </div>
+      {isDemoReport && (
+        <div className="debrief-demo-badge">
+          AI Analysis Not Generated
         </div>
-        {isDemoReport && (
-          <div style={{
-            marginLeft: 12, padding: '4px 10px', borderRadius: 6,
-            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
-            fontSize: '0.75rem', color: '#D97706', fontWeight: 500, whiteSpace: 'nowrap',
-          }}>
-            AI analysis not generated
+      )}
+      <div className="debrief-header-actions">
+        <button className="btn btn-secondary btn-sm" onClick={rehearseAgain}>
+          <RotateCcw size={12} /> Rehearse Again
+        </button>
+      </div>
+    </div>
+  )
+
+  const noTurnsKnown = presenterTurns === 0 && Array.isArray(session?.transcript)
+
+  if (moments.length === 0) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {debriefHeader}
+        <div className="debrief-empty-state">
+          <div className="debrief-empty-icon">{noTurnsKnown ? '🎙️' : '📊'}</div>
+          <div className="debrief-empty-title">
+            {noTurnsKnown ? 'No session recorded' : 'Analysis unavailable'}
           </div>
-        )}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('home')} style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-            Home
-          </button>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('room')}>
-            <RotateCcw size={12} /> Rehearse again
-          </button>
+          <div className="debrief-empty-desc">
+            {noTurnsKnown
+              ? 'Answer at least one question during rehearsal, then end the session to unlock your debrief.'
+              : 'AI was not able to generate a debrief for this session.'}
+          </div>
+          <div className="debrief-empty-actions">
+            <button className="btn btn-primary" onClick={rehearseAgain}>
+              <RotateCcw size={14} /> Rehearse Again
+            </button>
+            <button className="btn btn-secondary" onClick={() => navigate('home')}>
+              <Home size={14} /> Home
+            </button>
+          </div>
         </div>
       </div>
+    )
+  }
+
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {debriefHeader}
 
       <div className="debrief-layout" style={{ flex: 1 }}>
         {/* Left: Timeline */}
         <div className="debrief-timeline">
           <div className="timeline-header">
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Key moments
+              Key Moments
             </div>
           </div>
 
@@ -112,7 +143,7 @@ export default function Debrief({ navigate, session }) {
             <button
               className={`timeline-filter-btn ${filterPersonaId === null ? 'active' : ''}`}
               onClick={() => setFilterPersonaId(null)}
-            >All personas</button>
+            >All Personas</button>
             {sessionPersonas.map(p => (
               <button
                 key={p.id}
@@ -124,9 +155,7 @@ export default function Debrief({ navigate, session }) {
 
           {filteredMoments.length === 0 ? (
             <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              {moments.length === 0
-                ? 'No moments available for this session.'
-                : 'No moments match this filter.'}
+              No moments match this filter.
             </div>
           ) : filteredMoments.map(m => {
             const Icon  = MARKER_ICONS[m.type] || Minus
@@ -152,15 +181,14 @@ export default function Debrief({ navigate, session }) {
         {/* Right: Coaching */}
         <div className="debrief-coaching">
           {!coaching ? (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              height: '100%', textAlign: 'center', padding: '48px 32px',
-              color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.6,
-            }}>
-              Session debrief not available. AI was not able to generate analysis for this session.<br />
-              <button className="btn btn-secondary" style={{ marginTop: 24 }} onClick={() => navigate('room')}>
-                <RotateCcw size={14} /> Rehearse again
-              </button>
+            <div className="debrief-empty-state">
+              <div className="debrief-empty-icon">💬</div>
+              <div className="debrief-empty-title">Select a moment</div>
+              <div className="debrief-empty-desc">
+                {filteredMoments.length === 0
+                  ? 'No moments match the selected filter. Try a different persona.'
+                  : 'Pick a moment from the timeline to see coaching.'}
+              </div>
             </div>
           ) : (
           <motion.div
@@ -168,56 +196,77 @@ export default function Debrief({ navigate, session }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
           >
-            <div
-              className="coaching-moment-tag"
-              style={{ background: `${momentColor}14`, color: momentColor, border: `1px solid ${momentColor}28` }}
-            >
-              <MomentIcon size={12} />
-              {coaching.momentLabel}
+            <div style={{ marginBottom: 4 }}>
+              <div
+                className="coaching-moment-tag"
+                style={{ background: `${momentColor}14`, color: momentColor, border: `1px solid ${momentColor}28` }}
+              >
+                <MomentIcon size={12} />
+                {coaching.momentLabel}
+              </div>
             </div>
 
-            <div className="coaching-question">What the panel asked</div>
-            <div className="coaching-quote">{coaching.asked}</div>
+            <div style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px',
+            }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 10 }}>
+                What the Panel Asked
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontStyle: 'italic', lineHeight: 1.55, color: 'var(--text-primary)' }}>
+                {coaching.asked}
+              </div>
+            </div>
 
-            <div className="coaching-section">
-              <div className="coaching-section-title">What you said</div>
-              <div className="coaching-body" style={{
-                background: 'var(--bg-base)', border: '1px solid var(--border)',
-                borderLeft: `3px solid ${momentColor}`,
-                borderRadius: '0 var(--r-md) var(--r-md) 0',
-                padding: '12px 16px', fontStyle: 'italic',
-              }}>
+            <div style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border)',
+              borderLeft: `3px solid ${momentColor}`,
+              borderRadius: '0 12px 12px 0', padding: '14px 18px',
+            }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                What You Said
+              </div>
+              <div style={{ fontStyle: 'italic', fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                 {coaching.yourAnswer}
               </div>
             </div>
 
-            <div className="coaching-section">
-              <div className="coaching-section-title">
-                {coaching.momentType === 'strong' ? 'Why it worked' : 'Why it fell short'}
+            <div style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px',
+            }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                {coaching.momentType === 'strong' ? 'Why It Worked' : 'Why It Fell Short'}
               </div>
-              <div className="coaching-body">{coaching.whyShort}</div>
+              <div style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {coaching.whyShort}
+              </div>
             </div>
 
-            <div className="coaching-section">
-              <div className="coaching-section-title">
-                {coaching.momentType === 'strong' ? 'How to build on it' : 'A stronger answer to try'}
+            <div style={{
+              background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 18px',
+            }}>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', color: momentColor, textTransform: 'uppercase', marginBottom: 8 }}>
+                {coaching.momentType === 'strong' ? 'How to Build on It' : 'Try Saying This Instead'}
               </div>
-              <div className="coaching-better-answer">
-                <p>{coaching.betterAnswer}</p>
+              <div style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                {coaching.betterAnswer}
               </div>
             </div>
 
             <div className="coaching-actions">
-              <button className="btn btn-primary" onClick={() => navigate('room')}>
-                <RotateCcw size={14} /> Rehearse again
+              <button className="btn btn-primary" onClick={rehearseAgain}>
+                <RotateCcw size={14} /> Rehearse Again
               </button>
               <button
                 className="btn btn-secondary"
                 onClick={nextWeakPoint}
                 disabled={filteredMoments.filter(m => m.type === 'weak').length === 0}
               >
-                Next weak point
+                Next Weak Point
+              </button>
+              <button className="btn btn-ghost" onClick={() => navigate('home')}>
+                <Home size={14} /> Home
               </button>
             </div>
           </motion.div>

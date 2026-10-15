@@ -2,289 +2,294 @@
 
 **Rehearse your pitch before the meeting that matters.**
 
-Dry Run puts a panel of AI stakeholders in the room with you. You defend your proposal, they push back with hard questions, pile on when your answers contradict each other and only back down when you address their specific concerns with real data. After the session you get a coaching report and a moment-by-moment debrief showing exactly what to fix.
+Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has a distinct agenda, asks hard questions and only backs down when you address their specific concerns with real evidence. After the session you get a line-by-line coaching report showing exactly what to prepare before the real meeting.
 
-**Live (Firebase):** https://dry-run-1608.web.app
-
----
-
-## Problem statement
-
-Most proposals fail not because the idea is bad but because the presenter was unprepared for the room. Finance wants a three-year cost model. Legal needs a data privacy answer. Operations asks who actually owns the transition. These objections are predictable but people walk in without having rehearsed answers for any of them.
-
-Existing preparation tools are passive. Slide decks, bullet-point checklists and practice-in-the-mirror are all one-sided. There is no way to stress-test your answers until you are already in the room.
-
-Dry Run gives you a safe space to rehearse. An AI panel challenges you the same way a real committee would, tracks whether you have actually answered their concerns and tells you what you missed.
-
-The primary users are professionals who present proposals to approval committees: team leads seeking budget, product managers pitching roadmap changes and consultants defending recommendations to client boards.
+**Live:** https://dry-run-1608.web.app  
+**Category:** Future of Work and Enterprise Productivity  
+**Hackathon:** Google Cloud AI Builder Cup 2026  
+**Works on:** Desktop and mobile
 
 ---
 
-## How it works
+## The Problem
 
-1. **Upload your proposal.** Paste text, drop in a file or import directly from Google Drive. Recent Drive docs appear automatically if you are already signed in. The panel reads the proposal and generates challenges specific to your content.
-2. **Choose your panel.** Select which stakeholder roles will challenge you across five categories: Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests up to 4 panelists relevant to your document, mixing categories freely, and shows a recommendation banner. If no targeted panelists are detected, Usagi (General Reviewer) is selected as a fallback. Each role has a different agenda and conditions that must be met before they are satisfied. Custom roles can be created in the Panel Library. Your last selection is remembered.
-3. **Configure the session.** Set panel toughness (Supportive, Balanced, Tough) and turn limit.
-4. **Enter the room.** A random panelist fires the first question immediately. You type or speak your responses. After each reply the AI picks the next speaker, gives the last questioner first right of reply if they still have unmet conditions and sometimes triggers a second panelist to pile on immediately when your answer contradicts their domain. An elapsed timer and turn counter are shown in the top bar.
-5. **End the session.** When all conditions are addressed an exit offer appears. You can also end manually at any time. The AI analyses the full transcript and generates a coaching report.
-6. **Read the debrief.** Every key moment is annotated: what was asked, what you said, why it worked or fell short and a stronger version to try. Filter moments by persona.
-7. **Rehearse again.** One click puts you back in the room. Past sessions are saved locally and grouped by meeting.
+Most proposals fail not because the idea is bad but because the presenter walked in unprepared. Finance wants a three-year cost model. Legal needs a data privacy answer. Operations asks who owns the transition. These objections are entirely predictable yet people face them for the first time in the actual room.
+
+Existing preparation tools are one-sided. Slide decks and bullet-point checklists never push back. There is no way to stress-test your reasoning until you are already standing in front of the committee.
+
+Dry Run gives professionals a safe space to rehearse. An AI panel challenges you the same way a real committee would, tracks whether you have actually answered each concern and tells you exactly what you missed.
 
 ---
 
-## Tech stack
+## How It Works
+
+1. **Upload your proposal.** Paste text, drop in a PDF/DOCX/PPTX or import directly from Google Drive.
+2. **Choose your panel.** Pick from 28 stakeholder roles across Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests the best match for your content. Up to 5 panelists per session.
+3. **Enter the room.** A panelist fires the opening challenge immediately. You respond. The AI picks the next speaker, applies rotation logic and sometimes triggers a second panelist to pile on when your answer contradicts their domain.
+4. **End the session.** The AI analyses the full transcript and generates a coaching report.
+5. **Read the debrief.** Every key moment is annotated: what was asked, what you said, why it fell short and a scripted alternative to try next time.
+
+---
+
+## Why It's Different
+
+| What most prep tools do | What Dry Run does |
+|---|---|
+| Single-turn Q&A with one AI voice | Multi-persona panel where each role has its own agenda and conditions |
+| Generic AI responses | Challenges grounded in your actual proposal document |
+| Post-hoc feedback | Real-time condition tracking updated after every answer |
+| No conversation structure | Speaker rotation, first-right-of-reply and contradiction detection |
+| Static tips | Moment-by-moment debrief with scripted alternatives per turn |
+
+**Key innovations:**
+
+- **Condition tracking.** Each panelist has 2-3 explicit conditions. The session does not resolve cleanly until you have addressed all of them with concrete information.
+- **Fact-Checker persona.** Uses Gemini with Google Search grounding to verify your proposal's claims against live web data before the session starts. Every challenge from the Fact-Checker cites real sources.
+- **Pile-on mechanic.** When your answer contradicts a panelist's domain a second panelist jumps in immediately via `follow_up` without consuming an extra turn.
+- **Multi-turn intelligence.** The AI tracks who has spoken, how many consecutive turns they have held and whether they still have unmet conditions before deciding who speaks next.
+- **28 built-in roles across 5 industry verticals** plus custom persona creation for any domain.
+
+---
+
+## Google Cloud Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Frontend framework | React 18 with Vite 5 |
-| Animations | Framer Motion |
-| Icons | Lucide React |
+|---|---|
 | AI model | Gemini 3.8 Flash via `@google/genai` JS SDK |
-| Fact-checking | Gemini 3.8 Flash with Google Search grounding |
-| API layer | Firebase Cloud Functions v2 (Node 22, ES modules) |
-| Hosting | Firebase Hosting (SPA with function rewrites) |
+| Google Search grounding | Gemini built-in Search tool in `factCheckProposal` |
+| API backend | Firebase Cloud Functions v2 (Node 22, ES modules) |
+| Hosting | Firebase Hosting with SPA rewrites |
 | Secrets | Firebase Secret Manager (`GEMINI_API_KEY`) |
-| State management | React `useState` with session lifted to `App.jsx` |
-| Persistence | `localStorage` for sessions, personas, meetings, cal events, voice settings |
-| Styling | Plain CSS with CSS custom properties |
+| Proposal import | Google Drive API (file browser and recent docs) |
+| Report export | Google Docs API (formatted document creation) |
+| Meeting sync | Google Calendar API (upcoming events on the home dashboard) |
+
+Every core feature runs on Google Cloud. The AI, backend, hosting, secrets and all three Google Workspace integrations are native Google services.
+
+---
+
+## How the AI Works
+
+Three structured Gemini calls, each returning a single JSON response. No streaming. No server-side state.
+
+### `factCheckProposal` -- Google Search grounding
+
+Called at session start when the Fact-Checker persona is selected. Gemini searches the web and returns a briefing of verified and disputed claims from the proposal. This briefing is injected into every Fact-Checker response for the rest of the session.
+
+### `generateOpenings`
+
+One call per session. Returns one tailored opening challenge per selected panelist, each written specifically around the uploaded proposal content.
+
+### `generateReply`
+
+Called after every presenter turn. Returns the next panelist's response and an optional second panelist follow-up in a single call. The prompt applies several layers of intelligence:
+
+- **Speaker selection.** Picks the panelist with the most unmet conditions. The previous questioner gets first right of reply, capped at 2 consecutive turns before forced rotation.
+- **Answer quality classification.** Classifies the presenter's reply as poor, medium or good and adjusts the panelist's tone accordingly.
+- **Condition acknowledgment.** Only marks a condition met when the presenter explicitly addresses it with concrete information.
+- **Skip detection.** If the presenter signals they cannot answer, the AI rotates to a different panelist rather than pressing the same question.
+- **Pile-on trigger.** If the answer contradicts another panelist's domain a second response is returned in `follow_up`.
+- **Satisfied panelist mode.** When all conditions are met the panelist shifts from challenging to supportive.
+- **Regeneration.** When the presenter clicks "Try Different Response" the previously shown responses are sent as rejected examples so the AI cannot repeat them.
+
+### `generateReport`
+
+One call at session end. Returns 2-4 coaching gaps with actionable fixes and up to 7 annotated turning-point moments from the transcript. Framed as preparation coaching only. No approval predictions or probability scores.
 
 ---
 
 ## Architecture
 
 ```
-Browser (React SPA)
+Browser (React 18 SPA)
         |
         |  POST /api/session/start
-        |  POST /api/session/message       (one call per presenter turn)
+        |  POST /api/session/message    (one call per presenter turn)
         |  POST /api/session/end
         v
 Firebase Hosting rewrite
-        |
         v
-Firebase Cloud Functions v2 (us-central1, Node 22)
-  functions/index.js          sessionStart | sessionMessage | sessionEnd
-        |
-        |  imports
+Firebase Cloud Functions v2  (us-central1, Node 22)
+  functions/index.js     sessionStart | sessionMessage | sessionEnd
         v
-  functions/core.js            all Gemini logic
-  functions/fallback.js        scripted demo data (no-key or AI failure path)
-        |
-        |  @google/genai SDK
+  functions/core.js      Gemini: factCheck, openings, reply, report
+  functions/fallback.js  scripted demo data (no-key or AI failure)
         v
-  Gemini 3.8 Flash
-  (+ Google Search grounding for factCheckProposal)
+Gemini 3.8 Flash  (+  Google Search grounding)
 ```
 
-The API is fully stateless. Every request includes the full proposal text, the active persona IDs, the complete transcript and the current condition state. Functions hold no memory between calls.
+The API is fully stateless. Every request carries the full proposal text, persona IDs, complete transcript and current condition state. Functions hold no memory between calls.
 
-**Demo mode fallback:** If `GEMINI_API_KEY` is not set or any Gemini call fails, the function returns scripted responses (`demo: true` in the response body). The browser logs the failure reason via `console.error`. All screens remain fully functional.
+**Demo mode.** If `GEMINI_API_KEY` is not set or any Gemini call fails the function returns scripted responses. All screens stay fully functional. The browser shows a banner explaining the fallback.
 
 ---
 
-## Project layout
+## Project Layout
 
 ```
 frontend/
   src/
-    App.jsx              root: screen routing and session state
+    App.jsx              root routing and session state
     components/
       Sidebar.jsx        left nav with profile footer
-      Toast.jsx          ToastStack component and useToast hook
+      Toast.jsx          ToastStack and useToast hook
     hooks/
-      useTTS.js          text-to-speech queue with per-persona pitch and rate
-      useElapsedTimer.js session elapsed timer with helper to get elapsed minutes
+      useTTS.js          text-to-speech queue with per-persona voice settings
+      useElapsedTimer.js session timer
     screens/
       Home.jsx           dashboard: greeting, upcoming meetings, recent sessions, weak spots
-      NewRehearsal.jsx   3-step setup wizard: upload, choose panel, configure
-      RehearsalRoom.jsx  live rehearsal: panel seats, transcript, elapsed timer, input bar
-      Report.jsx         post-session summary with tabbed Conditions / Coaching / Proposal view
-      Debrief.jsx        moment-by-moment coaching with timeline and persona filter
-      PastSessions.jsx   history grouped by meeting with inline proposal preview
-      PanelLibrary.jsx   browse built-in roles by category and create custom personas
-      Settings.jsx       voice settings, rehearsal defaults, Google account management
+      NewRehearsal.jsx   3-step setup: upload, choose panel, configure
+      RehearsalRoom.jsx  live rehearsal: panel seats, transcript, input
+      Report.jsx         post-session summary with Conditions / Coaching / Proposal tabs
+      Debrief.jsx        moment-by-moment coaching with persona filter
+      PastSessions.jsx   history grouped by meeting
+      PanelLibrary.jsx   browse built-in personas and create custom ones
+      Settings.jsx       voice, defaults, Google account, profile
     utils/
-      google.js          OAuth2 token client, Drive, Calendar and Docs helpers
-      storage.js         localStorage helpers: sessions, meetings, cal events, personas, settings
-      time.js            shared time helpers: getCurrentTime, formatDate, daysFromNow, formatSessionDate
-    data.js              28 persona definitions across 5 categories plus General Reviewer; demo openings
+      google.js          OAuth2, Drive, Calendar and Docs helpers
+      storage.js         localStorage: sessions, meetings, personas, settings
+      time.js            time helpers shared across screens
+    data.js              28 persona definitions across 5 categories
     index.css            design system: tokens, components, room theme
 functions/
-  index.js               Firebase Cloud Functions v2: sessionStart, sessionMessage, sessionEnd
-  core.js                Gemini logic: factCheckProposal, generateOpenings, generateReply, generateReport
-  fallback.js            scripted demo data: getDemoOpenings, getDemoConditions, getDemoReply, getDemoReport
-  package.json           Node 22, ES module, firebase-functions v2 and @google/genai
-firebase.json            hosting rewrites: /api/* -> Cloud Functions, ** -> index.html
+  index.js               Cloud Functions v2: sessionStart, sessionMessage, sessionEnd
+  core.js                Gemini: factCheckProposal, generateOpenings, generateReply, generateReport
+  fallback.js            scripted demo data: getDemoOpenings, getDemoReply, getDemoReport
+firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to index.html
 .firebaserc              project alias: dry-run-1608
 ```
 
 ---
 
-## AI logic
+## Feature Summary
 
-All three AI calls use a single-call batch approach: one Gemini call returns the complete structured JSON response. No streaming, no server-side state.
+### Responsive Design
+- Fully responsive across desktop and mobile browsers
+- Mobile layout uses a bottom navigation bar; desktop uses a sidebar
+- All core flows (setup, rehearsal room, report and debrief) work on phone screens
+- Panelist seats scroll horizontally on mobile when 4 or 5 panelists are selected
 
-### `factCheckProposal` (Google Search grounding)
+### Rehearsal Setup
+- Paste text, upload PDF/DOCX/PPTX or import from Google Drive; recent Drive docs shown automatically when signed in
+- AI auto-detects the most relevant panelists using scored keyword matching
+- 28 built-in panelists; custom persona creation with name, role, speaking style and conditions
+- Session cap at 5 panelists; Usagi (General Reviewer) auto-selected as fallback when no targeted match is found
+- Toughness (Supportive / Balanced / Tough) and turn limit (5 / 10 / 15 / 20 / 25) configurable
 
-Called at session start if the Fact-Checker persona is selected. Uses Gemini's Google Search grounding to verify the proposal's key quantitative claims against live web data. The findings are injected into Ritish's context so every challenge Ritish makes references real market data.
+### Rehearsal Room
+- Panelist seats with speaking animations, condition dots and hover tooltip showing met/unmet status
+- Text and voice input (Web Speech API)
+- Text-to-speech panel voices with playback rate control
+- Smart auto-scroll: pauses when the user scrolls up and resumes on new message
+- "Try Different Response" on the opening and on the last AI message, both guaranteed to return a genuinely new response
+- Elapsed timer and turn counter in the top bar
 
-### `generateOpenings`
+### Report and Debrief
+- Conditions tab: met/unmet per panelist
+- Coaching tab: 2-4 gap areas with fixes
+- Proposal tab: original filename and word count
+- Moment-by-moment debrief with scripted alternatives for every weak turn
+- Export to Google Docs; copy to clipboard
+- Delete run directly from the report page
 
-Called once. Returns one opening challenge per selected panelist written specifically around the proposal content.
-
-### `generateReply`
-
-Called after every presenter turn. The system prompt applies several layers of intelligence:
-
-- **Speaker selection.** Picks the panelist with the most unmet conditions. The last questioner gets first right of reply: if they still have unmet conditions they are preferred before switching to another panelist.
-- **Multi-panelist pile-on.** After any reply a second panelist can jump in via `follow_up` when the presenter's answer directly contradicts their domain or raises a cross-domain concern. The presenter can face two challenges in a single turn.
-- **Answer quality check.** Classifies the presenter's latest message as poor, medium or good. A poor answer (vague, hedged or too short) injects a push-back instruction into the prompt; a good answer (specific, contains numbers or 40+ words) injects an acknowledgment instruction.
-- **Condition acknowledgment.** Only marks a condition as met when the presenter's latest message explicitly and specifically addressed it with concrete information.
-- **Contradiction detection.** If the presenter's current answer contradicts an earlier turn, the panelist is instructed to reference both statements directly.
-- **Satisfied panelist mode.** When all of a panelist's conditions are met they shift from challenging to supportive.
-
-### `generateReport`
-
-Called when the session ends. Returns `weak_points` (2 to 4 gaps with suggested fixes) and `moments` (up to 7 annotated turning points, capped to the actual number of presenter turns). Framed as preparation coaching only: no approval predictions or probability scores. The prompt explicitly tells the model how many turns occurred so it cannot hallucinate turns beyond the transcript.
+### History and Home
+- Past sessions grouped by linked meeting or proposal; per-session inline rename and delete
+- Google Calendar sync: upcoming meetings on the home dashboard; rehearsals can be tied to a specific event
+- Recurring weak spot tracking: the home dashboard surfaces patterns across multiple sessions
+- "Rehearse again" preserves the original panel, proposal, toughness and turn limit
 
 ---
 
-## The panelist roster
+## The Panelists
 
-28 built-in panelists across five categories plus one general-purpose fallback. Each has a speaking style, a set of concerns and 2 to 3 conditions that must be met before they are satisfied.
+28 built-in panelists across five categories plus one general-purpose fallback.
 
 | Category | Panelists |
-|----------|-----------|
+|---|---|
 | Business | Alan (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Ritish (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
 | Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
 | Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
 | Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
 | Policy | Zul (Policy Analyst), Boon (Regulatory Advisor), Nurul (Community Representative) |
-| General | Usagi (General Reviewer), used only when AI detects no targeted panelists; never auto-selected alongside targeted picks |
+| General | Usagi (General Reviewer) -- auto-selected when no targeted panelists are detected |
 
 Custom personas follow the same structure and are passed to every API call in `custom_personas`.
 
 ---
 
-## Session state
+## Session State
 
-Session state lives in `App.jsx` and is passed down as props. Never stored on a server.
+State lives in `App.jsx` and flows down as props. Never stored on a server.
 
 ```js
 {
-  proposalText: '',           // full proposal text
-  proposalName: '',           // rehearsal name, auto-filled from filename or Drive doc title if not set
-  personaIds: [...],          // active persona IDs
+  proposalText: '',        // full proposal text
+  proposalName: '',        // rehearsal name
+  documentName: '',        // original filename shown in Report
+  personaIds: [...],       // active persona IDs
   config: {
-    toughness: 'Balanced',    // Supportive | Balanced | Tough
-    turnLimit: 15,            // 5 | 10 | 15 | 20 | 25
+    toughness: 'Balanced', // Supportive | Balanced | Tough
+    turnLimit: 15,         // 5 | 10 | 15 | 20 | 25
   },
-  transcript: [],             // full message history
-  conditions: {},             // { f1: false, f2: true, ... }
-  factCheckNotes: '',         // Ritish's verified research briefing
-  customPersonaDefs: {},      // serialised custom personas for API calls
-  reportData: null,           // weak_points + moments from generateReport
-  startTime: null,            // Date.now() at session start
-  duration: '',               // formatted duration string, set on session end
-  linkedMeeting: '',          // name of the upcoming meeting this rehearsal is tied to
-  demoMode: false,            // true when AI is unavailable (see browser console for reason)
+  transcript: [],          // full message history
+  conditions: {},          // { f1: false, f2: true, ... }
+  factCheckNotes: '',      // Fact-Checker research briefing
+  customPersonaDefs: {},   // custom personas for API calls
+  reportData: null,        // weak_points and moments from generateReport
+  duration: '',            // formatted duration set on session end
+  linkedMeeting: '',       // calendar event this rehearsal is tied to
+  demoMode: false,         // true when AI is unavailable
 }
 ```
 
 ---
 
-## API endpoints
+## API Reference
 
 ### `POST /api/session/start`
 
-**Request**
 ```json
 {
   "proposal_text": "...",
-  "persona_ids": ["finance", "legal", "ops", "factcheck"],
+  "persona_ids": ["finance", "legal", "ops"],
   "config": { "toughness": "Balanced", "turnLimit": 15 },
   "custom_personas": {}
 }
 ```
 
-**Response**
-```json
-{
-  "messages": [
-    { "id": 1, "speaker": "finance", "text": "...", "time": "0:12", "type": "opening" }
-  ],
-  "conditions": { "f1": false, "f2": false, "f3": false, "l1": false },
-  "fact_check": "..."
-}
-```
-
-If AI is unavailable the response also includes `"demo": true` and `"demo_reason": "<error message>"`.
+Returns `messages` (opening challenges), `conditions` (initial state) and `fact_check` (Fact-Checker briefing). Includes `"demo": true` if AI is unavailable.
 
 ### `POST /api/session/message`
 
-**Request**
 ```json
 {
   "proposal_text": "...",
-  "persona_ids": ["finance", "legal", "ops", "factcheck"],
+  "persona_ids": [...],
   "transcript": [...],
-  "conditions": { "f1": false, "f2": true },
+  "conditions": { "f1": false },
   "config": {},
-  "fact_check": "...",
-  "custom_personas": {}
+  "previous_responses": []
 }
 ```
 
-**Response**
-```json
-{
-  "speaker": "legal",
-  "text": "...",
-  "conditions_met": ["l1"],
-  "source": null,
-  "follow_up": {
-    "speaker": "finance",
-    "text": "...",
-    "conditions_met": []
-  }
-}
-```
-
-`follow_up` is omitted when only one panelist responds. When present it is rendered as a second message immediately after the primary response with no additional presenter turn required.
+Returns `speaker`, `text`, `conditions_met` and optional `follow_up` (second panelist). The `previous_responses` field is used for regeneration to prevent repeated answers.
 
 ### `POST /api/session/end`
 
-**Request**
 ```json
 {
   "proposal_text": "...",
-  "persona_ids": ["finance", "legal", "ops", "factcheck"],
+  "persona_ids": [...],
   "transcript": [...],
-  "conditions": { "f1": true, "f2": false },
-  "custom_personas": {}
+  "conditions": { "f1": true }
 }
 ```
 
-**Response**
-```json
-{
-  "weak_points": [
-    { "label": "Finance", "issue": "Payback period cited without full TCO", "fix": "..." }
-  ],
-  "moments": [
-    {
-      "id": 1, "type": "weak", "turn": "Turn 3",
-      "excerpt": "This pays for itself within a year.",
-      "tag": "Weak answer",
-      "asked": "...", "your_answer": "...", "why": "...", "better": "..."
-    }
-  ]
-}
-```
+Returns `weak_points` (label, issue, fix) and `moments` (annotated turning points with scripted alternatives).
 
 ---
 
-## Run locally
+## Run Locally
 
 ```bash
 cd frontend
@@ -292,166 +297,36 @@ npm install
 npm run dev
 ```
 
-Set `GEMINI_API_KEY` in `frontend/.env`:
+Add `frontend/.env`:
 
 ```
-GEMINI_API_KEY=your_google_ai_studio_key_here
+VITE_GEMINI_API_KEY=your_google_ai_studio_key
 ```
 
-Without an API key the room falls back to scripted responses. All screens and navigation work.
+Without a key the app runs in demo mode with scripted responses. All screens and navigation work.
 
 ---
 
 ## Deploy
 
 ```bash
-# Install Firebase CLI
-npm install -g firebase-tools
-
-# Build frontend
 cd frontend && npm run build && cd ..
-
-# Deploy hosting + functions
 firebase deploy
 ```
 
-The `GEMINI_API_KEY` is stored in Firebase Secret Manager (not an environment variable). Set it once with:
+Store the API key in Firebase Secret Manager:
 
 ```bash
 firebase functions:secrets:set GEMINI_API_KEY
 ```
 
-Firebase Hosting rewrites `/api/*` paths to the corresponding Cloud Function. Everything else serves `index.html` for client-side routing.
+Firebase Hosting rewrites `/api/*` to the matching Cloud Function. Everything else serves `index.html` for client-side routing.
 
 ---
 
-## Environment variables
+## Known Limitations
 
-| Variable | Where | Description |
-|----------|-------|-------------|
-| `GEMINI_API_KEY` | Firebase Secret Manager | Set with `firebase functions:secrets:set GEMINI_API_KEY`. Required for live AI. |
-| `GEMINI_API_KEY` | `frontend/.env` | For local development with `npm run dev`. |
-
----
-
-## Hackathon context
-
-Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterprise Productivity". Submission deadline: 18 October 2026.
-
-**Requirements checklist:**
-- [x] Gemini AI (`gemini-3.8-flash` via `@google/genai` SDK)
-- [x] Google Search grounding (`factCheckProposal` uses Gemini's built-in Google Search tool)
-- [x] Firebase Cloud Functions v2 (Google Cloud serverless compute)
-- [x] Firebase Hosting (Google Cloud static hosting with rewrite rules)
-- [x] Firebase Secret Manager (Google Cloud secrets for API key)
-- [x] Live deployment: https://dry-run-1608.web.app
-- [ ] 3-minute demo video
-- [ ] PDF pitch deck
-
-**Google integrations:**
-- [x] Google Drive: import proposals with full folder navigation and breadcrumb trail; auto-shows recent docs when signed in
-- [x] Google Docs: export session report as a formatted document, with error recovery if not signed in
-- [x] Google Calendar: sync upcoming meetings to Home dashboard; persisted to localStorage; individual event deletion; disconnect from Settings
-
----
-
-## Feature summary
-
-### Rehearsal setup
-- 3-step wizard: upload, panel selection, configure
-- File upload (drag and drop or browse) or Google Drive import
-- Auto-fills rehearsal name from filename or Drive doc title if not already set
-- Recent Drive docs shown automatically when signed in (no picker required); dismissible with Clear
-- Uploaded filename shown in the Choose Panel step so you always know which file is loaded
-- Word count shown on uploaded file card
-- Meeting link: connect a rehearsal to an upcoming calendar event
-- Panel selection with six tabs: All, Business, Startup, Event Planning, Academic and Policy
-- AI auto-detects up to 4 relevant panelists, mixing categories freely; recommendation banner shows pre-selected count
-- If AI finds no targeted panelists, Usagi (General Reviewer) is auto-selected
-- 6 per page (2x3) with pagination controls in panel selection
-- Panel selection remembers the last configuration across sessions
-- Custom turn limit (5/10/15/20/25) and toughness level (Supportive/Balanced/Tough)
-
-### Rehearsal room
-- Panelist seats with speaking animations, condition dots and met/total counts
-- Transcript with time-stamped messages, source chips for fact-checked claims
-- Elapsed timer and turn counter in the top bar
-- Smart auto-scroll: pauses when the user scrolls up, resumes on new message
-- Voice input via Web Speech API
-- Text-to-speech panel voices with playback rate control
-- Copy-on-hover for every transcript message
-- Condition met flash banner
-- Turn limit warning with actionable "End and get report" button
-- All-conditions-met exit offer with keep-going option
-- Retry banner when API connection is lost, pre-fills last message into input
-- Demo mode banner when AI is unavailable
-
-### Report and debrief
-- Post-session summary: conditions met, turn count, session duration
-- Tabbed view: Conditions, Coaching (weak points), Proposal text
-- Copy report to clipboard
-- Export to Google Docs (opens new tab; retries gracefully on auth failure)
-- Full session debrief: annotated moments timeline with persona filter
-- Per-moment coaching: what was asked, what you said, why it worked or fell short, stronger answer to try
-- "Next weak point" button cycles through weak moments
-
-### Home dashboard
-- Time-of-day greeting with profile name (configurable in Settings)
-- Upcoming meetings column: Google Calendar sync and manual entries
-- Individual calendar event deletion
-- Recent sessions with meeting badge, paginated 3 per page
-- Recurring weak spots section: per-card dismiss with recovery ("Show dismissed")
-- Click any weak spot card to open a detail popup with the full issue, a how-to-fix callout and the list of sessions it appeared in
-
-### Past sessions
-- Sessions grouped by linked meeting or proposal
-- Calendar-synced meetings appear as groups even before any rehearsals are done
-- Per-group rename and bulk delete
-- Per-session: conditions met, turns, duration, demo badge
-- Inline proposal text expand/collapse per session row
-- "Rehearse again" restores linked meeting context
-- Assign to meeting: reassign any session to a different meeting inline without leaving the page
-
-### Panel Library
-- 28 built-in personas across five category tabs: Business, Startup, Event Planning, Academic and Policy
-- 9 per page with pagination controls per tab
-- Cards are uniform height per row with Read-only label anchored to the bottom-right
-- Built-in cards show name, role, conditions and areas of focus
-- Custom persona creation with name, role, speaking style and conditions
-- Edit and delete custom personas
-
-### Settings
-- Voice output: enable/disable and playback rate
-- Default toughness and turn limit (applied to new rehearsals)
-- Google account: connect for Drive, Docs and Calendar; connection state persists across reloads; disconnect with one click
-- Profile name and role
-
----
-
-## Progress
-
-### Done
-- Full React SPA with sidebar navigation, 7 screens and a shared design system
-- All features listed in the Feature summary section above
-- 28 built-in panelists across five categories plus Usagi (General Reviewer) fallback; AI-driven panel detection mixes categories freely, caps at 4
-- AI-driven panel with per-persona conditions, speaker rotation and fact-checking
-- Demo mode fast path: if `sessionStart` returns demo, all subsequent API calls are skipped with no retry
-- Firebase Cloud Functions v2 deployment with Secret Manager
-- Google Drive, Docs and Calendar integrations
-- Code refactor: TTS and elapsed timer extracted to custom hooks, shared time utilities, deduplicated session save and launch logic, CSS classes for room status banners
-- Multi-panelist pile-on via `follow_up`: second panelist jumps in when presenter contradicts their domain
-- First right of reply: last questioner is preferred for the next turn until their conditions are met
-- Contradiction detection: panelist references both conflicting statements when answer contradicts an earlier turn
-- Answer quality classification drives automatic push-back or acknowledgment instructions
-- Weak spot detail popup: issue text, how-to-fix callout and session list on click
-- Calendar-synced meetings appear in Past Sessions as empty groups before any rehearsals
-- Singapore-localised persona names across all 28 built-in roles
-### Still to do
-- 3-minute demo video
-- PDF pitch deck
-
----
-
-## Notes
-
-The panel personas are role archetypes only. No real or named individuals are imitated. The post-session report is framed as preparation coaching and never gives an approval prediction or probability score.
+- Timezone is hardcoded to `Asia/Singapore` in `time.js`.
+- `pdfjs-dist` loads at runtime for scanned PDF extraction; first upload adds ~2 s on a cold start.
+- Demo mode canned responses do not reflect custom persona definitions; custom persona sessions in demo mode show no opening messages but remain functional.
+- The panel personas are role archetypes only. No real or named individuals are imitated. The post-session report is framed as preparation coaching and never gives an approval prediction or probability score.

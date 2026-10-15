@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader, ArrowLeft } from 'lucide-react'
+import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader, Home, FileText, Trash2 } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { exportToGoogleDoc } from '../utils/google.js'
 import ToastStack, { useToast } from '../components/Toast.jsx'
+import { nextSessionName, deleteSession } from '../utils/storage.js'
 
 
 const container = {
@@ -22,6 +23,27 @@ export default function Report({ navigate, session }) {
   const [docUrl, setDocUrl]       = useState(null)
   const [exportError, setExportError] = useState(null)
   const { toasts, show: showToast } = useToast()
+
+  useEffect(() => {
+    if (!session?.proposalText && !session?.reportData) navigate('home')
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDelete = () => {
+    if (!session?.id) return
+    if (!window.confirm('Delete this run? This cannot be undone.')) return
+    deleteSession(session.id)
+    navigate('past')
+  }
+
+  const rehearseAgain = () => navigate('new', {
+    proposalText:  session?.proposalText || '',
+    documentName:  session?.documentName || session?.proposalName || '',
+    meetingName:   nextSessionName(session?.proposalName || ''),
+    linkedMeeting: session?.linkedMeeting || '',
+    personaIds:    session?.personaIds || [],
+    toughness:     session?.config?.toughness || '',
+    turnLimit:     session?.config?.turnLimit || '',
+  })
 
   const isDemoReport  = Boolean(session?.reportData?.demo) || !session?.reportData?.weak_points?.length
   const hasRealReport = !isDemoReport
@@ -96,12 +118,6 @@ export default function Report({ navigate, session }) {
   return (
     <div className="page">
       <ToastStack toasts={toasts} />
-      <button
-        onClick={() => navigate('home')}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8125rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 20, fontFamily: 'var(--font-ui)', padding: 0 }}
-      >
-        <ArrowLeft size={14} /> Home
-      </button>
       <motion.div variants={container} initial="hidden" animate="show">
         <motion.div variants={item}>
           <div className="report-hero">
@@ -114,10 +130,10 @@ export default function Report({ navigate, session }) {
             </div>
             <div className="report-actions">
               <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={() => navigate('debrief')}>
-                <BookOpen size={13} /> Open full debrief
+                <BookOpen size={13} /> Full Debrief
               </button>
-              <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={() => navigate('room')}>
-                <RotateCcw size={13} /> Rehearse again
+              <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)', color: '#E8E5DF' }} onClick={rehearseAgain}>
+                <RotateCcw size={13} /> Rehearse Again
               </button>
               <button
                 className="btn btn-secondary btn-sm"
@@ -129,7 +145,7 @@ export default function Report({ navigate, session }) {
                   transition: 'all 0.2s ease',
                 }}
               >
-                {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy report</>}
+                {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy Report</>}
               </button>
               <button
                 className="btn btn-secondary btn-sm"
@@ -145,7 +161,7 @@ export default function Report({ navigate, session }) {
                 {exporting
                   ? <><Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> Exporting...</>
                   : exportError
-                    ? <><ExternalLink size={13} /> Retry export</>
+                    ? <><ExternalLink size={13} /> Retry Export</>
                     : docUrl
                       ? <><ExternalLink size={13} /> Open in Docs</>
                       : <><ExternalLink size={13} /> Export to Docs</>
@@ -163,7 +179,7 @@ export default function Report({ navigate, session }) {
               fontSize: '0.8125rem', color: '#D97706',
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              <span style={{ fontWeight: 600 }}>AI report unavailable</span>
+              <span style={{ fontWeight: 600 }}>AI Report Unavailable</span>
 . Coaching was not generated for this session.
             </div>
           </motion.div>
@@ -224,7 +240,7 @@ export default function Report({ navigate, session }) {
 
           {activeTab === 'coaching' && (
             <div className="weak-points-section">
-              <div className="section-label" style={{ marginBottom: 16 }}>Top weak points to address</div>
+              <div className="section-label" style={{ marginBottom: 16 }}>Top Weak Points to Address</div>
               {weakPoints.length === 0 ? (
                 <div style={{
                   padding: '32px 24px', borderRadius: 10, textAlign: 'center',
@@ -240,7 +256,7 @@ export default function Report({ navigate, session }) {
                   <div className="weak-point-issue">{w.issue}</div>
                   {w.fix && (
                     <div className="weak-point-fix-block">
-                      <div className="weak-point-fix-label">How to fix</div>
+                      <div className="weak-point-fix-label">How to Fix</div>
                       <div className="weak-point-fix">{w.fix}</div>
                     </div>
                   )}
@@ -250,27 +266,55 @@ export default function Report({ navigate, session }) {
           )}
           {activeTab === 'proposal' && (
             <div style={{
-              whiteSpace: 'pre-wrap', fontSize: '0.875rem', lineHeight: 1.75,
-              color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)',
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '18px 22px',
               background: 'var(--bg-surface)', border: '1px solid var(--border)',
-              borderRadius: 10, padding: '20px 24px', maxHeight: 480, overflowY: 'auto',
+              borderRadius: 12,
             }}>
-              {session.proposalText}
+              <div style={{
+                width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <FileText size={18} style={{ color: 'var(--text-muted)' }} />
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '0.9375rem', fontWeight: 500,
+                  color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {session?.documentName || proposalName}
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                  {session.proposalText.trim().split(/\s+/).filter(Boolean).length} words · used in this session
+                </div>
+              </div>
             </div>
           )}
         </motion.div>
 
         <motion.div variants={item}>
-          <div style={{ display: 'flex', gap: 10, marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+          <div className="report-bottom-actions">
             <button className="btn btn-primary btn-lg" onClick={() => navigate('debrief')}>
-              <BookOpen size={16} /> Open full debrief
+              <BookOpen size={16} /> Open Full Debrief
             </button>
-            <button className="btn btn-secondary btn-lg" onClick={() => navigate('room')}>
-              <RotateCcw size={16} /> Rehearse again
+            <button className="btn btn-secondary btn-lg" onClick={rehearseAgain}>
+              <RotateCcw size={16} /> Rehearse Again
             </button>
-            <button className="btn btn-ghost btn-lg" onClick={() => navigate('home')}>
-              Home
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-ghost btn-lg" style={{ flex: 1 }} onClick={() => navigate('home')}>
+                <Home size={16} /> Home
+              </button>
+              {session?.id && (
+                <button
+                  className="btn btn-ghost btn-lg"
+                  onClick={handleDelete}
+                  style={{ flex: 1, color: '#EF4444', borderColor: 'rgba(239,68,68,0.25)' }}
+                >
+                  <Trash2 size={16} /> Delete Run
+                </button>
+              )}
+            </div>
           </div>
         </motion.div>
       </motion.div>

@@ -88,7 +88,7 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {initial.name ? 'Edit role' : 'Create a custom role'}
+            {initial.name ? 'Edit Role' : 'Create a Custom Role'}
           </div>
           <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
             <X size={18} />
@@ -125,7 +125,7 @@ function PersonaForm({ initial = EMPTY_FORM, onSave, onCancel, colorIdx = 0 }) {
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
           <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSave}>
-            <Check size={13} /> {initial.name ? 'Save changes' : 'Create role'}
+            <Check size={13} /> {initial.name ? 'Save Changes' : 'Create Role'}
           </button>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function PanelLibrary() {
 
       {customPersonas.length > 0 && (
         <>
-          <div className="section-label" style={{ marginBottom: 16 }}>Custom roles</div>
+          <div className="section-label" style={{ marginBottom: 16 }}>Custom Roles</div>
           <div className="panel-cards-grid" style={{ marginBottom: 32 }}>
             {customPersonas.map((p, i) => (
               <div key={p.id} className="panel-card">
@@ -243,7 +243,7 @@ export default function PanelLibrary() {
                   </div>
                   <div className="panel-card-cares-label">Focuses on</div>
                   <ul className="panel-card-cares-list">
-                    {(p.cares || []).map((c, j) => <li key={j}>{c}</li>)}
+                    {(Array.isArray(p.cares) ? p.cares : (p.cares || '').split(',').map(s => s.trim()).filter(Boolean)).map((c, j) => <li key={j}>{c}</li>)}
                   </ul>
                   <div className="panel-card-conditions-label">Conditions met</div>
                   {(p.conditions || []).map(c => (
@@ -277,7 +277,7 @@ export default function PanelLibrary() {
         </>
       )}
 
-      <div className="section-label" style={{ marginBottom: 16 }}>Built-in roles</div>
+      <div className="section-label" style={{ marginBottom: 16 }}>Built-in Roles</div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {LIBRARY_CATS.map(({ key, label }) => (

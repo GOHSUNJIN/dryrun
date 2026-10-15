@@ -27,7 +27,7 @@ export const PERSONAS = [
     dimColor: 'rgba(82,207,195,0.35)',
     panelPct: 37.5,
     category: 'business',
-    cares: ['Data privacy and GDPR compliance', 'Vendor contract terms', 'Accountability if it fails'],
+    cares: ['Data privacy and compliance', 'Vendor contract terms', 'Accountability if it fails'],
     conditions: [
       { id: 'l1', text: 'Data privacy plan confirmed',      met: false },
       { id: 'l2', text: 'Vendor contract terms addressed',  met: false },
@@ -95,7 +95,7 @@ export const PERSONAS = [
     dimColor: 'rgba(96,165,250,0.35)',
     panelPct: 37.5,
     category: 'business',
-    cares: ['Feasibility and tech dependencies', 'Integration effort and security risks', 'Maintenance responsibility post-launch'],
+    cares: ['Feasibility and tech risk', 'Integration effort and security risks', 'Maintenance responsibility post-launch'],
     conditions: [
       { id: 't1', text: 'Technical feasibility confirmed with supporting detail', met: false },
       { id: 't2', text: 'Integration dependencies and risks mapped',              met: false },
@@ -145,7 +145,7 @@ export const PERSONAS = [
     dimColor: 'rgba(16,185,129,0.35)',
     panelPct: 12.5,
     category: 'business',
-    cares: ['Carbon footprint and ESG impact', 'ESG commitments and reporting obligations', 'Supply chain and lifecycle sustainability'],
+    cares: ['Carbon footprint and ESG', 'ESG commitments and reporting obligations', 'Supply chain and lifecycle sustainability'],
     conditions: [
       { id: 'sus1', text: 'Environmental and carbon impact assessed',               met: false },
       { id: 'sus2', text: 'ESG alignment with reporting obligations confirmed',     met: false },
@@ -179,7 +179,7 @@ export const PERSONAS = [
     dimColor: 'rgba(125,211,252,0.35)',
     panelPct: 62.5,
     category: 'business',
-    cares: ['Legal basis for data processing', 'Data minimisation and retention policy', 'Third-party sharing and DPA obligations'],
+    cares: ['Legal basis for processing', 'Data minimisation and retention policy', 'Third-party sharing and DPA obligations'],
     conditions: [
       { id: 'dpo1', text: 'Legal basis for data processing confirmed',       met: false },
       { id: 'dpo2', text: 'Retention and deletion policy defined',           met: false },
@@ -198,7 +198,7 @@ export const PERSONAS = [
     dimColor: 'rgba(248,113,113,0.35)',
     panelPct: 12.5,
     category: 'event',
-    cares: ['Event purpose and expected value', 'Success criteria and outcomes', 'Approval chain and accountability'],
+    cares: ['Event purpose and outcomes', 'Success criteria and outcomes', 'Approval chain and accountability'],
     conditions: [
       { id: 'ed1', text: 'Event purpose and expected outcomes clearly stated', met: false },
       { id: 'ed2', text: 'Success criteria defined',                            met: false },
@@ -215,7 +215,7 @@ export const PERSONAS = [
     dimColor: 'rgba(251,146,60,0.35)',
     panelPct: 37.5,
     category: 'event',
-    cares: ['Itemised budget and per-pax cost', 'Contingency for overruns', 'Vendor payment terms and procurement process'],
+    cares: ['Itemised budget and per-pax', 'Contingency for overruns', 'Vendor payment terms and procurement process'],
     conditions: [
       { id: 'ef1', text: 'Itemised budget with per-pax breakdown provided',          met: false },
       { id: 'ef2', text: 'Contingency plan for cost overruns addressed',             met: false },
@@ -268,7 +268,7 @@ export const PERSONAS = [
     dimColor: 'rgba(129,140,248,0.35)',
     panelPct: 12.5,
     category: 'academic',
-    cares: ['Research methodology and rationale', 'Literature review coverage', 'Feasibility of scope and timeline'],
+    cares: ['Methodology and rationale', 'Literature review coverage', 'Feasibility of scope and timeline'],
     conditions: [
       { id: 'sup1', text: 'Research methodology justified with supporting rationale', met: false },
       { id: 'sup2', text: 'Literature review covers key sources',                     met: false },
@@ -285,7 +285,7 @@ export const PERSONAS = [
     dimColor: 'rgba(248,113,113,0.35)',
     panelPct: 37.5,
     category: 'academic',
-    cares: ['Original knowledge contribution', 'Validity of conclusions drawn from the data', 'Limitations the author has not acknowledged'],
+    cares: ['Originality and contribution', 'Validity of conclusions drawn from the data', 'Limitations the author has not acknowledged'],
     conditions: [
       { id: 'ex1', text: 'Original contribution to the field stated',    met: false },
       { id: 'ex2', text: 'Conclusions supported by the data presented',  met: false },
@@ -302,7 +302,7 @@ export const PERSONAS = [
     dimColor: 'rgba(252,211,77,0.35)',
     panelPct: 62.5,
     category: 'academic',
-    cares: ['Departmental research standards', 'Alignment between methodology and institutional guidelines', 'Coherence of abstract and conclusion'],
+    cares: ['Departmental standards', 'Alignment between methodology and institutional guidelines', 'Coherence of abstract and conclusion'],
     conditions: [
       { id: 'ie1', text: 'Research aligns with departmental standards',           met: false },
       { id: 'ie2', text: 'Methodology consistent with institutional guidelines',  met: false },
@@ -353,7 +353,7 @@ export const PERSONAS = [
     dimColor: 'rgba(163,230,53,0.35)',
     panelPct: 37.5,
     category: 'academic',
-    cares: ['Alignment with funding criteria', 'Value for money and resource justification', 'Impact pathway and dissemination plan'],
+    cares: ['Funding criteria alignment', 'Value for money and resource justification', 'Impact pathway and dissemination plan'],
     conditions: [
       { id: 'rf1', text: 'Alignment with funding criteria confirmed',          met: false },
       { id: 'rf2', text: 'Resource allocation justified for the scope',        met: false },
@@ -389,7 +389,7 @@ export const PERSONAS = [
     dimColor: 'rgba(134,239,172,0.35)',
     panelPct: 37.5,
     category: 'startup',
-    cares: ['Validated user problem and MVP scope', 'MVP scope with clear deferrals', 'Success metrics and how they are measured'],
+    cares: ['User problem and MVP scope', 'MVP scope with clear deferrals', 'Success metrics and how they are measured'],
     conditions: [
       { id: 'pm1', text: 'Core user problem validated with user research',      met: false },
       { id: 'pm2', text: 'MVP scope defined with explicit deferrals listed',    met: false },

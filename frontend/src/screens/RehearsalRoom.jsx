@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon, RefreshCw } from 'lucide-react'
+import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon, RefreshCw, Home, ChevronDown } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
-import { saveSession, loadVoiceSettings, saveVoiceSettings } from '../utils/storage.js'
+import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
 import { getCurrentTime, formatSessionDate } from '../utils/time.js'
 import { useTTS } from '../hooks/useTTS.js'
 import { useElapsedTimer } from '../hooks/useElapsedTimer.js'
@@ -17,9 +17,16 @@ function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
   const isLit       = isActive || isInterrupt
   const metCount    = persona.conditions.filter(c => c.met).length
   const totalCount  = persona.conditions.length
+  const [showTip, setShowTip] = useState(false)
 
   return (
-    <div className={`persona-seat ${isLit ? 'active' : 'dimmed'} ${isThinking ? 'thinking' : ''}`}>
+    <div
+      className={`persona-seat ${isLit ? 'active' : 'dimmed'} ${isThinking ? 'thinking' : ''}`}
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setShowTip(true)}
+      onMouseLeave={() => setShowTip(false)}
+      onClick={() => setShowTip(s => !s)}
+    >
       <div className="seat-ring-wrap">
         <div
           className="seat-ring"
@@ -60,13 +67,78 @@ function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
       <div style={{ fontSize: '0.625rem', color: 'var(--room-text-3)', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
         {metCount}/{totalCount}
       </div>
+
+      {showTip && persona.conditions.length > 0 && (
+        <div
+          className="persona-conditions-tip"
+          style={{
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(12, 10, 9, 0.97)',
+            border: `1px solid ${persona.color}40`,
+            borderRadius: 10,
+            padding: '11px 14px 13px', zIndex: 300,
+            minWidth: 196, maxWidth: 244,
+            boxShadow: `0 16px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04)`,
+            pointerEvents: 'none',
+            whiteSpace: 'normal',
+            textDecoration: 'none',
+            fontFamily: 'var(--font-ui)',
+          }}
+        >
+          <div style={{
+            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: persona.color,
+            marginBottom: 9, textDecoration: 'none', lineHeight: 1,
+          }}>
+            {persona.role}
+          </div>
+          {persona.conditions.map((c, idx) => (
+            <div key={c.id} style={{
+              display: 'flex', gap: 9, alignItems: 'flex-start',
+              marginBottom: idx < persona.conditions.length - 1 ? 7 : 0,
+            }}>
+              <div style={{
+                width: 15, height: 15, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                background: c.met ? 'rgba(5,150,105,0.2)' : 'rgba(255,255,255,0.06)',
+                border: `1.5px solid ${c.met ? '#34D399' : 'rgba(255,255,255,0.18)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {c.met && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399' }} />}
+              </div>
+              <div style={{
+                fontSize: '0.6875rem', lineHeight: 1.45, textDecoration: 'none',
+                color: c.met ? 'rgba(52,211,153,0.9)' : 'rgba(255,255,255,0.6)',
+              }}>
+                {c.text}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function TranscriptMsg({ msg, personas, appearing, onRegenerate }) {
+function TranscriptMsg({ msg, personas, appearing, onRegenerate, regenLabel = 'Try Different Response' }) {
+  if (msg.type === 'closing') {
+    return (
+      <motion.div
+        className="transcript-msg"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        style={{ textAlign: 'center', padding: '20px 12px 8px' }}
+      >
+        <div style={{ fontSize: '0.75rem', color: 'var(--room-text-3)', fontStyle: 'italic', letterSpacing: '0.04em' }}>
+          {msg.text}
+        </div>
+      </motion.div>
+    )
+  }
+
   const isPresenter  = msg.speaker === 'presenter'
   const persona      = personas.find(p => p.id === msg.speaker)
+  if (!isPresenter && !persona) return null
   const replyPersona = msg.replyTo ? personas.find(p => p.id === msg.replyTo) : null
   const [hovered, setHovered] = useState(false)
   const [copied, setCopied]   = useState(false)
@@ -98,6 +170,26 @@ function TranscriptMsg({ msg, personas, appearing, onRegenerate }) {
             </span>
           )}
           <span className="msg-time">{msg.time}</span>
+          {!appearing && (
+            <button
+              className="msg-copy-btn"
+              onClick={handleCopy}
+              style={{
+                marginLeft: 6,
+                opacity: hovered ? 1 : 0,
+                pointerEvents: hovered ? 'auto' : 'none',
+                background: copied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 4, cursor: 'pointer',
+                padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3,
+                fontSize: '0.625rem', color: copied ? '#34D399' : 'var(--room-text-3)',
+                transition: 'all 0.15s ease', flexShrink: 0,
+              }}
+            >
+              {copied ? <Check size={9} /> : <Copy size={9} />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          )}
         </div>
       )}
 
@@ -119,40 +211,24 @@ function TranscriptMsg({ msg, personas, appearing, onRegenerate }) {
         </div>
       )}
 
-      {hovered && !appearing && (
-        <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4 }}>
-          {onRegenerate && (
-            <button
-              onClick={onRegenerate}
-              title="Regenerate this response"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 5, cursor: 'pointer',
-                padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: '0.6875rem', color: 'var(--room-text-2)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <RefreshCw size={10} /> Retry
-            </button>
-          )}
-          <button
-            onClick={handleCopy}
-            style={{
-              background: copied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 5, cursor: 'pointer',
-              padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: '0.6875rem', color: copied ? '#34D399' : 'var(--room-text-2)',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {copied ? <Check size={10} /> : <Copy size={10} />}
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        </div>
+      {onRegenerate && !appearing && (
+        <button
+          onClick={onRegenerate}
+          title={regenLabel}
+          style={{
+            alignSelf: 'flex-start', marginTop: 6,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 5, cursor: 'pointer',
+            padding: '3px 7px', display: 'flex', alignItems: 'center', gap: 4,
+            fontSize: '0.6875rem', color: 'var(--room-text-3)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <RefreshCw size={10} /> {regenLabel}
+        </button>
       )}
+
     </motion.div>
   )
 }
@@ -229,6 +305,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const [exitOfferDismissed, setExitOfferDismissed] = useState(false)
   const [showProposal, setShowProposal]             = useState(false)
   const [preRegenState, setPreRegenState]           = useState(null)
+  const [preRegenFollowUpState, setPreRegenFollowUpState] = useState(null)
 
   const { elapsed, getElapsedMinutes } = useElapsedTimer()
 
@@ -238,14 +315,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const roomStateRef      = useRef(roomState)
   const speechOnRef       = useRef(speechOn)
   const openingsFiredRef  = useRef(false)
-  const userScrolledUpRef = useRef(false)
+  const userScrolledUpRef  = useRef(false)
+  const shownOpeningTexts = useRef(new Set())
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
 
   const { enqueueSpeak, cancelTTS } = useTTS(speechOnRef)
 
 
   const turnCount = localTranscript.filter(m => m.speaker === 'presenter').length
 
-  const allPersonas = PERSONAS.map(p => ({
+  const allPersonas = [...PERSONAS, ...loadCustomPersonas()].map(p => ({
     ...p,
     conditions: (p.conditions || []).map(c => ({
       ...c,
@@ -272,6 +351,18 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     && Object.keys(localConditions).length > 0
     && Object.values(localConditions).every(Boolean)
   const showExitOffer    = allConditionsMet && !exitOfferDismissed
+
+  // Redirect to home if session was lost (e.g. page refresh on /room)
+  useEffect(() => {
+    if (!session.proposalText) navigate('home')
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Warn before browser refresh/close during an active session
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [])
 
   // Fire one random opening question on mount. Guard against StrictMode double-invocation.
   useEffect(() => {
@@ -301,6 +392,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   useEffect(() => { roomStateRef.current = roomState }, [roomState])
   useEffect(() => { speechOnRef.current  = speechOn  }, [speechOn])
 
+  // Clear appearing state once room is idle so retry button becomes visible
+  useEffect(() => {
+    if (roomState === 'idle' || roomState === 'condition-met') setAppearingMsgId(null)
+  }, [roomState])
+
   // Auto-resize textarea
   useEffect(() => {
     const el = inputRef.current
@@ -323,7 +419,16 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
   const handleTranscriptScroll = useCallback(() => {
     const el = transcriptRef.current
     if (!el) return
-    userScrolledUpRef.current = (el.scrollHeight - el.scrollTop - el.clientHeight) > 40
+    const scrolledUp = (el.scrollHeight - el.scrollTop - el.clientHeight) > 60
+    userScrolledUpRef.current = scrolledUp
+    setShowScrollBtn(scrolledUp)
+  }, [])
+
+  const scrollToBottom = useCallback(() => {
+    const el = transcriptRef.current
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    userScrolledUpRef.current = false
+    setShowScrollBtn(false)
   }, [])
 
   const handleRetry = () => {
@@ -332,14 +437,28 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     setApiError(false)
   }
 
+  const appendClosingMessage = (delay) => {
+    setTimeout(() => {
+      setLocalTranscript(prev => [...prev, {
+        id: Date.now() + 100,
+        type: 'closing',
+        speaker: 'closing',
+        text: 'Thank you for your presentation. The panel has no further questions.',
+        time: getCurrentTime(),
+      }])
+    }, delay)
+  }
+
   const handleSend = async (textOverride) => {
     const text = textOverride !== undefined ? String(textOverride).trim() : inputValue.trim()
     if (!text || roomStateRef.current === 'thinking') return
 
     userScrolledUpRef.current = false
+    setShowScrollBtn(false)
     if (listening) stopListening()
     cancelTTS()
 
+    const isLastTurn = hasRealSession && turnsLeft === 1
     const conditionsBeforeThisTurn = { ...localConditions }
     setPreRegenState(null)
 
@@ -404,6 +523,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         if (followUp) {
           setRoomState('speaking')
           updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+          setPreRegenFollowUpState({ transcriptBeforeFollowUp: updatedTranscript, conditionsBeforeFollowUp: updatedConditions })
 
           setTimeout(() => {
             setTypingPersonaId(followUp.speaker)
@@ -420,6 +540,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               speaker: followUp.speaker,
               text: followUp.text,
               time: getCurrentTime(),
+              isFollowUp: true,
               ...(followUp.source ? { source: followUp.source } : {}),
             }
             const finalTranscript = [...updatedTranscript, fuMsg]
@@ -436,9 +557,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             if (hasCondMet || fuCondsMet.length > 0) {
               setRoomState('condition-met')
               setTimeout(() => setRoomState('idle'), 2200)
+              if (isLastTurn) appendClosingMessage(2500)
             } else {
               setRoomState('speaking')
-              setTimeout(() => setRoomState('idle'), 3500)
+              setTimeout(() => setRoomState('idle'), 1400)
+              if (isLastTurn) appendClosingMessage(3800)
             }
           }, 4500)
         } else {
@@ -447,9 +570,11 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           if (hasCondMet) {
             setRoomState('condition-met')
             setTimeout(() => setRoomState('idle'), 2200)
+            if (isLastTurn) appendClosingMessage(2500)
           } else {
             setRoomState('speaking')
-            setTimeout(() => setRoomState('idle'), 3500)
+            setTimeout(() => setRoomState('idle'), 1400)
+            if (isLastTurn) appendClosingMessage(3800)
           }
         }
       } catch (err) {
@@ -484,12 +609,77 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     }, 800)
   }
 
+  const handleRegenerateOpening = async () => {
+    if (roomState === 'thinking') return
+    cancelTTS()
+
+    const currentText = localTranscript[localTranscript.length - 1]?.text
+    shownOpeningTexts.current.add(currentText)
+    const previousResponses = [...shownOpeningTexts.current]
+
+    const placeholder = visiblePersonas[Math.floor(Math.random() * visiblePersonas.length)]
+    setTypingPersonaId(placeholder?.id || null)
+    setRoomState('thinking')
+
+    try {
+      const res = await fetch('/api/session/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proposal_text:      session.proposalText,
+          persona_ids:        session.personaIds,
+          transcript:         [],
+          conditions:         {},
+          config:             { ...session.config, regen: true },
+          fact_check:         session.factCheckNotes || '',
+          custom_personas:    {},
+          previous_responses: previousResponses,
+        }),
+      })
+
+      if (!res.ok) throw new Error(`API error ${res.status}`)
+      const data = await res.json()
+      const newMsg = {
+        id: Date.now(),
+        speaker: data.speaker,
+        text: data.text,
+        time: getCurrentTime(),
+        type: 'opening',
+      }
+      shownOpeningTexts.current.add(newMsg.text)
+      setTypingPersonaId(null)
+      setLocalTranscript([newMsg])
+      setActiveSpeaker(newMsg.speaker)
+      setAppearingMsgId(newMsg.id)
+      setRoomState('speaking')
+      enqueueSpeak(newMsg.text, newMsg.speaker)
+      setTimeout(() => setRoomState('idle'), 1400)
+    } catch (err) {
+      console.error('[regen-opening] API failed, falling back to local pool:', err.message)
+      setTypingPersonaId(null)
+      const pool = openingMsgs.filter(m => !shownOpeningTexts.current.has(m.text))
+      if (!pool.length) { setRoomState('idle'); return }
+      const newMsg = { ...([...pool].sort(() => Math.random() - 0.5))[0], id: Date.now(), time: getCurrentTime() }
+      setLocalTranscript([newMsg])
+      setActiveSpeaker(newMsg.speaker)
+      setAppearingMsgId(newMsg.id)
+      setRoomState('speaking')
+      enqueueSpeak(newMsg.text, newMsg.speaker)
+      setTimeout(() => setRoomState('idle'), 1400)
+    }
+  }
+
   const handleRegenerate = async () => {
     if (!preRegenState || roomState === 'thinking') return
     const { transcriptBeforeAi, conditionsBeforeAi } = preRegenState
 
+    const previousResponses = localTranscript
+      .slice(transcriptBeforeAi.length)
+      .filter(m => m.speaker !== 'presenter')
+      .map(m => m.text)
+      .filter(Boolean)
+
     cancelTTS()
-    setPreRegenState(null)
     setLocalTranscript(transcriptBeforeAi)
     setLocalConditions(conditionsBeforeAi)
     setRoomState('thinking')
@@ -505,19 +695,19 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          proposal_text:   session.proposalText,
-          persona_ids:     session.personaIds,
-          transcript:      transcriptBeforeAi,
-          conditions:      conditionsBeforeAi,
-          config:          { ...session.config, turns_remaining: regenTurnsLeft },
-          fact_check:      session.factCheckNotes || '',
-          custom_personas: session.customPersonaDefs || {},
+          proposal_text:      session.proposalText,
+          persona_ids:        session.personaIds,
+          transcript:         transcriptBeforeAi,
+          conditions:         conditionsBeforeAi,
+          config:             { ...session.config, turns_remaining: regenTurnsLeft },
+          fact_check:         session.factCheckNotes || '',
+          custom_personas:    session.customPersonaDefs || {},
+          previous_responses: previousResponses,
         }),
       })
 
       if (!res.ok) throw new Error(`API error ${res.status}`)
       const data = await res.json()
-
       if (!data.text?.trim()) {
         setTypingPersonaId(null)
         setRoomState('idle')
@@ -548,6 +738,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       if (followUp) {
         setRoomState('speaking')
         updateSession({ transcript: updatedTranscript, conditions: updatedConditions })
+        setPreRegenFollowUpState({ transcriptBeforeFollowUp: updatedTranscript, conditionsBeforeFollowUp: updatedConditions })
 
         setTimeout(() => {
           setTypingPersonaId(followUp.speaker)
@@ -564,6 +755,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             speaker: followUp.speaker,
             text: followUp.text,
             time: getCurrentTime(),
+            isFollowUp: true,
             ...(followUp.source ? { source: followUp.source } : {}),
           }
           const finalTranscript = [...updatedTranscript, fuMsg]
@@ -582,7 +774,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             setTimeout(() => setRoomState('idle'), 2200)
           } else {
             setRoomState('speaking')
-            setTimeout(() => setRoomState('idle'), 3500)
+            setTimeout(() => setRoomState('idle'), 1400)
           }
         }, 4500)
       } else {
@@ -593,11 +785,92 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           setTimeout(() => setRoomState('idle'), 2200)
         } else {
           setRoomState('speaking')
-          setTimeout(() => setRoomState('idle'), 3500)
+          setTimeout(() => setRoomState('idle'), 1400)
         }
       }
     } catch (err) {
       console.error('[regenerate] failed:', err.message)
+      setTypingPersonaId(null)
+      setRoomState('idle')
+    }
+  }
+
+  const handleRegenerateFollowUp = async () => {
+    if (!preRegenFollowUpState || roomState === 'thinking') return
+    const { transcriptBeforeFollowUp, conditionsBeforeFollowUp } = preRegenFollowUpState
+
+    const previousResponses = localTranscript
+      .slice(transcriptBeforeFollowUp.length)
+      .filter(m => m.speaker !== 'presenter')
+      .map(m => m.text)
+      .filter(Boolean)
+
+    cancelTTS()
+    setLocalTranscript(transcriptBeforeFollowUp)
+    setLocalConditions(conditionsBeforeFollowUp)
+    setRoomState('thinking')
+
+    const lastSpeakerId = transcriptBeforeFollowUp[transcriptBeforeFollowUp.length - 1]?.speaker
+    const nextPersona = visiblePersonas.find(p => p.id !== lastSpeakerId) || visiblePersonas[0]
+    if (!nextPersona) { setRoomState('idle'); return }
+    setTypingPersonaId(nextPersona.id)
+
+    try {
+      const res = await fetch('/api/session/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proposal_text:      session.proposalText,
+          persona_ids:        session.personaIds,
+          transcript:         transcriptBeforeFollowUp,
+          conditions:         conditionsBeforeFollowUp,
+          config:             { ...session.config, follow_up_only: true },
+          fact_check:         session.factCheckNotes || '',
+          custom_personas:    session.customPersonaDefs || {},
+          previous_responses: previousResponses,
+        }),
+      })
+
+      if (!res.ok) throw new Error(`API error ${res.status}`)
+      const data = await res.json()
+
+      if (!data.text?.trim()) {
+        setTypingPersonaId(null)
+        setRoomState('idle')
+        return
+      }
+
+      const fuMsg = {
+        id: Date.now() + 1,
+        speaker: data.speaker,
+        text: data.text,
+        time: getCurrentTime(),
+        isFollowUp: true,
+        ...(data.source ? { source: data.source } : {}),
+      }
+      const finalTranscript = [...transcriptBeforeFollowUp, fuMsg]
+      const condsMet = data.conditions_met || []
+      const finalConditions = { ...conditionsBeforeFollowUp }
+      for (const cid of condsMet) finalConditions[cid] = true
+
+      setTypingPersonaId(null)
+      setLocalTranscript(finalTranscript)
+      setLocalConditions(finalConditions)
+      setActiveSpeaker(data.speaker)
+      setAppearingMsgId(fuMsg.id)
+      enqueueSpeak(fuMsg.text, fuMsg.speaker)
+      updateSession({ transcript: finalTranscript, conditions: finalConditions })
+      setPreRegenFollowUpState({ transcriptBeforeFollowUp, conditionsBeforeFollowUp })
+
+      if (condsMet.length > 0) {
+        setRoomState('condition-met')
+        setTimeout(() => setRoomState('idle'), 2200)
+      } else {
+        setRoomState('speaking')
+        setTimeout(() => setRoomState('idle'), 1400)
+      }
+    } catch (err) {
+      console.error('[regen-follow-up] failed:', err.message)
       setTypingPersonaId(null)
       setRoomState('idle')
     }
@@ -615,11 +888,13 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       id:            Date.now(),
       proposal:      session.proposalName || 'Untitled proposal',
       proposalText:  session.proposalText || '',
+      documentName:  session.documentName || '',
       date:          formatSessionDate(),
       condMet,
       condTotal,
       duration:      sessionDuration,
       personaIds:    session.personaIds || [],
+      config:        session.config || {},
       conditions:    localConditions,
       reportData,
       linkedMeeting: session.linkedMeeting || '',
@@ -628,8 +903,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     if (session.demoMode) {
       setGeneratingReport(true)
       const reportData = { demo: true, weak_points: [], moments: [] }
-      saveSession(buildRecord(reportData))
-      updateSession({ reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
+      const record = buildRecord(reportData)
+      saveSession(record)
+      updateSession({ id: record.id, reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
       navigate('report')
       return
     }
@@ -649,8 +925,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       })
       if (!res.ok) throw new Error(`API error ${res.status}`)
       const reportData = await res.json()
-      saveSession(buildRecord(reportData))
-      updateSession({ reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
+      const record = buildRecord(reportData)
+      saveSession(record)
+      updateSession({ id: record.id, reportData, conditions: localConditions, duration: sessionDuration, transcript: localTranscript })
       navigate('report')
     } catch (err) {
       console.error('[session/end] failed  -  report will be unavailable:', err.message)
@@ -713,7 +990,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       <header className="room-topbar">
         <div className="room-topbar-left">
-          <div className="room-logo">
+          <button
+            className="room-logo"
+            onClick={() => {
+              if (localTranscript.length > 1 && !window.confirm('Leave this session? Progress will not be saved.')) return
+              navigate('home')
+            }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
             <div className="room-logo-mark">
               <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
                 <rect x="1" y="4" width="5" height="9" rx="1" fill="#1C1917"/>
@@ -721,12 +1005,23 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               </svg>
             </div>
             <span className="room-logo-text">Dry Run</span>
-          </div>
+          </button>
           <div className="room-divider" />
           <span className="room-proposal-title">{session.proposalName || 'Untitled proposal'}</span>
         </div>
 
         <div className="room-topbar-right">
+          <button
+            className="room-input-btn room-topbar-home"
+            onClick={() => {
+              if (localTranscript.length > 1 && !window.confirm('Leave this session? Progress will not be saved.')) return
+              navigate('home')
+            }}
+            title="Go to home"
+            style={{ background: 'transparent', border: 'none', color: 'var(--room-text-3)', cursor: 'pointer', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center' }}
+          >
+            <Home size={15} />
+          </button>
           {session.proposalText && (
             <button
               className="room-input-btn"
@@ -755,7 +1050,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           >
             {speechOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
-          <span style={{ fontSize: '0.75rem', color: 'var(--room-text-3)', fontVariantNumeric: 'tabular-nums', minWidth: 34 }}>
+          <span className="room-elapsed" style={{ fontSize: '0.75rem', color: 'var(--room-text-3)', fontVariantNumeric: 'tabular-nums', minWidth: 34 }}>
             {elapsed}
           </span>
           <span
@@ -775,8 +1070,8 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             style={{ opacity: generatingReport ? 0.7 : 1 }}
           >
             {generatingReport
-              ? <><Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> Generating report...</>
-              : 'End session'}
+              ? <><Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> <span className="room-end-text-full">Generating Report...</span></>
+              : <><span className="room-end-text-full">End Session</span><span className="room-end-text-short">End</span></>}
           </button>
         </div>
       </header>
@@ -805,20 +1100,47 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       <div className="room-sep" />
 
-      <div className="room-transcript" ref={transcriptRef} onScroll={handleTranscriptScroll}>
+      <div className="room-transcript" ref={transcriptRef} onScroll={handleTranscriptScroll} style={{ position: 'relative' }}>
+        {showScrollBtn && (
+          <button
+            onClick={scrollToBottom}
+            style={{
+              position: 'sticky', top: 12, zIndex: 20,
+              display: 'flex', alignItems: 'center', gap: 5,
+              margin: '0 auto', padding: '5px 14px',
+              background: 'rgba(26,28,33,0.92)',
+              border: '1px solid var(--room-border)',
+              borderRadius: 20, cursor: 'pointer',
+              fontSize: '0.75rem', color: 'var(--room-text-2)',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+            }}
+          >
+            <ChevronDown size={13} /> Jump to Latest
+          </button>
+        )}
         <div className="room-transcript-inner">
           {localTranscript.map((msg, idx) => {
-            const isLastMsg   = idx === localTranscript.length - 1
-            const isAiMsg     = msg.speaker !== 'presenter'
-            const canRegen    = isLastMsg && isAiMsg && preRegenState && hasRealSession && !session.demoMode
+            const isLastMsg      = idx === localTranscript.length - 1
+            const isAiMsg        = msg.speaker !== 'presenter'
+            const isOpening      = isLastMsg && isAiMsg && turnCount === 0 && openingMsgs.length > 1 && hasRealSession && !session.demoMode
+            const canRegenFollowUp = isLastMsg && msg.isFollowUp && preRegenFollowUpState && hasRealSession && !session.demoMode
               && (roomState === 'idle' || roomState === 'condition-met')
+            const canRegen       = isLastMsg && isAiMsg && !msg.isFollowUp && preRegenState && hasRealSession && !session.demoMode
+              && (roomState === 'idle' || roomState === 'condition-met')
+            const showRetry      = (canRegen || isOpening || canRegenFollowUp) && (roomState === 'idle' || roomState === 'condition-met')
+            const regenHandler   = showRetry
+              ? (isOpening ? handleRegenerateOpening : canRegenFollowUp ? handleRegenerateFollowUp : handleRegenerate)
+              : undefined
+            const regenLabel     = canRegenFollowUp ? 'Regenerate Question' : 'Try Different Response'
             return (
               <TranscriptMsg
                 key={msg.id}
                 msg={msg}
                 personas={visiblePersonas}
                 appearing={msg.id === appearingMsgId}
-                onRegenerate={canRegen ? handleRegenerate : undefined}
+                onRegenerate={regenHandler}
+                regenLabel={regenLabel}
               />
             )
           })}
@@ -831,7 +1153,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       {roomState === 'condition-met' && (
         <div className="room-banner-wrap">
           <div className="room-banner success">
-            <Check size={13} style={{ flexShrink: 0 }} /> Condition met
+            <Check size={13} style={{ flexShrink: 0 }} /> Condition Met
           </div>
         </div>
       )}
@@ -861,7 +1183,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               disabled={generatingReport}
               style={{ background: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.3)', color: '#D97706', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
             >
-              {generatingReport ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'End and get report'}
+              {generatingReport ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'End and Get Report'}
             </button>
           </div>
         </div>
@@ -881,14 +1203,14 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
                 className="btn btn-secondary btn-sm"
                 onClick={() => setExitOfferDismissed(true)}
                 style={{ background: 'transparent', borderColor: 'rgba(255,255,255,0.12)', color: 'var(--room-text-2)', fontSize: '0.75rem' }}
-              >Keep going</button>
+              >Keep Going</button>
               <button
                 className="btn btn-sm"
                 onClick={handleEndSession}
                 disabled={generatingReport}
                 style={{ background: '#059669', borderColor: '#059669', color: '#fff', fontSize: '0.75rem' }}
               >
-                {generatingReport ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'End and get report'}
+                {generatingReport ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> : 'End and Get Report'}
               </button>
             </div>
           </div>

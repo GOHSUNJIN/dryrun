@@ -27,6 +27,14 @@ export function saveSession(sessionSummary) {
   saveSessions([sessionSummary, ...prev].slice(0, 20))
 }
 
+export function nextSessionName(baseName) {
+  const base = (baseName || '').replace(/\s+\d+$/, '').trim() || 'Untitled proposal'
+  const existing = new Set(loadSessions().map(s => (s.proposal || '').trim()))
+  let n = 2
+  while (existing.has(`${base} ${n}`)) n++
+  return `${base} ${n}`
+}
+
 export function deleteSession(sessionId) {
   saveSessions(loadSessions().filter(s => s.id !== sessionId))
 }
@@ -153,6 +161,10 @@ export function renameProposal(oldName, newName) {
   saveSessions(loadSessions().map(s => s.proposal === oldName ? { ...s, proposal: newName } : s))
 }
 
+export function renameSession(sessionId, newName) {
+  saveSessions(loadSessions().map(s => s.id === sessionId ? { ...s, proposal: newName } : s))
+}
+
 export function updateSessionMeeting(sessionId, newLinkedMeeting) {
   saveSessions(loadSessions().map(s =>
     s.id === sessionId ? { ...s, linkedMeeting: newLinkedMeeting || '' } : s
@@ -214,6 +226,9 @@ export function deleteCalEvent(name) {
   const events = loadCalEvents()
   if (!Array.isArray(events)) return
   saveCalEvents(events.filter(e => e.name !== name))
+  saveSessions(loadSessions().map(s =>
+    s.linkedMeeting === name ? { ...s, linkedMeeting: '' } : s
+  ))
 }
 
 export function loadDismissedSpots() {
@@ -236,7 +251,9 @@ export function groupSessionsByProposal(sessions) {
 
   const groups = {}
   for (const s of sessions) {
-    const key = s.linkedMeeting || (meetingNames.has(s.proposal) ? s.proposal : null)
+    const key = (s.linkedMeeting && meetingNames.has(s.linkedMeeting))
+      ? s.linkedMeeting
+      : (meetingNames.has(s.proposal) ? s.proposal : null)
     if (key) {
       if (!groups[key]) groups[key] = { proposal: key, linkedMeeting: key, noMeeting: false, sessions: [] }
       groups[key].sessions.push(s)
