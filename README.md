@@ -86,14 +86,6 @@ The API is fully stateless. Every request includes the full proposal text, the a
 
 ```
 frontend/
-  api/
-    _lib/
-      core.js            Gemini logic (local dev path)
-      fallback.js        scripted demo data (local dev path)
-    session/
-      start.js           POST /api/session/start
-      message.js         POST /api/session/message
-      end.js             POST /api/session/end
   src/
     App.jsx              root: screen routing and session state
     components/
@@ -124,14 +116,6 @@ functions/
   package.json           Node 22, ES module, firebase-functions v2 and @google/genai
 firebase.json            hosting rewrites: /api/* -> Cloud Functions, ** -> index.html
 .firebaserc              project alias: dry-run-1608
-backend/
-  agents/
-    core.py              Python Gemini logic (Cloud Run path)
-  main.py                terminal rehearsal entry point (original prototype)
-  server.py              FastAPI server (for Cloud Run deployment)
-  Dockerfile             multi-stage: Node 20 builds React, Python 3.12 runs FastAPI
-tests/
-  test_core.py           126 pytest tests for backend/agents/core.py
 ```
 
 ---
@@ -302,8 +286,6 @@ If AI is unavailable the response also includes `"demo": true` and `"demo_reason
 
 ## Run locally
 
-### Web app with live AI
-
 ```bash
 cd frontend
 npm install
@@ -316,27 +298,11 @@ Set `GEMINI_API_KEY` in `frontend/.env`:
 GEMINI_API_KEY=your_google_ai_studio_key_here
 ```
 
-The Vite dev server proxies `/api/*` to the local functions in `frontend/api/`. Gemini calls go directly from the function.
-
-### Web app without AI (demo mode)
-
-Run the same `npm run dev` command without an API key. The room falls back to scripted responses. All screens and navigation work.
-
-### Terminal (original prototype)
-
-```bash
-pip install -r requirements.txt
-# set GEMINI_API_KEY
-python main.py
-```
-
-Type at the `You:` prompt. Type `quit` to end and receive a coaching report in the terminal.
+Without an API key the room falls back to scripted responses. All screens and navigation work.
 
 ---
 
 ## Deploy
-
-### Firebase (primary)
 
 ```bash
 # Install Firebase CLI
@@ -356,21 +322,6 @@ firebase functions:secrets:set GEMINI_API_KEY
 ```
 
 Firebase Hosting rewrites `/api/*` paths to the corresponding Cloud Function. Everything else serves `index.html` for client-side routing.
-
-### Cloud Run (optional)
-
-```bash
-gcloud builds submit --tag gcr.io/dry-run-1608/dryrun
-gcloud run deploy dryrun \
-  --image gcr.io/dry-run-1608/dryrun \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest \
-  --project dry-run-1608
-```
-
-The `Dockerfile` does a multi-stage build: Node 20 compiles the React app then Python 3.12 runs FastAPI and serves the compiled static files from the same container.
 
 ---
 
@@ -394,7 +345,6 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - [x] Firebase Hosting (Google Cloud static hosting with rewrite rules)
 - [x] Firebase Secret Manager (Google Cloud secrets for API key)
 - [x] Live deployment: https://dry-run-1608.web.app
-- [ ] Google Cloud Run backend (Python FastAPI ready in `server.py` and `Dockerfile`)
 - [ ] 3-minute demo video
 - [ ] PDF pitch deck
 
@@ -496,10 +446,7 @@ Built for the Google Cloud AI Builder Cup 2026, theme "Future of Work and Enterp
 - Weak spot detail popup: issue text, how-to-fix callout and session list on click
 - Calendar-synced meetings appear in Past Sessions as empty groups before any rehearsals
 - Singapore-localised persona names across all 28 built-in roles
-- 126 pytest tests covering all Gemini logic including full multi-turn session simulation
-
 ### Still to do
-- Google Cloud Run backend (Dockerfile ready)
 - 3-minute demo video
 - PDF pitch deck
 
