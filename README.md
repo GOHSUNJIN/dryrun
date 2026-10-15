@@ -13,7 +13,7 @@ Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has 
 
 ## The Team
 
-**A.L.A.N** -- Always Learning, Always New
+**A.L.A.N** | Always Learning, Always New
 
 | Role | Name | LinkedIn |
 |---|---|---|
@@ -83,7 +83,7 @@ Every core feature runs on Google Cloud. The AI, backend, hosting, secrets and a
 
 Three structured Gemini calls, each returning a single JSON response. No streaming. No server-side state.
 
-### `factCheckProposal` -- Google Search grounding
+### `factCheckProposal` (Google Search grounding)
 
 Called at session start when the Fact-Checker persona is selected. Gemini searches the web and returns a briefing of verified and disputed claims from the proposal. This briefing is injected into every Fact-Checker response for the rest of the session.
 
@@ -222,7 +222,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 | Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
 | Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
 | Policy | Zul (Policy Analyst), Boon (Regulatory Advisor), Nurul (Community Representative) |
-| General | Usagi (General Reviewer) -- auto-selected when no targeted panelists are detected |
+| General | Usagi (General Reviewer) · auto-selected when no targeted panelists are detected |
 
 Custom personas follow the same structure and are passed to every API call in `custom_personas`.
 
