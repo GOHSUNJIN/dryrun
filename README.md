@@ -96,7 +96,7 @@ One call per session. Returns one tailored opening challenge per selected paneli
 Called after every presenter turn. Returns the next panelist's response and an optional second panelist follow-up in a single call. The prompt applies several layers of intelligence:
 
 - **Speaker selection.** The previous questioner has first right of reply. After 2 consecutive turns with the same panelist, the AI rotates to the one with the most unmet conditions.
-- **Condition acknowledgment.** Only marks a condition met when the presenter explicitly addresses it with concrete information.
+- **Condition acknowledgment.** How strictly conditions are marked depends on toughness: Supportive accepts a meaningful address of the topic, Balanced requires explicit concrete information and Tough requires every specific detail with concrete evidence.
 - **Skip detection.** If the presenter signals they cannot answer, the AI rotates to a different panelist rather than pressing the same question.
 - **Pile-on trigger.** If the answer contradicts another panelist's domain a second response is returned in `follow_up`.
 - **Regeneration.** When the presenter clicks "Try Different Response" the previously shown responses are sent as rejected examples so the AI cannot repeat them.
