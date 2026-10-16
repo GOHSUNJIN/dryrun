@@ -8,7 +8,7 @@ An AI rehearsal room powered by Gemini. You upload a proposal, face a panel of A
 **Demo:** https://youtu.be/SVNpqS2siMA  
 **Category:** Future of Work and Enterprise Productivity  
 **Hackathon:** Google Cloud AI Builder Cup 2026  
-**Stack:** Gemini Flash + Google Search grounding + Firebase Hosting + Cloud Functions v2
+**Stack:** Gemini 3.8 Flash + Google Search grounding + Firebase Hosting + Cloud Functions v2
 
 ---
 
@@ -82,7 +82,7 @@ Every core feature runs on Google Cloud. The AI, backend, hosting, secrets and a
 
 ## How the AI Works
 
-Four structured Gemini calls per session. No streaming. No server-side state. Three return JSON; `factCheckProposal` returns a plain-text briefing injected into the session.
+Five structured Gemini calls per session. No streaming. No server-side state. Three return JSON; `factCheckProposal` returns a plain-text briefing injected into the session.
 
 ### `factCheckProposal` (Google Search grounding)
 
@@ -200,7 +200,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 - Conditions tab: met/unmet per panelist
 - Coaching tab: 2-4 gap areas with fixes
 - Proposal tab: original filename and word count
-- Debrief covers 4-7 annotated moments per session (weak turns get scripted alternatives; strong turns get coaching notes on how to reinforce them)
+- Debrief covers up to 7 annotated moments per session (weak turns get scripted alternatives; strong turns get coaching notes on how to reinforce them)
 - Export to Google Docs; copy to clipboard
 - Delete run directly from the report page
 
