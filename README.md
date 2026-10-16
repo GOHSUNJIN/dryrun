@@ -265,7 +265,7 @@ State lives in `App.jsx` and flows down as props. Never stored on a server.
 { "proposal_text": "...", "available_ids": ["finance", "legal", ...] }
 ```
 
-Returns `persona_ids` — the recommended panel for the proposal. Used to auto-populate the panel selector before the session starts.
+Returns `persona_ids`: the recommended panel for the proposal. Used to auto-populate the panel selector before the session starts.
 
 ### `POST /api/extract-document`
 
@@ -273,7 +273,7 @@ Returns `persona_ids` — the recommended panel for the proposal. Used to auto-p
 { "pages": [{ "data": "<base64>", "type": "image/jpeg" }], "filename": "proposal.pdf" }
 ```
 
-Returns `text` — extracted plain text from uploaded PDF, DOCX or PPTX files. Handled server-side using Gemini vision for scanned PDFs.
+Returns `text`: extracted plain text from uploaded PDF, DOCX or PPTX files. Handled server-side using Gemini vision for scanned PDFs.
 
 ### `POST /api/session/start`
 
@@ -326,7 +326,7 @@ npm install
 npm run dev
 ```
 
-The frontend calls `/api/...` which in local dev has no backend — the app runs in demo mode with scripted responses. All screens and navigation work. To connect to live AI, deploy the Functions and point the dev server at the deployed URLs, or run the Firebase emulator suite.
+The frontend calls `/api/...` which in local dev has no backend. The app runs in demo mode with scripted responses. All screens and navigation work. To connect to live AI, deploy the Functions and point the dev server at the deployed URLs or run the Firebase emulator suite.
 
 ---
 
