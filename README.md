@@ -17,8 +17,8 @@ Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has 
 
 | Role | Name | LinkedIn |
 |---|---|---|
-| Developer | Xavier | [linkedin.com/in/gohsunjin](https://www.linkedin.com/in/gohsunjin) |
-| Support | Angelo | [linkedin.com/in/prabhakaran-ritish-45286921a](https://linkedin.com/in/prabhakaran-ritish-45286921a) |
+| Developer | Goh Sun Jin | [linkedin.com/in/gohsunjin](https://www.linkedin.com/in/gohsunjin) |
+| Support | Prabhakaran Ritish | [linkedin.com/in/prabhakaran-ritish-45286921a](https://linkedin.com/in/prabhakaran-ritish-45286921a) |
 
 ---
 
