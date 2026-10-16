@@ -5,6 +5,7 @@
 Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has a distinct agenda, asks hard questions and only backs down when you address their specific concerns with real evidence. After the session you get a line-by-line coaching report showing exactly what to prepare before the real meeting.
 
 **Live:** https://dry-run-1608.web.app  
+**Demo:** https://youtu.be/SVNpqS2siMA  
 **Category:** Future of Work and Enterprise Productivity  
 **Hackathon:** Google Cloud AI Builder Cup 2026  
 **Works on:** Desktop and mobile
