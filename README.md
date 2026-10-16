@@ -217,11 +217,11 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 
 | Category | Panelists |
 |---|---|
-| Business | Xavier (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Angelo (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
+| Business | Xavier (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Angelo (Fact-Checker), Ethan (Sustainability), William (Customer Success), Wilfred (DPO) |
 | Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
-| Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
-| Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
-| Policy | Zul (Policy Analyst), Boon (Regulatory Advisor), Nurul (Community Representative) |
+| Event Planning | Syaqiq (Event Director), Darren (Finance Approver), Paul (Safety Officer), Samuel (Programme Lead) |
+| Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Jawad (Industry Mentor), Dr. Lim (Research Funder) |
+| Policy | Jay (Policy Analyst), Bhone (Regulatory Advisor), Justin (Community Representative) |
 | General | Usagi (General Reviewer) · auto-selected when no targeted panelists are detected |
 
 Custom personas follow the same structure and are passed to every API call in `custom_personas`.

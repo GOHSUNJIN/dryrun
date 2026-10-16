@@ -116,7 +116,7 @@ const PERSONA_DEFS = {
     ],
   },
   industry_mentor: {
-    name: 'Arjun',
+    name: 'Jawad',
     role: 'Industry Mentor',
     speaking_style: 'Practical and experience-driven. Bridges theory and real-world application and challenges whether the solution would actually be adopted outside the lab.',
     cares: 'Real-world applicability beyond the academic setting, whether target users would genuinely adopt it and practical constraints that research often overlooks',
@@ -139,7 +139,7 @@ const PERSONA_DEFS = {
   },
 
   sustainability: {
-    name: 'Linh',
+    name: 'Ethan',
     role: 'Sustainability Lead',
     speaking_style: 'Principled and evidence-driven. Challenges on environmental claims, ESG alignment and whether the lifecycle impact has been properly assessed.',
     cares: 'Environmental impact and carbon footprint, alignment with ESG commitments and reporting obligations and supply chain sustainability',
@@ -150,7 +150,7 @@ const PERSONA_DEFS = {
     ],
   },
   cx: {
-    name: 'Hui',
+    name: 'William',
     role: 'Customer Success Lead',
     speaking_style: 'Customer-focused and practical. Asks what changes for existing customers, what the onboarding plan is and how churn risk is being managed during the transition.',
     cares: 'Customer experience disruption during transition, a clear onboarding and adoption plan and churn risk and retention impact',
@@ -161,7 +161,7 @@ const PERSONA_DEFS = {
     ],
   },
   dpo: {
-    name: 'Farhan',
+    name: 'Wilfred',
     role: 'Data Protection Officer',
     speaking_style: 'Systematic and regulation-focused. Maps data flows before approving anything and asks for legal basis, retention periods and DPA status on every third-party relationship.',
     cares: 'Legal basis for processing personal data, data minimisation and retention policy and third-party data sharing and DPA obligations',
@@ -209,7 +209,7 @@ const PERSONA_DEFS = {
 
   // Policy panel
   policy_analyst: {
-    name: 'Zul',
+    name: 'Jay',
     role: 'Policy Analyst',
     speaking_style: 'Systematic and framework-oriented. Checks proposals against existing policy and regulatory landscapes and asks for formal impact assessments and documented consultation.',
     cares: 'Regulatory environment and compliance requirements, policy precedents and government alignment and impact assessment with stakeholder consultation',
@@ -220,7 +220,7 @@ const PERSONA_DEFS = {
     ],
   },
   regulator: {
-    name: 'Boon',
+    name: 'Bhone',
     role: 'Regulatory Advisor',
     speaking_style: 'Precise and risk-focused. Identifies approval dependencies that teams overlook and will not proceed without a clear licensing and compliance timeline.',
     cares: 'Regulatory approval timelines and requirements, compliance obligations and enforcement risk and licensing and certification prerequisites',
@@ -231,7 +231,7 @@ const PERSONA_DEFS = {
     ],
   },
   community_rep: {
-    name: 'Nurul',
+    name: 'Justin',
     role: 'Community Representative',
     speaking_style: 'Advocacy-driven and equity-focused. Asks who was consulted, who benefits and who bears the cost, and challenges proposals that affect vulnerable groups without evidence of engagement.',
     cares: 'Community impact and equitable access, whether affected groups were genuinely consulted and unintended consequences for vulnerable populations',
@@ -281,7 +281,7 @@ const PERSONA_DEFS = {
 
   // Event planning panel
   event_director: {
-    name: 'Shalini',
+    name: 'Syaqiq',
     role: 'Event Director',
     speaking_style: 'Strategic and measured. Challenges on purpose and outcomes. Wants to know the event\'s value to the organisation and who is accountable if things go wrong.',
     cares: 'Event purpose, expected outcomes for the organisation, success criteria and the approval and escalation chain',
@@ -303,7 +303,7 @@ const PERSONA_DEFS = {
     ],
   },
   event_safety: {
-    name: 'Haziq',
+    name: 'Paul',
     role: 'Safety Officer',
     speaking_style: 'Methodical and risk-focused. Asks about specific procedures and worst-case scenarios. Does not accept vague intentions as an answer.',
     cares: 'Venue safety compliance and certified capacity, emergency response and first aid arrangements and dietary restriction management',
@@ -314,7 +314,7 @@ const PERSONA_DEFS = {
     ],
   },
   event_programme: {
-    name: 'Pei',
+    name: 'Samuel',
     role: 'Programme Lead',
     speaking_style: 'Detail-oriented and practical. Challenges on execution gaps, timing conflicts and what happens when something goes wrong on the day.',
     cares: 'Detailed run-of-show with timings, confirmed dry run schedule and backup plans for performer or speaker no-shows',
@@ -357,6 +357,21 @@ function getClient() {
 // and exhaust the budget before the actual response is written.
 function noThink(extra = {}) {
   return { thinkingConfig: { thinkingBudget: 0 }, ...extra }
+}
+
+function sampleProposal(text, maxChars = 9000) {
+  if (text.length <= maxChars) return text
+  const startChars = Math.round(maxChars * 0.40)
+  const midChars   = Math.round(maxChars * 0.33)
+  const endChars   = maxChars - startChars - midChars
+  const midStart   = Math.floor((text.length - midChars) / 2)
+  return (
+    text.slice(0, startChars) +
+    '\n\n[...]\n\n' +
+    text.slice(midStart, midStart + midChars) +
+    '\n\n[...]\n\n' +
+    text.slice(text.length - endChars)
+  )
 }
 
 export async function detectPanel(proposalText, availableIds) {
@@ -475,6 +490,7 @@ Generate exactly one opening challenge per panelist below. Each challenge must:
 - Not use em dashes.
 
 Panel toughness: ${toughness}${industry ? `\nIndustry: ${industry}` : ''}
+${toughness === 'Supportive' ? 'Tone: Ask genuine clarifying questions. Acknowledge what looks well-considered. Keep the tone collaborative and inquisitive, not adversarial.' : toughness === 'Tough' ? 'Tone: Lead with the hardest gap or weakest assumption you can find in this document. Do not soften the challenge or acknowledge positives.' : 'Tone: Ask firm, direct questions grounded in specific gaps in this document. Be challenging but professional.'}
 
 Panelists (use the exact ID before the colon as persona_id):
 ${panelDescLines.join('\n')}
@@ -485,7 +501,7 @@ Return a JSON object with an "openings" array. Each item has "persona_id" and "t
   try {
     response = await withRetry(() => ai.models.generateContent({
       model: GEMINI_MODEL,
-      contents: `Proposal:\n${proposalText.slice(0, 2000)}\n\nGenerate the opening challenges.`,
+      contents: `Proposal:\n${sampleProposal(proposalText)}\n\nGenerate the opening challenges.`,
       config: noThink({
         systemInstruction: system,
         responseMimeType: 'application/json',
@@ -615,10 +631,10 @@ ${isClosingTurn ? '- FINAL TURN RULE (highest priority): Acknowledge the present
 - Keep the response under 90 words.
 - Stay anchored to the uploaded proposal. If the presenter introduces facts, systems or figures that are not in the proposal and were not raised by the panel, challenge the credibility of those claims and ask how they relate to the proposal rather than accepting them as true.
 - If the presenter's latest message clearly signals they cannot answer right now (e.g. "I don't know", "not sure", "I'll get back to you", "skip", "pass", "I can't answer that"), do not press the same question again. Switch to a different panelist who has unmet conditions and open a new line of questioning. The original panelist may return to their topic in a later turn.
-- Be direct, specific and challenging. Push back on vague or incomplete answers. Do not repeat a question already covered in "Last asked".
+${toughness === 'Supportive' ? '- Be constructive and encouraging. Acknowledge when the presenter makes a valid point before raising the next concern. Ask follow-up questions rather than pressing hard challenges.' : toughness === 'Tough' ? '- Be relentless. Push back hard on any vague or partial answer. Do not accept anything short of a complete, specific response.' : '- Be firm but fair. Push back on vague or incomplete answers and ask for specifics, but acknowledge solid responses before moving on.'} Do not repeat a question already covered in "Last asked".
 - You must always return a non-empty response string. Never leave "response" blank.
 - Do not use em dashes.
-- Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
+${toughness === 'Supportive' ? '- Mark a condition as met if the presenter meaningfully addresses the topic, even if full specifics are not yet provided.' : toughness === 'Tough' ? '- Only mark a condition as met if the presenter has provided every required specific with concrete evidence. Partial answers do not count.' : '- Only mark a condition as met if the presenter explicitly and specifically addressed it with concrete information.'}
 - If you mark any conditions_met, open with a brief one-sentence acknowledgment of what was satisfied, then pivot to the next unmet concern.
 - If Angelo (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
 - Include a follow_up when: (a) the presenter's answer directly contradicts or conflicts with a concern owned by a different panelist, prompting them to call it out, (b) the presenter's answer raises a new concern that a second panelist would immediately react to, or (c) the presenter directly addresses another panelist's unmet condition and that panelist should briefly acknowledge it. Keep follow_up null when the answer is straightforward and relevant to only one panelist. The follow_up speaker must differ from speaker_id. Max 2 sentences, under 60 words.
@@ -648,7 +664,7 @@ Set follow_up to null (not an object) when only one voice is needed.`;
   const response = await withRetry(() => ai.models.generateContent({
     model: GEMINI_MODEL,
     contents:
-      `Proposal:\n${proposalText.slice(0, 2000)}\n\n` +
+      `Proposal:\n${sampleProposal(proposalText)}\n\n` +
       `Recent conversation:\n${transcriptStr}\n\n` +
       `Presenter just said: "${presenterMsg}"\n\n` +
       `Pick the next speaker and write their response.${regenSuffix}`,

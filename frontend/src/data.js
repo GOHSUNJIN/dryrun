@@ -137,9 +137,9 @@ export const PERSONAS = [
   },
   {
     id: 'sustainability',
-    name: 'Linh',
+    name: 'Ethan',
     role: 'Sustainability Lead',
-    initial: 'L',
+    initial: 'E',
     color: '#10B981',
     glow: 'rgba(16,185,129,0.22)',
     dimColor: 'rgba(16,185,129,0.35)',
@@ -154,9 +154,9 @@ export const PERSONAS = [
   },
   {
     id: 'cx',
-    name: 'Hui',
+    name: 'William',
     role: 'Customer Success Lead',
-    initial: 'H',
+    initial: 'W',
     color: '#FBBF24',
     glow: 'rgba(251,191,36,0.22)',
     dimColor: 'rgba(251,191,36,0.35)',
@@ -171,9 +171,9 @@ export const PERSONAS = [
   },
   {
     id: 'dpo',
-    name: 'Farhan',
+    name: 'Wilfred',
     role: 'Data Protection Officer',
-    initial: 'F',
+    initial: 'W',
     color: '#7DD3FC',
     glow: 'rgba(125,211,252,0.22)',
     dimColor: 'rgba(125,211,252,0.35)',
@@ -190,7 +190,7 @@ export const PERSONAS = [
   // --- Event planning ---
   {
     id: 'event_director',
-    name: 'Shalini',
+    name: 'Syaqiq',
     role: 'Event Director',
     initial: 'S',
     color: '#F87171',
@@ -224,9 +224,9 @@ export const PERSONAS = [
   },
   {
     id: 'event_safety',
-    name: 'Haziq',
+    name: 'Paul',
     role: 'Safety Officer',
-    initial: 'H',
+    initial: 'P',
     color: '#4ADE80',
     glow: 'rgba(74,222,128,0.22)',
     dimColor: 'rgba(74,222,128,0.35)',
@@ -241,9 +241,9 @@ export const PERSONAS = [
   },
   {
     id: 'event_programme',
-    name: 'Pei',
+    name: 'Samuel',
     role: 'Programme Lead',
-    initial: 'P',
+    initial: 'S',
     color: '#C084FC',
     glow: 'rgba(192,132,252,0.22)',
     dimColor: 'rgba(192,132,252,0.35)',
@@ -328,9 +328,9 @@ export const PERSONAS = [
   },
   {
     id: 'industry_mentor',
-    name: 'Arjun',
+    name: 'Jawad',
     role: 'Industry Mentor',
-    initial: 'A',
+    initial: 'J',
     color: '#22D3EE',
     glow: 'rgba(34,211,238,0.22)',
     dimColor: 'rgba(34,211,238,0.35)',
@@ -417,9 +417,9 @@ export const PERSONAS = [
   // --- Policy ---
   {
     id: 'policy_analyst',
-    name: 'Zul',
+    name: 'Jay',
     role: 'Policy Analyst',
-    initial: 'Z',
+    initial: 'J',
     color: '#BAE6FD',
     glow: 'rgba(186,230,253,0.22)',
     dimColor: 'rgba(186,230,253,0.35)',
@@ -434,7 +434,7 @@ export const PERSONAS = [
   },
   {
     id: 'regulator',
-    name: 'Boon',
+    name: 'Bhone',
     role: 'Regulatory Advisor',
     initial: 'B',
     color: '#C4B5FD',
@@ -451,9 +451,9 @@ export const PERSONAS = [
   },
   {
     id: 'community_rep',
-    name: 'Nurul',
+    name: 'Justin',
     role: 'Community Representative',
-    initial: 'N',
+    initial: 'J',
     color: '#67E8F9',
     glow: 'rgba(103,232,249,0.22)',
     dimColor: 'rgba(103,232,249,0.35)',
