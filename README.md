@@ -81,7 +81,7 @@ Every core feature runs on Google Cloud. The AI, backend, hosting, secrets and a
 
 ## How the AI Works
 
-Four structured Gemini calls, each returning a single JSON response. No streaming. No server-side state.
+Four structured Gemini calls. No streaming. No server-side state. Three return JSON; `factCheckProposal` returns a plain-text briefing injected into the session.
 
 ### `factCheckProposal` (Google Search grounding)
 
@@ -99,7 +99,6 @@ Called after every presenter turn. Returns the next panelist's response and an o
 - **Condition acknowledgment.** Only marks a condition met when the presenter explicitly addresses it with concrete information.
 - **Skip detection.** If the presenter signals they cannot answer, the AI rotates to a different panelist rather than pressing the same question.
 - **Pile-on trigger.** If the answer contradicts another panelist's domain a second response is returned in `follow_up`.
-- **Satisfied panelist mode.** When all conditions are met the panelist shifts from challenging to supportive.
 - **Regeneration.** When the presenter clicks "Try Different Response" the previously shown responses are sent as rejected examples so the AI cannot repeat them.
 
 ### `generateReport`
@@ -166,7 +165,7 @@ frontend/
 functions/
   index.js               Cloud Functions v2: sessionDetectPanel, extractDocument, sessionStart, sessionMessage, sessionEnd
   core.js                Gemini: detectPanel, factCheckProposal, generateOpenings, generateReply, extractFromImages, generateReport
-  fallback.js            scripted demo data: getDemoOpenings, getDemoReply, getDemoReport
+  fallback.js            scripted demo data: getDemoConditions, getDemoOpenings, getDemoReply, getDemoReport
 firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to index.html
 .firebaserc              project alias: dry-run-1608
 ```
@@ -282,6 +281,7 @@ Returns `text`: extracted plain text from uploaded PDF, DOCX or PPTX files. Hand
   "proposal_text": "...",
   "persona_ids": ["finance", "legal", "ops"],
   "config": { "toughness": "Balanced", "turnLimit": 15 },
+  "fact_check": "",
   "custom_personas": {}
 }
 ```
@@ -297,6 +297,7 @@ Returns `messages` (opening challenges), `conditions` (initial state) and `fact_
   "transcript": [...],
   "conditions": { "f1": false },
   "config": {},
+  "fact_check": "",
   "previous_responses": []
 }
 ```
