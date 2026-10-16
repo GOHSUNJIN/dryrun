@@ -55,7 +55,7 @@ Dry Run gives professionals a safe space to rehearse. An AI panel challenges you
 **Key innovations:**
 
 - **Condition tracking.** Each panelist has 2-3 explicit conditions. The session does not resolve cleanly until you have addressed all of them with concrete information.
-- **Fact-Checker persona.** Uses Gemini with Google Search grounding to verify your proposal's claims against live web data before the session starts. Every challenge from the Fact-Checker cites real sources.
+- **Fact-Checker persona.** Uses Gemini with Google Search grounding to verify your proposal's claims against live web data before the session starts. Challenges from the Fact-Checker include source labels when citing real reports or datasets.
 - **Pile-on mechanic.** When your answer contradicts a panelist's domain a second panelist jumps in immediately via `follow_up` without consuming an extra turn.
 - **Multi-turn intelligence.** The AI tracks who has spoken, how many consecutive turns they have held and whether they still have unmet conditions before deciding who speaks next.
 - **27 built-in roles across 5 industry verticals** plus a general fallback and custom persona creation for any domain.
@@ -85,7 +85,7 @@ Four structured Gemini calls. No streaming. No server-side state. Three return J
 
 ### `factCheckProposal` (Google Search grounding)
 
-Called at session start when the Fact-Checker persona is selected. Gemini searches the web and returns a briefing of verified and disputed claims from the proposal. This briefing is injected into every Fact-Checker response for the rest of the session.
+Called at session start when the Fact-Checker persona is selected and the proposal is at least 150 words. Gemini searches the web and returns a briefing of verified and disputed claims. Results are cached so repeated sessions on the same proposal skip the call. This briefing is injected into every Fact-Checker response for the rest of the session.
 
 ### `generateOpenings`
 
@@ -199,7 +199,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 - Conditions tab: met/unmet per panelist
 - Coaching tab: 2-4 gap areas with fixes
 - Proposal tab: original filename and word count
-- Moment-by-moment debrief with scripted alternatives for every weak turn
+- Debrief covers 4-7 annotated moments per session (weak turns get scripted alternatives; strong turns get coaching notes on how to reinforce them)
 - Export to Google Docs; copy to clipboard
 - Delete run directly from the report page
 
@@ -344,7 +344,7 @@ Store the API key in Firebase Secret Manager:
 firebase functions:secrets:set GEMINI_API_KEY
 ```
 
-Firebase Hosting rewrites `/api/*` to the matching Cloud Function. Everything else serves `index.html` for client-side routing.
+Firebase Hosting rewrites each `/api/...` endpoint individually to its matching Cloud Function. Everything else serves `index.html` for client-side routing.
 
 ---
 
