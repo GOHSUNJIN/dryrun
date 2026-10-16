@@ -1049,7 +1049,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
       {session.demoMode && (
         <div className="room-demo-banner">
-          {session.demoReason === 'GEMINI_API_KEY not set'
+          {session.demoReason === 'no_key'
             ? 'No AI key configured. Panel responses are sample messages and will not reflect your proposal.'
             : session.demoReason === 'connection_failed'
               ? 'Could not reach AI service. Panel responses are sample messages and will not reflect your proposal.'
