@@ -10,7 +10,11 @@ import {
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 
-const opts = { secrets: [GEMINI_API_KEY], cors: true, timeoutSeconds: 120 }
+const opts = { secrets: [GEMINI_API_KEY], cors: true, timeoutSeconds: 120, maxInstances: 10 }
+
+const MAX_PROPOSAL_CHARS = 200_000
+const MAX_TRANSCRIPT_TURNS = 60
+const MAX_PAGES = 10
 
 export const sessionDetectPanel = onRequest(opts, async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -38,13 +42,17 @@ export const sessionStart = onRequest(opts, async (req, res) => {
     fact_check: cachedFactCheck = '',
   } = req.body
 
+  if (proposal_text.length > MAX_PROPOSAL_CHARS) {
+    return res.status(400).json({ error: 'Proposal text exceeds maximum length.' })
+  }
+
   if (!process.env.GEMINI_API_KEY) {
     return res.status(200).json({
       messages: getDemoOpenings(persona_ids),
       conditions: getDemoConditions(persona_ids),
       fact_check: '',
       demo: true,
-      demo_reason: 'GEMINI_API_KEY not set',
+      demo_reason: 'no_key',
     })
   }
 
@@ -67,7 +75,7 @@ export const sessionStart = onRequest(opts, async (req, res) => {
       conditions: getDemoConditions(persona_ids),
       fact_check: '',
       demo: true,
-      demo_reason: err.message,
+      demo_reason: 'ai_error',
     })
   }
 })
@@ -85,6 +93,13 @@ export const sessionMessage = onRequest(opts, async (req, res) => {
     custom_personas = {},
     previous_responses = [],
   } = req.body
+
+  if (proposal_text.length > MAX_PROPOSAL_CHARS) {
+    return res.status(400).json({ error: 'Proposal text exceeds maximum length.' })
+  }
+  if (transcript.length > MAX_TRANSCRIPT_TURNS) {
+    return res.status(400).json({ error: 'Transcript exceeds maximum turn limit.' })
+  }
 
   if (!process.env.GEMINI_API_KEY) {
     return res.status(200).json(getDemoReply(persona_ids, transcript))
@@ -111,6 +126,13 @@ export const sessionEnd = onRequest(opts, async (req, res) => {
     custom_personas = {},
   } = req.body
 
+  if (proposal_text.length > MAX_PROPOSAL_CHARS) {
+    return res.status(400).json({ error: 'Proposal text exceeds maximum length.' })
+  }
+  if (transcript.length > MAX_TRANSCRIPT_TURNS) {
+    return res.status(400).json({ error: 'Transcript exceeds maximum turn limit.' })
+  }
+
   if (!process.env.GEMINI_API_KEY) {
     return res.status(200).json(getDemoReport())
   }
@@ -130,11 +152,11 @@ export const extractDocument = onRequest({ ...opts, timeoutSeconds: 180 }, async
   const { pages = [], filename = '' } = req.body
   if (!process.env.GEMINI_API_KEY) return res.status(200).json({ text: '', error: 'GEMINI_API_KEY not set' })
   if (!pages.length) return res.status(400).json({ error: 'No pages provided' })
+  if (pages.length > MAX_PAGES) return res.status(400).json({ error: `Maximum ${MAX_PAGES} pages allowed.` })
   try {
     res.status(200).json({ text: await extractFromImages(pages, filename) })
   } catch (err) {
     console.error('[extract-document] failed:', err.message)
-    res.status(200).json({ text: '', error: err.message })
+    res.status(200).json({ text: '', error: 'Extraction failed. Try a different file format.' })
   }
 })
-

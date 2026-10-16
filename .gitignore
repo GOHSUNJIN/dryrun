@@ -1,15 +1,3 @@
-# Python
-.env
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-venv/
-env/
-
-# Pytest
-.pytest_cache/
-
 # OS
 .DS_Store
 Thumbs.db
@@ -21,6 +9,8 @@ frontend/dist/
 # Local tooling
 .claude/
 .firebase/
+
+# Local media files
 *.png
 *.jpg
 *.pptx
