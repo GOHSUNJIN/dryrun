@@ -250,7 +250,7 @@ State lives in `App.jsx` and flows down as props. Never stored on a server.
   startTime: null,         // timestamp set when session begins
   duration: '',            // formatted duration set on session end
   linkedMeeting: '',       // calendar event this rehearsal is tied to
-  demoMode: false,         // true when AI is unavailable
+  demoMode: false,         // set at session start: true when AI is unavailable
 }
 ```
 
