@@ -1478,7 +1478,7 @@ ul { list-style: none; }
   font-family: var(--font-ui);
   font-size: 0.875rem;
   line-height: 1.6;
-  resize: vertical;
+  resize: none;
   transition: border-color var(--t-base);
   outline: none;
 }

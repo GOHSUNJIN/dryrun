@@ -567,6 +567,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                     placeholder="Your rehearsal name"
                     style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }}
                   />
+                  {uploaded && proposalName.trim() === '' && (
+                    <div style={{ marginTop: 6, fontSize: '0.8125rem', color: 'var(--app-accent)', fontWeight: 500 }}>
+                      Give your rehearsal a name to continue.
+                    </div>
+                  )}
                 </div>
 
                 {(() => {
@@ -796,7 +801,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                           style={{
                             width: '100%', minHeight: 160, padding: '12px 14px', boxSizing: 'border-box',
                             fontFamily: 'var(--font-ui)', fontSize: '0.875rem', lineHeight: 1.6,
-                            border: '1px solid var(--border)', borderRadius: 8, resize: 'vertical',
+                            border: '1px solid var(--border)', borderRadius: 8, resize: 'none',
                             background: 'var(--bg-surface)', color: 'var(--text-primary)', outline: 'none',
                           }}
                         />
