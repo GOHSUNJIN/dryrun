@@ -50,7 +50,7 @@ Dry Run gives professionals a safe space to rehearse. An AI panel challenges you
 | Generic AI responses | Challenges grounded in your actual proposal document |
 | Post-hoc feedback | Real-time condition tracking updated after every answer |
 | No conversation structure | Speaker rotation, first-right-of-reply and contradiction detection |
-| Static tips | Moment-by-moment debrief with scripted alternatives per turn |
+| Static tips | Moment-by-moment debrief with annotated turning points, scripted alternatives and coaching notes |
 
 **Key innovations:**
 
@@ -315,7 +315,7 @@ Returns `speaker`, `text`, `conditions_met` and optional `follow_up` (second pan
 }
 ```
 
-Returns `weak_points` (label, issue, fix) and `moments` (annotated turning points with scripted alternatives).
+Returns `weak_points` (label, issue, fix) and `moments` (annotated turning points; weak moments include a scripted alternative, strong moments include a coaching note).
 
 ---
 
