@@ -13,7 +13,7 @@ const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY')
 const opts = { secrets: [GEMINI_API_KEY], cors: true, timeoutSeconds: 120, maxInstances: 10 }
 
 const MAX_PROPOSAL_CHARS = 200_000
-const MAX_TRANSCRIPT_TURNS = 60
+const MAX_TRANSCRIPT_TURNS = 150
 const MAX_PAGES = 10
 
 export const sessionDetectPanel = onRequest(opts, async (req, res) => {
