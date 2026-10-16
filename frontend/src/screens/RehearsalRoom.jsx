@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Send, ExternalLink, Loader, Volume2, VolumeX, Check, Copy, FileText, X as XIcon, RefreshCw, Home, ChevronDown } from 'lucide-react'
 import { PERSONAS, DEMO_TRANSCRIPT } from '../data.js'
 import { saveSession, loadVoiceSettings, saveVoiceSettings, loadCustomPersonas } from '../utils/storage.js'
+import { fetchWithRetry } from '../utils/api.js'
 import { getCurrentTime, formatSessionDate } from '../utils/time.js'
 import { useTTS } from '../hooks/useTTS.js'
 import { useElapsedTimer } from '../hooks/useElapsedTimer.js'
@@ -120,22 +121,6 @@ function PersonaSeat({ persona, state, activeSpeaker, interruptSpeaker }) {
 }
 
 function TranscriptMsg({ msg, personas, appearing, onRegenerate, regenLabel = 'Try Different Response' }) {
-  if (msg.type === 'closing') {
-    return (
-      <motion.div
-        className="transcript-msg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        style={{ textAlign: 'center', padding: '20px 12px 8px' }}
-      >
-        <div style={{ fontSize: '0.75rem', color: 'var(--room-text-3)', fontStyle: 'italic', letterSpacing: '0.04em' }}>
-          {msg.text}
-        </div>
-      </motion.div>
-    )
-  }
-
   const isPresenter  = msg.speaker === 'presenter'
   const persona      = personas.find(p => p.id === msg.speaker)
   if (!isPresenter && !persona) return null
@@ -144,9 +129,10 @@ function TranscriptMsg({ msg, personas, appearing, onRegenerate, regenLabel = 'T
   const [copied, setCopied]   = useState(false)
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(msg.text).catch(() => {})
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    navigator.clipboard.writeText(msg.text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }).catch(() => {})
   }
 
   return (
@@ -437,18 +423,6 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     setApiError(false)
   }
 
-  const appendClosingMessage = (delay) => {
-    setTimeout(() => {
-      setLocalTranscript(prev => [...prev, {
-        id: Date.now() + 100,
-        type: 'closing',
-        speaker: 'closing',
-        text: 'Thank you for your presentation. The panel has no further questions.',
-        time: getCurrentTime(),
-      }])
-    }, delay)
-  }
-
   const handleSend = async (textOverride) => {
     const text = textOverride !== undefined ? String(textOverride).trim() : inputValue.trim()
     if (!text || roomStateRef.current === 'thinking') return
@@ -474,7 +448,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       setTypingPersonaId(nextPersona.id)
 
       try {
-        const res = await fetch('/api/session/message', {
+        const res = await fetchWithRetry('/api/session/message', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -557,11 +531,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
             if (hasCondMet || fuCondsMet.length > 0) {
               setRoomState('condition-met')
               setTimeout(() => setRoomState('idle'), 2200)
-              if (isLastTurn) appendClosingMessage(2500)
             } else {
               setRoomState('speaking')
               setTimeout(() => setRoomState('idle'), 1400)
-              if (isLastTurn) appendClosingMessage(3800)
             }
           }, 4500)
         } else {
@@ -570,11 +542,9 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
           if (hasCondMet) {
             setRoomState('condition-met')
             setTimeout(() => setRoomState('idle'), 2200)
-            if (isLastTurn) appendClosingMessage(2500)
           } else {
             setRoomState('speaking')
             setTimeout(() => setRoomState('idle'), 1400)
-            if (isLastTurn) appendClosingMessage(3800)
           }
         }
       } catch (err) {
@@ -622,7 +592,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     setRoomState('thinking')
 
     try {
-      const res = await fetch('/api/session/message', {
+      const res = await fetchWithRetry('/api/session/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -691,7 +661,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     const regenTurnsLeft = turnLimit - transcriptBeforeAi.filter(m => m.speaker === 'presenter').length
 
     try {
-      const res = await fetch('/api/session/message', {
+      const res = await fetchWithRetry('/api/session/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -816,7 +786,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
     setTypingPersonaId(nextPersona.id)
 
     try {
-      const res = await fetch('/api/session/message', {
+      const res = await fetchWithRetry('/api/session/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -912,7 +882,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
 
     setGeneratingReport(true)
     try {
-      const res = await fetch('/api/session/end', {
+      const res = await fetchWithRetry('/api/session/end', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1234,6 +1204,10 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
               onKeyDown={handleKeyDown}
               rows={1}
               disabled={isInputDisabled}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               style={listening ? { color: 'var(--amber)' } : undefined}
             />
             <div className="room-input-actions">

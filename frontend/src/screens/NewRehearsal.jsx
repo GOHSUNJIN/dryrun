@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, FileText, Check, ArrowRight, ArrowLeft, X, Loader, FolderOpen, Folder, ChevronRight, ChevronLeft } from 'lucide-react'
 import { PERSONAS } from '../data.js'
 import { loadRehearsalDefaults, loadSessions, loadLocalMeetings, loadCalEvents, loadLastPanel, saveLastPanel, loadCustomPersonas } from '../utils/storage.js'
+import { fetchWithRetry } from '../utils/api.js'
 import { listDriveItems, listDriveDocs, fetchDocText, isSignedIn } from '../utils/google.js'
 
 const STEPS = ['Upload Proposal', 'Choose Panel', 'Configure and Launch']
@@ -168,6 +169,8 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
   const [fileError, setFileError] = useState('')
   const [extractionStage, setExtractionStage] = useState('')
+  const [pasteMode, setPasteMode] = useState(false)
+  const [pasteText, setPasteText] = useState('')
 
   function cleanText(raw) {
     const lines = raw.split('\n')
@@ -190,6 +193,26 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       .trim()
   }
 
+  function fileToArrayBuffer(file) {
+    if (typeof file.arrayBuffer === 'function') return file.arrayBuffer()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  function fileToText(file) {
+    if (typeof file.text === 'function') return file.text()
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsText(file)
+    })
+  }
+
   const readFile = useCallback(async (file) => {
     setFileError('')
     setExtractionStage('Reading file...')
@@ -202,7 +225,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       if (ext === 'pdf') {
         const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist')
         GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
-        const arrayBuffer = await file.arrayBuffer()
+        const arrayBuffer = await fileToArrayBuffer(file)
         const pdf = await getDocument({ data: arrayBuffer }).promise
         const pageCount = pdf.numPages
 
@@ -232,7 +255,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
             await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
             base64Pages.push(canvas.toDataURL('image/jpeg', 0.8).split(',')[1])
           }
-          const res = await fetch('/api/extract-document', {
+          const res = await fetchWithRetry('/api/extract-document', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pages: base64Pages, filename: file.name }),
@@ -247,14 +270,14 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
 
       } else if (ext === 'docx') {
         const mammoth = await import('mammoth')
-        const arrayBuffer = await file.arrayBuffer()
+        const arrayBuffer = await fileToArrayBuffer(file)
         const result = await mammoth.extractRawText({ arrayBuffer })
         text = cleanText(result.value)
 
       } else if (ext === 'pptx') {
         setExtractionStage('Extracting slides...')
         const JSZip = (await import('jszip')).default
-        const arrayBuffer = await file.arrayBuffer()
+        const arrayBuffer = await fileToArrayBuffer(file)
         const zip = await JSZip.loadAsync(arrayBuffer)
         const slideFiles = Object.keys(zip.files)
           .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
@@ -278,7 +301,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
         return
 
       } else {
-        text = await file.text()
+        text = await fileToText(file)
       }
 
       if (!text.trim()) {
@@ -291,7 +314,11 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setUploaded(true)
     } catch (err) {
       console.error('[readFile] extraction failed:', err)
-      setFileError('Failed to read the file. ' + (err.message || 'Make sure it is not password-protected or corrupted.'))
+      if (err?.message?.toLowerCase().includes('failed to fetch') || err?.message?.toLowerCase().includes('dynamically imported')) {
+        setFileError('Page needs a refresh. Press Ctrl+Shift+R (or Cmd+Shift+R on Mac) and try uploading again.')
+      } else {
+        setFileError('Failed to read the file. ' + (err.message || 'Make sure it is not password-protected or corrupted.'))
+      }
     } finally {
       setExtractionStage('')
     }
@@ -374,7 +401,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
       setDetectingPanel(true)
       try {
         const allIds = PERSONAS.map(p => p.id)
-        const res = await fetch('/api/session/detect-panel', {
+        const res = await fetchWithRetry('/api/session/detect-panel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ proposal_text: proposalText, available_ids: allIds }),
@@ -460,7 +487,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
     saveLastPanel(selected)
     const cachedFactCheck = selected.includes('factcheck') ? loadFactCheckCache(proposalText) : ''
     try {
-      const res = await fetch('/api/session/start', {
+      const res = await fetchWithRetry('/api/session/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -629,7 +656,7 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".txt,.md,.pdf,.doc,.docx,.pptx"
+                        accept=".txt,.md,.pdf,.doc,.docx,.pptx,text/plain,text/markdown,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
                         style={{ display: 'none' }}
                         onChange={e => { const f = e.target.files[0]; if (f) readFile(f) }}
                       />
@@ -747,6 +774,61 @@ export default function NewRehearsal({ navigate, session, updateSession, resetSe
                           </div>
                         </div>
                       )}
+
+                    {!pasteMode ? (
+                      <button
+                        onClick={() => { setPasteMode(true); setFileError('') }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', padding: '4px 0', textDecoration: 'underline' }}
+                      >
+                        or paste text directly
+                      </button>
+                    ) : (
+                      <div style={{ width: '100%' }}>
+                        <textarea
+                          autoFocus
+                          value={pasteText}
+                          onChange={e => setPasteText(e.target.value)}
+                          placeholder="Paste your proposal text here..."
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck="false"
+                          style={{
+                            width: '100%', minHeight: 160, padding: '12px 14px', boxSizing: 'border-box',
+                            fontFamily: 'var(--font-ui)', fontSize: '0.875rem', lineHeight: 1.6,
+                            border: '1px solid var(--border)', borderRadius: 8, resize: 'vertical',
+                            background: 'var(--bg-surface)', color: 'var(--text-primary)', outline: 'none',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            disabled={pasteText.trim().split(/\s+/).filter(Boolean).length < 20}
+                            onClick={() => {
+                              const text = pasteText.trim()
+                              setProposalText(text)
+                              setDocumentName('Pasted text')
+                              setUploaded(true)
+                              setPasteMode(false)
+                              setPasteText('')
+                            }}
+                          >
+                            Use this text
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => { setPasteMode(false); setPasteText('') }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {pasteText.trim().split(/\s+/).filter(Boolean).length < 20 && pasteText.length > 0 && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                            Keep going - need at least 20 words for a useful session.
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     </div>
                   </>

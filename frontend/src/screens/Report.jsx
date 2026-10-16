@@ -123,7 +123,7 @@ export default function Report({ navigate, session }) {
           <div className="report-hero">
             <div className="report-hero-label">Session complete · {reportDate}</div>
             <div className="report-hero-title">
-              "Here is what to prepare<br />before the real meeting."
+              Here is what to prepare<br />before the real meeting.
             </div>
             <div className="report-hero-sub">
               {condMet} of {condTotal} conditions met · {turns} turns · {duration} · {proposalName}

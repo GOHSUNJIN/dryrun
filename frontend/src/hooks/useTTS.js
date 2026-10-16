@@ -12,11 +12,25 @@ const PERSONA_VOICE = {
   event_programme: { pitch: 0.92, rate: 0.95 },
 }
 
+function getVoices() {
+  return new Promise(resolve => {
+    const voices = window.speechSynthesis.getVoices()
+    if (voices.length > 0) { resolve(voices); return }
+    const onChanged = () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', onChanged)
+      resolve(window.speechSynthesis.getVoices())
+    }
+    window.speechSynthesis.addEventListener('voiceschanged', onChanged)
+    // Fallback: resolve after 1s even if event never fires (some iOS versions)
+    setTimeout(() => { window.speechSynthesis.removeEventListener('voiceschanged', onChanged); resolve(window.speechSynthesis.getVoices()) }, 1000)
+  })
+}
+
 export function useTTS(speechOnRef) {
   const ttsQueueRef = useRef([])
   const ttsBusyRef  = useRef(false)
 
-  const flushTTS = useCallback(() => {
+  const flushTTS = useCallback(async () => {
     if (ttsBusyRef.current || ttsQueueRef.current.length === 0) return
     if (!speechOnRef.current || typeof window === 'undefined' || !window.speechSynthesis) return
     const { text, speakerId } = ttsQueueRef.current.shift()
@@ -29,6 +43,7 @@ export function useTTS(speechOnRef) {
     utter.onerror = () => { ttsBusyRef.current = false; flushTTS() }
     ttsBusyRef.current = true
     try {
+      await getVoices()
       window.speechSynthesis.speak(utter)
     } catch (err) {
       console.warn('[TTS] speak() threw:', err.message)
