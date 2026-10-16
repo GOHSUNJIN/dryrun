@@ -217,7 +217,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 
 | Category | Panelists |
 |---|---|
-| Business | Alan (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Angelo (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
+| Business | Xavier (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Angelo (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
 | Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
 | Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
 | Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |

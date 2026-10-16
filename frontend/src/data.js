@@ -2,7 +2,7 @@ export const PERSONAS = [
   // --- Business ---
   {
     id: 'finance',
-    name: 'Alan',
+    name: 'Xavier',
     role: 'Head of Finance',
     initial: 'A',
     color: '#F2B35B',
@@ -121,9 +121,9 @@ export const PERSONAS = [
   },
   {
     id: 'factcheck',
-    name: 'Ritish',
+    name: 'Angelo',
     role: 'Fact-Checker',
-    initial: 'R',
+    initial: 'A',
     color: '#9AB0DE',
     glow: 'rgba(154,176,222,0.22)',
     dimColor: 'rgba(154,176,222,0.35)',
