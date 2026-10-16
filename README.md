@@ -17,8 +17,8 @@ Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has 
 
 | Role | Name | LinkedIn |
 |---|---|---|
-| Developer | Goh Sun Jin | [linkedin.com/in/gohsunjin](https://www.linkedin.com/in/gohsunjin) |
-| Support | Prabhakaran Ritish | [linkedin.com/in/prabhakaran-ritish-45286921a](https://linkedin.com/in/prabhakaran-ritish-45286921a) |
+| Developer | Xavier | [linkedin.com/in/gohsunjin](https://www.linkedin.com/in/gohsunjin) |
+| Support | Angelo | [linkedin.com/in/prabhakaran-ritish-45286921a](https://linkedin.com/in/prabhakaran-ritish-45286921a) |
 
 ---
 
@@ -217,7 +217,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 
 | Category | Panelists |
 |---|---|
-| Business | Alan (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Ritish (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
+| Business | Alan (Finance), Alex (Legal), Renes (Operations), Rek (Board), Ryme (HR), Kevin (Engineering), Ajwad (Marketing), Angelo (Fact-Checker), Linh (Sustainability), Hui (Customer Success), Farhan (DPO) |
 | Startup | Janice (VC Investor), Jac (Product Manager), Jamie (Growth Lead) |
 | Event Planning | Shalini (Event Director), Darren (Finance Approver), Haziq (Safety Officer), Pei (Programme Lead) |
 | Academic | Prof. Tan (Supervisor), Johann (External Examiner), Dr. Ramasamy (Internal Examiner), Dr. Ng (Ethics Reviewer), Arjun (Industry Mentor), Dr. Lim (Research Funder) |
