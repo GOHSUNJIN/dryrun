@@ -35,7 +35,7 @@ Dry Run gives professionals a safe space to rehearse. An AI panel challenges you
 ## How It Works
 
 1. **Upload your proposal.** Paste text, drop in a PDF/DOCX/PPTX or import directly from Google Drive.
-2. **Choose your panel.** Pick from 28 stakeholder roles across Business, Startup, Event Planning, Academic and Policy. The AI auto-suggests the best match for your content. Up to 5 panelists per session.
+2. **Choose your panel.** Pick from 27 stakeholder roles across Business, Startup, Event Planning, Academic and Policy, plus a general fallback. The AI auto-suggests the best match for your content. Up to 5 panelists per session.
 3. **Enter the room.** A panelist fires the opening challenge immediately. You respond. The AI picks the next speaker, applies rotation logic and sometimes triggers a second panelist to pile on when your answer contradicts their domain.
 4. **End the session.** The AI analyses the full transcript and generates a coaching report.
 5. **Read the debrief.** Every key moment is annotated: what was asked, what you said, why it fell short and a scripted alternative to try next time.
@@ -58,7 +58,7 @@ Dry Run gives professionals a safe space to rehearse. An AI panel challenges you
 - **Fact-Checker persona.** Uses Gemini with Google Search grounding to verify your proposal's claims against live web data before the session starts. Every challenge from the Fact-Checker cites real sources.
 - **Pile-on mechanic.** When your answer contradicts a panelist's domain a second panelist jumps in immediately via `follow_up` without consuming an extra turn.
 - **Multi-turn intelligence.** The AI tracks who has spoken, how many consecutive turns they have held and whether they still have unmet conditions before deciding who speaks next.
-- **28 built-in roles across 5 industry verticals** plus custom persona creation for any domain.
+- **27 built-in roles across 5 industry verticals** plus a general fallback and custom persona creation for any domain.
 
 ---
 
@@ -213,7 +213,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 
 ## The Panelists
 
-28 built-in panelists across five categories plus one general-purpose fallback.
+27 built-in panelists across five categories plus one general-purpose fallback (28 total).
 
 | Category | Panelists |
 |---|---|
