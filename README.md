@@ -81,7 +81,7 @@ Every core feature runs on Google Cloud. The AI, backend, hosting, secrets and a
 
 ## How the AI Works
 
-Three structured Gemini calls, each returning a single JSON response. No streaming. No server-side state.
+Four structured Gemini calls, each returning a single JSON response. No streaming. No server-side state.
 
 ### `factCheckProposal` (Google Search grounding)
 
@@ -114,16 +114,18 @@ One call at session end. Returns 2-4 coaching gaps with actionable fixes and up 
 ```
 Browser (React 18 SPA)
         |
+        |  POST /api/session/detect-panel  (auto-suggest panelists)
+        |  POST /api/extract-document      (PDF/DOCX/PPTX text extraction)
         |  POST /api/session/start
-        |  POST /api/session/message    (one call per presenter turn)
+        |  POST /api/session/message       (one call per presenter turn)
         |  POST /api/session/end
         v
 Firebase Hosting rewrite
         v
 Firebase Cloud Functions v2  (us-central1, Node 22)
-  functions/index.js     sessionStart | sessionMessage | sessionEnd
+  functions/index.js     sessionDetectPanel | extractDocument | sessionStart | sessionMessage | sessionEnd
         v
-  functions/core.js      Gemini: factCheck, openings, reply, report
+  functions/core.js      Gemini: detectPanel, factCheck, openings, reply, extract, report
   functions/fallback.js  scripted demo data (no-key or AI failure)
         v
 Gemini 3.8 Flash  (+  Google Search grounding)
@@ -182,7 +184,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 
 ### Rehearsal Setup
 - Paste text, upload PDF/DOCX/PPTX or import from Google Drive; recent Drive docs shown automatically when signed in
-- AI auto-detects the most relevant panelists using scored keyword matching
+- AI auto-detects the most relevant panelists for your proposal via Gemini; falls back to keyword matching if the API is unavailable
 - 28 built-in panelists; custom persona creation with name, role, speaking style and conditions
 - Session cap at 5 panelists; Usagi (General Reviewer) auto-selected as fallback when no targeted match is found
 - Toughness (Supportive / Balanced / Tough) and turn limit (5 / 10 / 15 / 20 / 25) configurable
@@ -257,6 +259,22 @@ State lives in `App.jsx` and flows down as props. Never stored on a server.
 
 ## API Reference
 
+### `POST /api/session/detect-panel`
+
+```json
+{ "proposal_text": "...", "available_ids": ["finance", "legal", ...] }
+```
+
+Returns `persona_ids` — the recommended panel for the proposal. Used to auto-populate the panel selector before the session starts.
+
+### `POST /api/extract-document`
+
+```json
+{ "pages": [{ "data": "<base64>", "type": "image/jpeg" }], "filename": "proposal.pdf" }
+```
+
+Returns `text` — extracted plain text from uploaded PDF, DOCX or PPTX files. Handled server-side using Gemini vision for scanned PDFs.
+
 ### `POST /api/session/start`
 
 ```json
@@ -308,13 +326,7 @@ npm install
 npm run dev
 ```
 
-Add `frontend/.env`:
-
-```
-VITE_GEMINI_API_KEY=your_google_ai_studio_key
-```
-
-Without a key the app runs in demo mode with scripted responses. All screens and navigation work.
+The frontend calls `/api/...` which in local dev has no backend — the app runs in demo mode with scripted responses. All screens and navigation work. To connect to live AI, deploy the Functions and point the dev server at the deployed URLs, or run the Firebase emulator suite.
 
 ---
 

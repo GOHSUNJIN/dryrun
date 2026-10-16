@@ -4,7 +4,7 @@ export const PERSONAS = [
     id: 'finance',
     name: 'Xavier',
     role: 'Head of Finance',
-    initial: 'A',
+    initial: 'X',
     color: '#F2B35B',
     glow: 'rgba(242,179,91,0.22)',
     dimColor: 'rgba(242,179,91,0.35)',
