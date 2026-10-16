@@ -4,7 +4,7 @@ const GEMINI_MODEL = 'gemini-3.8-flash';
 
 const PERSONA_DEFS = {
   finance: {
-    name: 'Alan',
+    name: 'Xavier',
     role: 'Head of Finance',
     speaking_style: 'Direct, numbers-focused and sceptical of vague claims. Always asks for specific figures.',
     cares: 'Total cost of ownership, payback period with supporting maths and budget contingency planning',
@@ -37,7 +37,7 @@ const PERSONA_DEFS = {
     ],
   },
   factcheck: {
-    name: 'Ritish',
+    name: 'Angelo',
     role: 'Fact-Checker',
     speaking_style: 'Neutral and methodical. Cites sources and flags unsupported quantitative claims.',
     cares: 'Accuracy of quantitative claims, whether key figures are supported by cited sources and whether efficiency or cost projections have been independently verified',
@@ -94,7 +94,7 @@ const PERSONA_DEFS = {
 
   // Academic panel
   supervisor: {
-    name: 'Prof. Lin',
+    name: 'Prof. Tan',
     role: 'Academic Supervisor',
     speaking_style: 'Methodical and evidence-focused. Challenges the research design and asks for clear justification of methodological choices over alternatives.',
     cares: 'Research methodology and justification, adequate literature review coverage and feasibility of the project scope and timeline',
@@ -116,7 +116,7 @@ const PERSONA_DEFS = {
     ],
   },
   industry_mentor: {
-    name: 'Raj',
+    name: 'Arjun',
     role: 'Industry Mentor',
     speaking_style: 'Practical and experience-driven. Bridges theory and real-world application and challenges whether the solution would actually be adopted outside the lab.',
     cares: 'Real-world applicability beyond the academic setting, whether target users would genuinely adopt it and practical constraints that research often overlooks',
@@ -127,7 +127,7 @@ const PERSONA_DEFS = {
     ],
   },
   ethicist: {
-    name: 'Dr. Chen',
+    name: 'Dr. Ng',
     role: 'Ethics Reviewer',
     speaking_style: 'Principle-driven and systematic. Identifies ethical risks and asks whether all potential harms have been considered and mitigated.',
     cares: 'Ethical implications of the research or design, data privacy and informed consent procedures and the potential for bias or unintended harm',
@@ -139,7 +139,7 @@ const PERSONA_DEFS = {
   },
 
   sustainability: {
-    name: 'Elena',
+    name: 'Linh',
     role: 'Sustainability Lead',
     speaking_style: 'Principled and evidence-driven. Challenges on environmental claims, ESG alignment and whether the lifecycle impact has been properly assessed.',
     cares: 'Environmental impact and carbon footprint, alignment with ESG commitments and reporting obligations and supply chain sustainability',
@@ -150,7 +150,7 @@ const PERSONA_DEFS = {
     ],
   },
   cx: {
-    name: 'Nadia',
+    name: 'Hui',
     role: 'Customer Success Lead',
     speaking_style: 'Customer-focused and practical. Asks what changes for existing customers, what the onboarding plan is and how churn risk is being managed during the transition.',
     cares: 'Customer experience disruption during transition, a clear onboarding and adoption plan and churn risk and retention impact',
@@ -161,7 +161,7 @@ const PERSONA_DEFS = {
     ],
   },
   dpo: {
-    name: 'Marcus',
+    name: 'Farhan',
     role: 'Data Protection Officer',
     speaking_style: 'Systematic and regulation-focused. Maps data flows before approving anything and asks for legal basis, retention periods and DPA status on every third-party relationship.',
     cares: 'Legal basis for processing personal data, data minimisation and retention policy and third-party data sharing and DPA obligations',
@@ -209,7 +209,7 @@ const PERSONA_DEFS = {
 
   // Policy panel
   policy_analyst: {
-    name: 'Omar',
+    name: 'Zul',
     role: 'Policy Analyst',
     speaking_style: 'Systematic and framework-oriented. Checks proposals against existing policy and regulatory landscapes and asks for formal impact assessments and documented consultation.',
     cares: 'Regulatory environment and compliance requirements, policy precedents and government alignment and impact assessment with stakeholder consultation',
@@ -220,7 +220,7 @@ const PERSONA_DEFS = {
     ],
   },
   regulator: {
-    name: 'Victor',
+    name: 'Boon',
     role: 'Regulatory Advisor',
     speaking_style: 'Precise and risk-focused. Identifies approval dependencies that teams overlook and will not proceed without a clear licensing and compliance timeline.',
     cares: 'Regulatory approval timelines and requirements, compliance obligations and enforcement risk and licensing and certification prerequisites',
@@ -231,7 +231,7 @@ const PERSONA_DEFS = {
     ],
   },
   community_rep: {
-    name: 'Zara',
+    name: 'Nurul',
     role: 'Community Representative',
     speaking_style: 'Advocacy-driven and equity-focused. Asks who was consulted, who benefits and who bears the cost, and challenges proposals that affect vulnerable groups without evidence of engagement.',
     cares: 'Community impact and equitable access, whether affected groups were genuinely consulted and unintended consequences for vulnerable populations',
@@ -244,7 +244,7 @@ const PERSONA_DEFS = {
 
   // Additional academic panel
   internal_examiner: {
-    name: 'Dr. Patel',
+    name: 'Dr. Ramasamy',
     role: 'Internal Examiner',
     speaking_style: 'Standards-focused and procedural. Checks for consistency with departmental guidelines, flags misalignment between abstract and findings and ensures the work will pass institutional review.',
     cares: 'Consistency with departmental research standards, alignment between methodology and institutional guidelines and coherence of the abstract and conclusions',
@@ -255,7 +255,7 @@ const PERSONA_DEFS = {
     ],
   },
   research_funder: {
-    name: 'Dr. Kim',
+    name: 'Dr. Lim',
     role: 'Research Funder',
     speaking_style: 'Criteria-focused and impact-oriented. Assesses whether the proposal earns its funding by meeting the call objectives and whether there is a credible plan to make the research matter beyond the institution.',
     cares: 'Alignment with funding objectives and call criteria, value for money and resource justification and a clear impact pathway with a dissemination plan',
@@ -281,7 +281,7 @@ const PERSONA_DEFS = {
 
   // Event planning panel
   event_director: {
-    name: 'Riya',
+    name: 'Shalini',
     role: 'Event Director',
     speaking_style: 'Strategic and measured. Challenges on purpose and outcomes. Wants to know the event\'s value to the organisation and who is accountable if things go wrong.',
     cares: 'Event purpose, expected outcomes for the organisation, success criteria and the approval and escalation chain',
@@ -303,7 +303,7 @@ const PERSONA_DEFS = {
     ],
   },
   event_safety: {
-    name: 'Kai',
+    name: 'Haziq',
     role: 'Safety Officer',
     speaking_style: 'Methodical and risk-focused. Asks about specific procedures and worst-case scenarios. Does not accept vague intentions as an answer.',
     cares: 'Venue safety compliance and certified capacity, emergency response and first aid arrangements and dietary restriction management',
@@ -314,7 +314,7 @@ const PERSONA_DEFS = {
     ],
   },
   event_programme: {
-    name: 'Cleo',
+    name: 'Pei',
     role: 'Programme Lead',
     speaking_style: 'Detail-oriented and practical. Challenges on execution gaps, timing conflicts and what happens when something goes wrong on the day.',
     cares: 'Detailed run-of-show with timings, confirmed dry run schedule and backup plans for performer or speaker no-shows',
@@ -620,7 +620,7 @@ ${isClosingTurn ? '- FINAL TURN RULE (highest priority): Acknowledge the present
 - Do not use em dashes.
 - Only mark a condition as met if the presenter's latest message explicitly and specifically addressed it with concrete information.
 - If you mark any conditions_met, open with a brief one-sentence acknowledgment of what was satisfied, then pivot to the next unmet concern.
-- If Ritish (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
+- If Angelo (Fact-Checker) is speaking and cites a real published report or dataset, include a brief source label.
 - Include a follow_up when: (a) the presenter's answer directly contradicts or conflicts with a concern owned by a different panelist, prompting them to call it out, (b) the presenter's answer raises a new concern that a second panelist would immediately react to, or (c) the presenter directly addresses another panelist's unmet condition and that panelist should briefly acknowledge it. Keep follow_up null when the answer is straightforward and relevant to only one panelist. The follow_up speaker must differ from speaker_id. Max 2 sentences, under 60 words.
 
 Return ONLY valid JSON with no markdown fences:
