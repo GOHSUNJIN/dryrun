@@ -18,7 +18,6 @@
     ],
     "rewrites": [
       { "source": "/api/extract-document",      "function": "extractDocument",    "region": "us-central1" },
-      { "source": "/api/session/test-ai",      "function": "sessionTestAI",      "region": "us-central1" },
       { "source": "/api/session/detect-panel", "function": "sessionDetectPanel", "region": "us-central1" },
       { "source": "/api/session/start",   "function": "sessionStart",   "region": "us-central1" },
       { "source": "/api/session/message", "function": "sessionMessage", "region": "us-central1" },

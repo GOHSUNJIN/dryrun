@@ -95,8 +95,7 @@ One call per session. Returns one tailored opening challenge per selected paneli
 
 Called after every presenter turn. Returns the next panelist's response and an optional second panelist follow-up in a single call. The prompt applies several layers of intelligence:
 
-- **Speaker selection.** Picks the panelist with the most unmet conditions. The previous questioner gets first right of reply, capped at 2 consecutive turns before forced rotation.
-- **Answer quality classification.** Classifies the presenter's reply as poor, medium or good and adjusts the panelist's tone accordingly.
+- **Speaker selection.** The previous questioner has first right of reply. After 2 consecutive turns with the same panelist, the AI rotates to the one with the most unmet conditions.
 - **Condition acknowledgment.** Only marks a condition met when the presenter explicitly addresses it with concrete information.
 - **Skip detection.** If the presenter signals they cannot answer, the AI rotates to a different panelist rather than pressing the same question.
 - **Pile-on trigger.** If the answer contradicts another panelist's domain a second response is returned in `follow_up`.
@@ -162,11 +161,11 @@ frontend/
       google.js          OAuth2, Drive, Calendar and Docs helpers
       storage.js         localStorage: sessions, meetings, personas, settings
       time.js            time helpers shared across screens
-    data.js              28 persona definitions across 5 categories
+    data.js              28 persona definitions across 6 categories
     index.css            design system: tokens, components, room theme
 functions/
-  index.js               Cloud Functions v2: sessionStart, sessionMessage, sessionEnd
-  core.js                Gemini: factCheckProposal, generateOpenings, generateReply, generateReport
+  index.js               Cloud Functions v2: sessionDetectPanel, extractDocument, sessionStart, sessionMessage, sessionEnd
+  core.js                Gemini: detectPanel, factCheckProposal, generateOpenings, generateReply, extractFromImages, generateReport
   fallback.js            scripted demo data: getDemoOpenings, getDemoReply, getDemoReport
 firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to index.html
 .firebaserc              project alias: dry-run-1608
@@ -242,13 +241,14 @@ State lives in `App.jsx` and flows down as props. Never stored on a server.
   personaIds: [...],       // active persona IDs
   config: {
     toughness: 'Balanced', // Supportive | Balanced | Tough
-    turnLimit: 15,         // 5 | 10 | 15 | 20 | 25
+    turnLimit: 15,         // added at session start: 5 | 10 | 15 | 20 | 25
   },
   transcript: [],          // full message history
   conditions: {},          // { f1: false, f2: true, ... }
   factCheckNotes: '',      // Fact-Checker research briefing
   customPersonaDefs: {},   // custom personas for API calls
   reportData: null,        // weak_points and moments from generateReport
+  startTime: null,         // timestamp set when session begins
   duration: '',            // formatted duration set on session end
   linkedMeeting: '',       // calendar event this rehearsal is tied to
   demoMode: false,         // true when AI is unavailable

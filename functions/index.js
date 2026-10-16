@@ -1,6 +1,5 @@
 import { onRequest } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
-import { GoogleGenAI } from '@google/genai'
 import {
   detectPanel, factCheckProposal, generateOpenings, getInitialConditions,
   generateReply, generateReport, extractFromImages,
@@ -139,21 +138,3 @@ export const extractDocument = onRequest({ ...opts, timeoutSeconds: 180 }, async
   }
 })
 
-export const sessionTestAI = onRequest(opts, async (req, res) => {
-  const key = process.env.GEMINI_API_KEY
-  if (!key) return res.status(200).json({ ok: false, error: 'GEMINI_API_KEY not set' })
-  try {
-    const ai = new GoogleGenAI({ apiKey: key })
-
-    // Test 1: basic response
-    const r1 = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: 'Reply with only this text, no markdown: hello',
-      config: { maxOutputTokens: 100 },
-    })
-
-    res.status(200).json({ ok: true, key_length: key.length, raw: r1.text })
-  } catch (err) {
-    res.status(200).json({ ok: false, error: err.message, key_length: key.length })
-  }
-})
