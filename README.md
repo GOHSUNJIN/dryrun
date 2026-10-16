@@ -38,7 +38,7 @@ Dry Run gives professionals a safe space to rehearse. An AI panel challenges you
 2. **Choose your panel.** Pick from 27 stakeholder roles across Business, Startup, Event Planning, Academic and Policy, plus a general fallback. The AI auto-suggests the best match for your content. Up to 5 panelists per session.
 3. **Enter the room.** A panelist fires the opening challenge immediately. You respond. The AI picks the next speaker, applies rotation logic and sometimes triggers a second panelist to pile on when your answer contradicts their domain.
 4. **End the session.** The AI analyses the full transcript and generates a coaching report.
-5. **Read the debrief.** Every key moment is annotated: what was asked, what you said, why it fell short and a scripted alternative to try next time.
+5. **Read the debrief.** Key moments are annotated: what was asked, what you said, why it worked or fell short, and a scripted alternative or coaching note for next time.
 
 ---
 
@@ -183,7 +183,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 ### Rehearsal Setup
 - Paste text, upload PDF/DOCX/PPTX or import from Google Drive; recent Drive docs shown automatically when signed in
 - AI auto-detects the most relevant panelists for your proposal via Gemini; falls back to keyword matching if the API is unavailable
-- 28 built-in panelists; custom persona creation with name, role, speaking style and conditions
+- 28 built-in panelists; custom persona creation with name, role, cares, speaking style and conditions
 - Session cap at 5 panelists; Usagi (General Reviewer) auto-selected as fallback when no targeted match is found
 - Toughness (Supportive / Balanced / Tough) and turn limit (5 / 10 / 15 / 20 / 25) configurable
 
@@ -269,7 +269,7 @@ Returns `persona_ids`: the recommended panel for the proposal. Used to auto-popu
 ### `POST /api/extract-document`
 
 ```json
-{ "pages": [{ "data": "<base64>", "type": "image/jpeg" }], "filename": "proposal.pdf" }
+{ "pages": ["<base64>", "<base64>"], "filename": "proposal.pdf" }
 ```
 
 Returns `text`: extracted plain text from uploaded PDF, DOCX or PPTX files. Handled server-side using Gemini vision for scanned PDFs.
