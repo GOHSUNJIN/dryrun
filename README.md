@@ -2,13 +2,13 @@
 
 **Rehearse your pitch before the meeting that matters.**
 
-Dry Run puts a panel of AI stakeholders in the room with you. Each panelist has a distinct agenda, asks hard questions and only backs down when you address their specific concerns with real evidence. After the session you get a line-by-line coaching report showing exactly what to prepare before the real meeting.
+An AI rehearsal room powered by Gemini. You upload a proposal, face a panel of AI stakeholders, and walk away with a line-by-line coaching report before the real meeting.
 
 **Live:** https://dry-run-1608.web.app  
 **Demo:** https://youtu.be/SVNpqS2siMA  
 **Category:** Future of Work and Enterprise Productivity  
 **Hackathon:** Google Cloud AI Builder Cup 2026  
-**Works on:** Desktop and mobile
+**Stack:** Gemini Flash + Google Search grounding + Firebase Hosting + Cloud Functions v2
 
 ---
 
@@ -29,16 +29,16 @@ Most proposals fail not because the idea is bad but because the presenter walked
 
 Existing preparation tools are one-sided. Slide decks and bullet-point checklists never push back. There is no way to stress-test your reasoning until you are already standing in front of the committee.
 
-Dry Run gives professionals a safe space to rehearse. An AI panel challenges you the same way a real committee would, tracks whether you have actually answered each concern and tells you exactly what you missed.
+Dry Run gives professionals a safe space to rehearse. An AI panel challenges you the same way a real committee would, tracks whether you have actually addressed each concern and tells you exactly what you missed.
 
 ---
 
 ## How It Works
 
 1. **Upload your proposal.** Paste text, drop in a PDF/DOCX/PPTX or import directly from Google Drive.
-2. **Choose your panel.** Pick from 27 stakeholder roles across Business, Startup, Event Planning, Academic and Policy, plus a general fallback. The AI auto-suggests the best match for your content. Up to 5 panelists per session.
+2. **Choose your panel.** Pick from 27 stakeholder roles across Business, Startup, Event Planning, Academic and Policy, plus a general fallback. Gemini auto-suggests the best match for your content. Up to 5 panelists per session.
 3. **Enter the room.** A panelist fires the opening challenge immediately. You respond. The AI picks the next speaker, applies rotation logic and sometimes triggers a second panelist to pile on when your answer contradicts their domain.
-4. **End the session.** The AI analyses the full transcript and generates a coaching report.
+4. **End the session.** Gemini analyses the full transcript and generates a coaching report.
 5. **Read the debrief.** Key moments are annotated: what was asked, what you said, why it worked or fell short, and a scripted alternative or coaching note for next time.
 
 ---
@@ -82,7 +82,7 @@ Every core feature runs on Google Cloud. The AI, backend, hosting, secrets and a
 
 ## How the AI Works
 
-Four structured Gemini calls. No streaming. No server-side state. Three return JSON; `factCheckProposal` returns a plain-text briefing injected into the session.
+Four structured Gemini calls per session. No streaming. No server-side state. Three return JSON; `factCheckProposal` returns a plain-text briefing injected into the session.
 
 ### `factCheckProposal` (Google Search grounding)
 
@@ -183,7 +183,7 @@ firebase.json            hosting rewrites: /api/* to Cloud Functions; ** to inde
 
 ### Rehearsal Setup
 - Paste text, upload PDF/DOCX/PPTX or import from Google Drive; recent Drive docs shown automatically when signed in
-- AI auto-detects the most relevant panelists for your proposal via Gemini; falls back to keyword matching if the API is unavailable
+- Gemini auto-detects the most relevant panelists for your proposal; falls back to keyword matching if the API is unavailable
 - 28 built-in panelists; custom persona creation with name, role, cares, speaking style and conditions
 - Session cap at 5 panelists; Usagi (General Reviewer) auto-selected as fallback when no targeted match is found
 - Toughness (Supportive / Balanced / Tough) and turn limit (5 / 10 / 15 / 20 / 25) configurable
