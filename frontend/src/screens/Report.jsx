@@ -4,7 +4,7 @@ import { Check, X, Copy, RotateCcw, BookOpen, ExternalLink, Loader, Home, FileTe
 import { PERSONAS } from '../data.js'
 import { exportToGoogleDoc } from '../utils/google.js'
 import ToastStack, { useToast } from '../components/Toast.jsx'
-import { nextSessionName, deleteSession } from '../utils/storage.js'
+import { nextSessionName, deleteSession, loadCustomPersonas } from '../utils/storage.js'
 
 
 const container = {
@@ -66,8 +66,9 @@ export default function Report({ navigate, session }) {
     new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   )
 
+  const allPersonas = [...PERSONAS, ...loadCustomPersonas()]
   const personas = session?.personaIds?.length
-    ? PERSONAS
+    ? allPersonas
         .filter(p => session.personaIds.includes(p.id))
         .map(p => ({
           ...p,

@@ -35,9 +35,13 @@ function clearStoredToken() {
 
 function waitForGis() {
   if (window.google?.accounts?.oauth2) return Promise.resolve()
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      clearInterval(t)
+      reject(new Error('Google sign-in unavailable. Check your connection or disable any content blockers and try again.'))
+    }, 8000)
     const t = setInterval(() => {
-      if (window.google?.accounts?.oauth2) { clearInterval(t); resolve() }
+      if (window.google?.accounts?.oauth2) { clearInterval(t); clearTimeout(timeout); resolve() }
     }, 50)
   })
 }

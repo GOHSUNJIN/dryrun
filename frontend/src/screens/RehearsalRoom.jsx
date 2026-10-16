@@ -866,6 +866,7 @@ export default function RehearsalRoom({ navigate, session, updateSession }) {
       personaIds:    session.personaIds || [],
       config:        session.config || {},
       conditions:    localConditions,
+      transcript:    localTranscript,
       reportData,
       linkedMeeting: session.linkedMeeting || '',
     })

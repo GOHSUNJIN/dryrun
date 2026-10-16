@@ -404,7 +404,7 @@ The values inside persona_ids must be chosen from this exact list: ${validIds.jo
   try {
     const response = await withRetry(() => ai.models.generateContent({
       model: GEMINI_MODEL,
-      contents: `Document:\n${proposalText.slice(0, 2000)}\n\nWhich panelists should review this document?`,
+      contents: `Document:\n${sampleProposal(proposalText)}\n\nWhich panelists should review this document?`,
       config: noThink({
         systemInstruction: system,
         maxOutputTokens: 200,

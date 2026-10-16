@@ -65,6 +65,7 @@ export default function App() {
         personaIds:    sv.personaIds || [],
         config:        sv.config || DEFAULT_SESSION.config,
         conditions:    sv.conditions || {},
+        transcript:    sv.transcript || [],
         reportData:    sv.reportData || null,
         duration:      sv.duration || '',
         linkedMeeting: sv.linkedMeeting || '',
