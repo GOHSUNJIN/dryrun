@@ -5,7 +5,7 @@
 An AI rehearsal room powered by Gemini. You upload a proposal, face a panel of AI stakeholders, and walk away with a line-by-line coaching report before the real meeting.
 
 **Live:** https://dry-run-1608.web.app  
-**Demo:** https://youtu.be/SVNpqS2siMA  
+**Demo:** https://youtu.be/OvxL9-V84Xo  
 **Category:** Future of Work and Enterprise Productivity  
 **Hackathon:** Google Cloud AI Builder Cup 2026  
 **Stack:** Gemini 3.8 Flash + Google Search grounding + Firebase Hosting + Cloud Functions v2
